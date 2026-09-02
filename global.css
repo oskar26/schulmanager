@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --sf-bg: 248 249 253;
+    --sf-surface: 255 255 255;
+    --sf-elevated: 255 255 255;
+    --sf-line: 232 234 243;
+    --sf-ink: 18 20 34;
+    --sf-muted: 106 112 134;
+    --sf-faint: 156 162 182;
+
+    --sf-brand: 108 92 231;
+    --sf-brand-soft: 237 234 254;
+    --sf-brand-ink: 60 47 160;
+
+    --sf-mint: 46 204 168;
+    --sf-lemon: 250 199 72;
+    --sf-coral: 255 118 117;
+    --sf-sky: 72 163 255;
+    --sf-grape: 189 122 246;
+
+    --sf-success: 34 176 122;
+    --sf-warning: 232 152 30;
+    --sf-danger: 226 72 72;
+  }
+
+  .dark:root,
+  .dark {
+    --sf-bg: 11 14 26;
+    --sf-surface: 20 24 40;
+    --sf-elevated: 27 32 52;
+    --sf-line: 39 45 68;
+    --sf-ink: 240 242 250;
+    --sf-muted: 154 161 184;
+    --sf-faint: 108 116 142;
+
+    --sf-brand: 138 124 255;
+    --sf-brand-soft: 39 36 82;
+    --sf-brand-ink: 205 198 255;
+
+    --sf-mint: 61 224 186;
+    --sf-lemon: 255 209 102;
+    --sf-coral: 255 135 133;
+    --sf-sky: 105 180 255;
+    --sf-grape: 202 146 250;
+
+    --sf-success: 62 202 146;
+    --sf-warning: 245 174 66;
+    --sf-danger: 240 100 100;
+  }
+}

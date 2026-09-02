@@ -1,0 +1,214 @@
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
+
+import { de } from '@/features/grades/calculator';
+import { useSnapshot } from '@/data/queries';
+import { subjectStyle, tint } from '@/design/subjects';
+import { formatRelativeDay } from '@/lib/date';
+import { excerpt, htmlToText } from '@/lib/html';
+import { Card, EmptyState, IconButton, Ionicons, Muted, Row, Screen, Title } from '@/ui/primitives';
+
+interface Hit {
+  id: string;
+  kind: 'Stunde' | 'Hausaufgabe' | 'Arbeit' | 'Note' | 'Brief' | 'Nachricht' | 'Termin' | 'Aushang';
+  title: string;
+  subtitle: string;
+  color: string;
+  href?: string;
+}
+
+export default function SearchScreen() {
+  const router = useRouter();
+  const { data } = useSnapshot();
+  const [query, setQuery] = useState('');
+
+  const hits = useMemo<Hit[]>(() => {
+    if (!data || query.trim().length < 2) return [];
+    const needle = query.trim().toLowerCase();
+    const match = (...values: (string | undefined | null)[]) =>
+      values.some((value) => value?.toLowerCase().includes(needle));
+
+    const out: Hit[] = [];
+
+    data.lessons
+      .filter((lesson) => match(lesson.subject, lesson.teacher, lesson.room))
+      .slice(0, 6)
+      .forEach((lesson) =>
+        out.push({
+          id: `l-${lesson.id}`,
+          kind: 'Stunde',
+          title: `${lesson.subject} · ${lesson.hour}. Stunde`,
+          subtitle: `${formatRelativeDay(lesson.date)} · ${lesson.start} · ${lesson.room ?? ''}`,
+          color: subjectStyle(lesson.subject).color,
+          href: '/timetable',
+        }),
+      );
+
+    data.homework
+      .filter((item) => match(item.subject, item.text, item.teacher))
+      .forEach((item) =>
+        out.push({
+          id: `h-${item.id}`,
+          kind: 'Hausaufgabe',
+          title: `${item.subject}: ${excerpt(item.text, 50)}`,
+          subtitle: `fällig ${formatRelativeDay(item.due)}`,
+          color: subjectStyle(item.subject).color,
+          href: '/tasks',
+        }),
+      );
+
+    data.exams
+      .filter((exam) => match(exam.subject, exam.type, exam.comment))
+      .forEach((exam) =>
+        out.push({
+          id: `e-${exam.id}`,
+          kind: 'Arbeit',
+          title: `${exam.subject} · ${exam.type ?? 'Arbeit'}`,
+          subtitle: formatRelativeDay(exam.date),
+          color: '#E24848',
+          href: '/tasks',
+        }),
+      );
+
+    data.subjects
+      .filter((subject) => match(subject.subject))
+      .forEach((subject) =>
+        out.push({
+          id: `g-${subject.subjectId}`,
+          kind: 'Note',
+          title: `${subject.subject} · Schnitt ${subject.average != null ? de(subject.average) : '–'}`,
+          subtitle: `${subject.grades.length} Bewertungen`,
+          color: subjectStyle(subject.subject).color,
+          href: '/grades',
+        }),
+      );
+
+    data.letters
+      .filter((letter) => match(letter.subject, htmlToText(letter.content), letter.sender))
+      .forEach((letter) =>
+        out.push({
+          id: `b-${letter.id}`,
+          kind: 'Brief',
+          title: letter.subject,
+          subtitle: letter.sender ?? 'Schule',
+          color: '#6C5CE7',
+          href: '/inbox',
+        }),
+      );
+
+    data.threads
+      .filter((thread) => match(thread.subject, thread.sender, thread.preview))
+      .forEach((thread) =>
+        out.push({
+          id: `t-${thread.id}`,
+          kind: 'Nachricht',
+          title: thread.subject,
+          subtitle: thread.sender,
+          color: '#48A3FF',
+          href: '/inbox',
+        }),
+      );
+
+    data.events
+      .filter((event) => match(event.title, event.location, event.categoryName))
+      .forEach((event) =>
+        out.push({
+          id: `c-${event.id}`,
+          kind: 'Termin',
+          title: event.title,
+          subtitle: formatRelativeDay(event.start.slice(0, 10)),
+          color: event.color ?? '#BD7AF6',
+          href: '/calendar',
+        }),
+      );
+
+    data.tiles
+      .filter((tile) => match(tile.title, htmlToText(tile.content)))
+      .forEach((tile) =>
+        out.push({
+          id: `p-${tile.id}`,
+          kind: 'Aushang',
+          title: tile.title,
+          subtitle: excerpt(htmlToText(tile.content), 50),
+          color: '#22B07A',
+          href: '/inbox',
+        }),
+      );
+
+    return out.slice(0, 40);
+  }, [data, query]);
+
+  const suggestions = ['Mathe', 'Sport', 'Klassenarbeit', 'Elternabend', 'Hausaufgabe'];
+
+  return (
+    <Screen>
+      <Row className="gap-2 px-4 pb-3 pt-2">
+        <IconButton icon="close" onPress={() => router.back()} color="#6A7086" size={36} />
+        <View className="flex-1 flex-row items-center rounded-2xl border border-line bg-surface px-3">
+          <Ionicons name="search" size={17} color="#9CA2B6" />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            autoFocus
+            placeholder="Fächer, Aufgaben, Briefe, Termine …"
+            placeholderTextColor="#9CA2B6"
+            className="ml-2 h-11 flex-1 text-[15px] text-ink"
+          />
+        </View>
+      </Row>
+
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
+        {query.trim().length < 2 ? (
+          <>
+            <Title className="mb-2 text-[16px]">Vorschläge</Title>
+            <Row className="flex-wrap gap-2">
+              {suggestions.map((item) => (
+                <Pressable
+                  key={item}
+                  onPress={() => setQuery(item)}
+                  className="rounded-full bg-line/60 px-3 py-2 active:opacity-70"
+                >
+                  <Text className="text-[13px] font-semibold text-muted">{item}</Text>
+                </Pressable>
+              ))}
+            </Row>
+            <EmptyState emoji="🔍" title="Alles auf einmal durchsuchen" hint="Stundenplan, Aufgaben, Noten, Briefe, Nachrichten, Termine und Aushänge." />
+          </>
+        ) : hits.length === 0 ? (
+          <EmptyState emoji="🤷" title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
+        ) : (
+          hits.map((hit) => (
+            <Pressable
+              key={hit.id}
+              onPress={() => hit.href && router.push(hit.href as never)}
+              className="mb-2 active:opacity-80"
+            >
+              <Card>
+                <Row className="gap-3">
+                  <View
+                    className="h-9 w-9 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: tint(hit.color, 0.16) }}
+                  >
+                    <Text className="text-[10px] font-bold" style={{ color: hit.color }}>
+                      {hit.kind.slice(0, 2)}
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>
+                      {hit.title}
+                    </Text>
+                    <Muted className="text-[12px]" numberOfLines={1}>
+                      {hit.kind} · {hit.subtitle}
+                    </Muted>
+                  </View>
+                  <Ionicons name="chevron-forward" size={15} color="#9CA2B6" />
+                </Row>
+              </Card>
+            </Pressable>
+          ))
+        )}
+      </ScrollView>
+    </Screen>
+  );
+}
