@@ -142,6 +142,9 @@ app/
 
 ## Schnellstart
 
+> 📘 **Ausführliche Schritt-für-Schritt-Anleitung inkl. Expo Go, Emulator, Dev-Build und
+> Testtour durch alle Features: [AUSFÜHREN.md](AUSFÜHREN.md)**
+
 ```bash
 npm install
 npm run web          # Browser
@@ -230,7 +233,7 @@ Fünf eigenständige Konzepte, jeweils als sauberes, handgeschriebenes SVG (512 
 
 | Datei | Konzept | Idee |
 |---|---|---|
-| `assets/logos/01-flow.svg` | **Flow** (Primärmarke) | Stundenplan-Raster, dessen Zeilen zu einer Welle werden |
+| `assets/logos/01-flow.svg` | **Flow** ✅ (gewählte Primärmarke)  | Stundenplan-Raster, dessen Zeilen zu einer Welle werden |
 | `assets/logos/02-bookmark.svg` | **Bookmark** | Lesezeichen + Häkchen — gemerkt & erledigt |
 | `assets/logos/03-bubble-grid.svg` | **Bubble Grid** | Vier Kacheln, eine wird zur Sprechblase |
 | `assets/logos/04-pencil-clock.svg` | **Pencil Clock** | Bleistift als Uhrzeiger — die Schulstunde |
