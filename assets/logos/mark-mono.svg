@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t">
+  <title id="t">Schulflow – Mono-Marke</title>
+  <!-- Einfarbig über currentColor: Tab-Bar, Wasserzeichen, Print, Favicon-Fallback. -->
+  <g fill="currentColor">
+    <rect x="104" y="124" width="80" height="34" rx="12"/>
+    <rect x="200" y="124" width="112" height="34" rx="12" opacity=".55"/>
+    <rect x="328" y="124" width="80" height="34" rx="12" opacity=".3"/>
+    <rect x="104" y="182" width="112" height="34" rx="12" opacity=".55"/>
+    <rect x="232" y="182" width="80" height="34" rx="12"/>
+    <rect x="328" y="182" width="80" height="34" rx="12" opacity=".55"/>
+    <rect x="104" y="240" width="80" height="34" rx="12" opacity=".3"/>
+    <rect x="200" y="240" width="80" height="34" rx="12" opacity=".55"/>
+    <rect x="296" y="240" width="112" height="34" rx="12"/>
+  </g>
+  <path fill="none" stroke="currentColor" stroke-width="34" stroke-linecap="round"
+        d="M104 332c40-46 76-46 116 0s76 46 116 0 44-38 72-24"/>
+  <path fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" opacity=".35"
+        d="M104 392c40-40 76-40 116 0s76 40 116 0"/>
+</svg>

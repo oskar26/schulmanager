@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t d">
+  <title id="t">Schulflow – Konzept 3 „Bubble Grid“</title>
+  <desc id="d">Vier Kacheln des Schwarzen Bretts, eine davon wird zur Sprechblase.</desc>
+  <defs>
+    <linearGradient id="g-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F1226"/>
+      <stop offset="1" stop-color="#1B1F3D"/>
+    </linearGradient>
+  </defs>
+
+  <path fill="url(#g-bg)" d="M256 24c105 0 143 5 179 41s41 74 41 191-5 143-41 179-74 41-179 41-143-5-179-41-41-74-41-179 5-155 41-191S151 24 256 24Z"/>
+
+  <!-- Kachel 1: Stundenplan -->
+  <g>
+    <rect x="96" y="96" width="146" height="146" rx="40" fill="#7B6BFF"/>
+    <g fill="#FFFFFF" opacity=".92">
+      <rect x="126" y="136" width="86" height="14" rx="7"/>
+      <rect x="126" y="164" width="56" height="14" rx="7" opacity=".7"/>
+      <rect x="126" y="192" width="72" height="14" rx="7" opacity=".45"/>
+    </g>
+  </g>
+
+  <!-- Kachel 2: Note -->
+  <g>
+    <rect x="270" y="96" width="146" height="146" rx="40" fill="#2ECCA8"/>
+    <path fill="#0F1226" d="M343 128c5 0 9 3 11 8l12 30 32 3c11 1 15 14 7 21l-24 21 7 32c2 10-9 18-18 13l-27-16-27 16c-9 5-20-3-18-13l7-32-24-21c-8-7-4-20 7-21l32-3 12-30c2-5 6-8 11-8Z" opacity=".85"/>
+  </g>
+
+  <!-- Kachel 3: Aufgabe -->
+  <g>
+    <rect x="96" y="270" width="146" height="146" rx="40" fill="#FAC748"/>
+    <path fill="none" stroke="#0F1226" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"
+          d="m134 344 26 26 48-56" opacity=".85"/>
+  </g>
+
+  <!-- Kachel 4 wird zur Sprechblase -->
+  <path fill="#FF7677"
+        d="M310 270h66c22 0 40 18 40 40v66c0 22-18 40-40 40h-24l-30 34c-8 9-23 3-23-9v-25h-29c-22 0-40-18-40-40v-66c0-22 18-40 40-40Z"/>
+  <g fill="#FFFFFF">
+    <circle cx="304" cy="343" r="12"/>
+    <circle cx="343" cy="343" r="12"/>
+    <circle cx="382" cy="343" r="12"/>
+  </g>
+</svg>

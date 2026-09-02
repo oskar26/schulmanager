@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t d">
+  <title id="t">Schulflow – Konzept 1 „Flow“</title>
+  <desc id="d">Ein Stundenplan-Raster, dessen unterste Zeilen zu einer Welle werden.</desc>
+  <defs>
+    <linearGradient id="f-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7B6BFF"/>
+      <stop offset="1" stop-color="#5A46D6"/>
+    </linearGradient>
+    <linearGradient id="f-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2ECCA8"/>
+      <stop offset="0.55" stop-color="#FAC748"/>
+      <stop offset="1" stop-color="#FF7677"/>
+    </linearGradient>
+    <clipPath id="f-clip">
+      <path d="M256 24c105 0 143 5 179 41s41 74 41 191-5 143-41 179-74 41-179 41-143-5-179-41-41-74-41-179 5-155 41-191S151 24 256 24Z"/>
+    </clipPath>
+  </defs>
+
+  <path fill="url(#f-bg)" d="M256 24c105 0 143 5 179 41s41 74 41 191-5 143-41 179-74 41-179 41-143-5-179-41-41-74-41-179 5-155 41-191S151 24 256 24Z"/>
+
+  <g clip-path="url(#f-clip)">
+    <!-- Rasterzeilen (Stundenplan) -->
+    <g fill="#FFFFFF">
+      <rect x="104" y="124" width="80" height="34" rx="12" opacity=".95"/>
+      <rect x="200" y="124" width="112" height="34" rx="12" opacity=".55"/>
+      <rect x="328" y="124" width="80" height="34" rx="12" opacity=".3"/>
+
+      <rect x="104" y="182" width="112" height="34" rx="12" opacity=".55"/>
+      <rect x="232" y="182" width="80" height="34" rx="12" opacity=".95"/>
+      <rect x="328" y="182" width="80" height="34" rx="12" opacity=".55"/>
+
+      <rect x="104" y="240" width="80" height="34" rx="12" opacity=".3"/>
+      <rect x="200" y="240" width="80" height="34" rx="12" opacity=".55"/>
+      <rect x="296" y="240" width="112" height="34" rx="12" opacity=".95"/>
+    </g>
+
+    <!-- die Zeilen lösen sich in eine Welle auf -->
+    <path fill="none" stroke="url(#f-wave)" stroke-width="34" stroke-linecap="round"
+          d="M104 332c40-46 76-46 116 0s76 46 116 0 44-38 72-24"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" opacity=".28"
+          d="M104 392c40-40 76-40 116 0s76 40 116 0"/>
+  </g>
+
+  <!-- verspielter Funke -->
+  <g fill="#FAC748">
+    <path d="M392 96c4 20 10 26 30 30-20 4-26 10-30 30-4-20-10-26-30-30 20-4 26-10 30-30Z"/>
+  </g>
+</svg>

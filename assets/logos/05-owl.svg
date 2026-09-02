@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t d">
+  <title id="t">Schulflow – Konzept 5 „Owl“</title>
+  <desc id="d">Eine geometrische Eule aus Kreisen und Bögen mit Buch als Bauch.</desc>
+  <defs>
+    <linearGradient id="o-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6C5CE7"/>
+      <stop offset="1" stop-color="#48A3FF"/>
+    </linearGradient>
+    <linearGradient id="o-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E6E9FA"/>
+    </linearGradient>
+  </defs>
+
+  <path fill="url(#o-bg)" d="M256 24c105 0 143 5 179 41s41 74 41 191-5 143-41 179-74 41-179 41-143-5-179-41-41-74-41-179 5-155 41-191S151 24 256 24Z"/>
+
+  <!-- Ohren -->
+  <path fill="#3C2FA0" d="M150 148c-6-30 4-52 22-58 15-5 30 8 38 34Zm212 0c6-30-4-52-22-58-15-5-30 8-38 34Z"/>
+
+  <!-- Körper -->
+  <path fill="url(#o-body)"
+        d="M256 108c62 0 106 44 106 108v56c0 62-46 108-106 108s-106-46-106-108v-56c0-64 44-108 106-108Z"/>
+
+  <!-- Augen -->
+  <circle cx="209" cy="216" r="52" fill="#FFFFFF" stroke="#3C2FA0" stroke-width="12"/>
+  <circle cx="303" cy="216" r="52" fill="#FFFFFF" stroke="#3C2FA0" stroke-width="12"/>
+  <circle cx="216" cy="220" r="22" fill="#121422"/>
+  <circle cx="296" cy="220" r="22" fill="#121422"/>
+  <circle cx="224" cy="212" r="7" fill="#FFFFFF"/>
+  <circle cx="304" cy="212" r="7" fill="#FFFFFF"/>
+
+  <!-- Schnabel -->
+  <path fill="#FAC748" d="M256 246c11 0 20 9 20 20l-20 24-20-24c0-11 9-20 20-20Z"/>
+
+  <!-- Buch als Bauch -->
+  <g>
+    <path fill="#FF7677" d="M186 316h140c8 0 14 6 14 14v40c0 8-6 14-14 14H186c-8 0-14-6-14-14v-40c0-8 6-14 14-14Z"/>
+    <path fill="#FFFFFF" opacity=".85" d="M256 322c14-8 34-8 48 0v56c-14-8-34-8-48 0Zm0 0c-14-8-34-8-48 0v56c14-8 34-8 48 0Z"/>
+    <path stroke="#FF7677" stroke-width="6" d="M256 322v56"/>
+  </g>
+
+  <!-- Füße -->
+  <g fill="#FAC748">
+    <path d="M212 380h28l-6 24h-16Zm60 0h28l-6 24h-16Z" opacity=".9"/>
+  </g>
+</svg>
