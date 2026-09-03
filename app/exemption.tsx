@@ -64,7 +64,7 @@ export default function ExemptionScreen() {
                 <Pressable
                   key={offset}
                   onPress={() => setStart(iso)}
-                  className={`flex-1 items-center rounded-2xl py-2.5 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
+                  className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-2.5 hover:opacity-90 active:opacity-80 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
                 >
                   <Text className={`text-[12px] font-bold ${active ? 'text-on-amber' : 'text-muted'}`}>
                     in {offset} T.
@@ -79,7 +79,7 @@ export default function ExemptionScreen() {
               <Pressable
                 key={value}
                 onPress={() => setDays(value)}
-                className={`flex-1 items-center rounded-2xl py-2.5 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
+                className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-2.5 hover:opacity-90 active:opacity-80 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
               >
                 <Text className={`text-[13px] font-bold ${days === value ? 'text-on-amber' : 'text-muted'}`}>
                   {value} {value === 1 ? 'Tag' : 'Tage'}

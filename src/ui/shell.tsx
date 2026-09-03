@@ -19,6 +19,7 @@ import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import type { LayoutInfo } from '@/lib/breakpoints';
 import { useSnapshot } from '@/data/queries';
+import { hapticLight } from '@/lib/haptics';
 
 function useBadges(): { tasks: number; inbox: number } {
   const { data } = useSnapshot();
@@ -79,7 +80,10 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
 
   const goTab = (name: string, key: string) => {
     const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
-    if (state.routes[state.index]?.key !== key && !event.defaultPrevented) navigation.navigate(name);
+    if (state.routes[state.index]?.key !== key && !event.defaultPrevented) {
+      hapticLight();
+      navigation.navigate(name);
+    }
   };
 
   const BadgePill = ({ count }: { count: number }) =>

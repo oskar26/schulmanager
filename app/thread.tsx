@@ -142,7 +142,7 @@ export default function ThreadScreen() {
               onPress={sendDraft}
               disabled={draft.trim().length === 0 || send.isPending}
               className={`h-11 w-11 items-center justify-center rounded-2xl ${
-                draft.trim().length === 0 ? 'bg-line/50' : 'bg-accent-amber active:opacity-80'
+                draft.trim().length === 0 ? 'bg-line/50' : 'bg-accent-amber hover:opacity-90 active:opacity-80'
               }`}
             >
               <Send size={18} strokeWidth={2} color={draft.trim().length === 0 ? colors.faint : colors.on.amber} />

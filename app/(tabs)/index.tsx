@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Search, Settings } from 'lucide-react-native';
 
@@ -9,7 +9,7 @@ import { daysUntil, formatLongDay, formatTimeAgo, greeting, toISO } from '@/lib/
 import { useLayout } from '@/lib/breakpoints';
 import { Avatar } from '@/ui/gluestack/feedback';
 import { AdaptiveContent, BentoCard, BentoGrid, Muted, RoundActionButton, Row, Screen, Skeleton } from '@/ui/primitives';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
 import { foregroundOn, shadow } from '@/design/tokens';
 import { tint } from '@/design/subjects';
@@ -102,11 +102,11 @@ function WelcomeBanner({
               <Text className="text-[12px] font-semibold" style={{ color: whiteDim }}>
                 {hwDone} von {hwTotal} Hausaufgaben erledigt
               </Text>
-              <Pressable onPress={onOpenTasks} hitSlop={8} accessibilityRole="link">
+              <PressableOpacity onPress={onOpenTasks} hitSlop={12} accessibilityRole="link">
                 <Text className="text-[12px] font-bold" style={{ color: 'rgba(255,255,255,0.88)' }}>
                   Alle ansehen
                 </Text>
-              </Pressable>
+              </PressableOpacity>
             </Row>
           </>
         ) : (

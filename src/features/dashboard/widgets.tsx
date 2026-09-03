@@ -55,7 +55,7 @@ import {
   RoundActionButton,
   Row,
 } from '@/ui/primitives';
-import { LivePulse, PressableScale } from '@/ui/motion';
+import { LivePulse, PressableOpacity, PressableScale } from '@/ui/motion';
 import { Progress } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
@@ -107,9 +107,9 @@ function WidgetHeader({
       {typeof badge === 'number' && badge > 0 ? (
         <Badge count={badge} />
       ) : action ? (
-        <Pressable onPress={onAction} hitSlop={8}>
+        <PressableOpacity onPress={onAction} hitSlop={14} accessibilityRole="button">
           <Text className="text-[12px] font-semibold text-accent-amber-deep">{action}</Text>
-        </Pressable>
+        </PressableOpacity>
       ) : onAction ? (
         <RoundActionButton onPress={onAction} size={34} color={resolvedIconColor} accessibilityLabel={title} />
       ) : null}
@@ -253,7 +253,7 @@ export function InsightsWidget({ snapshot }: WidgetProps) {
           <Pressable
             key={insight.id}
             onPress={() => insight.action && router.push(insight.action.href as never)}
-            className="active:bg-line/40"
+            className="hover:bg-line/30 active:bg-line/50"
           >
             <Row className="gap-3 px-5 py-3">
               <View
@@ -410,7 +410,7 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
           const style = subjectStyle(item.subject);
           const days = daysUntil(item.due);
           return (
-            <Pressable key={item.id} onPress={() => toggle(item.id)} className="active:bg-line/40">
+            <Pressable key={item.id} onPress={() => toggle(item.id)} className="hover:bg-line/30 active:bg-line/50">
               <Row className="gap-3 px-5 py-2.5">
                 <View
                   className="h-5 w-5 items-center justify-center rounded-md border-2"
@@ -572,7 +572,7 @@ export function LettersWidget({ snapshot }: WidgetProps) {
         <Pressable
           key={String(letter.id)}
           onPress={() => router.push('/inbox')}
-          className="active:bg-line/40"
+          className="hover:bg-line/30 active:bg-line/50"
         >
           <Row className="gap-3 px-5 py-2.5">
             <View className="h-9 w-9 items-center justify-center rounded-xl bg-accent-violet/15">

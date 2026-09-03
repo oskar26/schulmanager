@@ -10,7 +10,7 @@ import {
 } from '@/lib/date';
 import { useLayout } from '@/lib/breakpoints';
 import { AdaptiveContent, AvatarStack, Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
@@ -72,12 +72,15 @@ export default function TimetableScreen() {
           </View>
           <Row className="gap-2">
             <IconButton icon="chevron-back" onPress={() => setWeekOffset((value) => value - 1)} color={colors.muted} size={36} />
-            <Pressable
+            {/* Phase 4: Spring-Press + 44-px-Touch-Target für „Heute“. */}
+            <PressableOpacity
               onPress={() => setWeekOffset(0)}
-              className="h-9 items-center justify-center rounded-xl bg-accent-amber/15 px-3"
+              className="min-h-[44px] items-center justify-center rounded-xl bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
+              accessibilityRole="button"
+              accessibilityLabel="Zur aktuellen Woche"
             >
               <Text className="text-[12px] font-bold text-on-amber">Heute</Text>
-            </Pressable>
+            </PressableOpacity>
             <IconButton icon="chevron-forward" onPress={() => setWeekOffset((value) => value + 1)} color={colors.muted} size={36} />
           </Row>
         </Row>
@@ -91,12 +94,13 @@ export default function TimetableScreen() {
               Mini-Kacheln mehr, die Fächernamen abschneiden. Tablets dürfen weiter
               zwischen Wochen- und Tagesraster wechseln. */}
           {layout.isTablet ? (
-            <Pressable
+            <PressableOpacity
               onPress={() => setMode(mode === 'week' ? 'day' : 'week')}
-              className="rounded-xl bg-line/60 px-3 py-1.5"
+              className="min-h-[44px] justify-center rounded-xl bg-line/60 px-3.5 hover:bg-line"
+              accessibilityRole="button"
             >
               <Text className="text-[11px] font-bold text-muted">{mode === 'week' ? 'Tagesansicht' : 'Wochenansicht'}</Text>
-            </Pressable>
+            </PressableOpacity>
           ) : null}
         </Row>
       </View>
@@ -219,7 +223,7 @@ function LessonCell({
         borderLeftWidth: 3,
         borderLeftColor: cancelled ? colors.danger : substitution ? colors.success : style.color,
       }}
-      className="justify-center rounded-xl px-1.5 active:opacity-70"
+      className="justify-center rounded-xl px-1.5 hover:opacity-85 active:opacity-70"
     >
       <Text
         className="text-[11px] font-bold"
@@ -292,13 +296,17 @@ function DayList({
             const isActive = day === active;
             const count = byDay.get(day)?.filter((lesson) => lesson.state !== 'cancelled').length ?? 0;
             return (
-              <Pressable
+              <PressableScale
                 key={day}
                 onPress={() => onSelectDay(day)}
+                scale={0.93}
                 className={`h-[62px] w-[56px] items-center justify-center rounded-[18px] ${
-                  isActive ? 'bg-accent-amber' : 'border border-line bg-surface'
+                  isActive ? 'bg-accent-amber' : 'border border-line bg-surface hover:bg-line/40'
                 }`}
                 style={isActive ? shadow.card : undefined}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={formatLongDay(day)}
               >
                 <Text
                   className={`text-[10px] font-bold uppercase tracking-wide ${
@@ -316,7 +324,7 @@ function DayList({
                     backgroundColor: count > 0 ? (isActive ? colors.on.amber : colors.accent.amber) : 'transparent',
                   }}
                 />
-              </Pressable>
+              </PressableScale>
             );
           })}
         </Row>
@@ -403,7 +411,7 @@ function DayList({
                     {/* Karte mit voll lesbarem Fach */}
                     <Pressable
                       onPress={() => onSelect(lesson)}
-                      className="flex-1 active:opacity-80"
+                      className="flex-1 hover:opacity-90 active:opacity-80"
                       style={{ opacity: past && !running && lesson.state === 'regular' ? 0.55 : 1 }}
                     >
                       <Card

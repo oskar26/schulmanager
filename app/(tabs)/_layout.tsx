@@ -13,6 +13,7 @@ import { useSnapshot, useModuleActive } from '@/data/queries';
 import { useLayout } from '@/lib/breakpoints';
 import { AdaptiveTabBar } from '@/ui/shell';
 import { PressableScale } from '@/ui/motion';
+import { hapticLight } from '@/lib/haptics';
 
 /**
  * Icons pro Tab — nur Lucide-Vektoren. Bewusst sparsam: ein Icon, keine Labels
@@ -85,7 +86,10 @@ function FloatingTabBar({ state, navigation, descriptors, colors }: BottomTabBar
 
   const goTab = (name: string, key: string) => {
     const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
-    if (state.routes[state.index]?.key !== key && !event.defaultPrevented) navigation.navigate(name);
+    if (state.routes[state.index]?.key !== key && !event.defaultPrevented) {
+      hapticLight();
+      navigation.navigate(name);
+    }
   };
 
   return (

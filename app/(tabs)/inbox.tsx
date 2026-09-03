@@ -126,7 +126,7 @@ export default function InboxScreen() {
                   hapticLight();
                   setTile(item);
                 }}
-                className="mb-2 active:opacity-80"
+                className="mb-2 hover:opacity-90 active:opacity-80"
               >
                 <Card>
                   <Row className="gap-2">
@@ -211,7 +211,7 @@ function LetterRow({
       >
         <View className="flex-row">
           <View style={{ width: 4, backgroundColor: tone }} />
-          <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-4 active:opacity-70">
+          <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-4 hover:opacity-90 active:opacity-70">
             <Row className="gap-3">
               <View
                 className="h-10 w-10 items-center justify-center rounded-2xl"
@@ -295,7 +295,7 @@ function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: nu
               if (unread) markRead.mutate(String(thread.subscriptionId));
               onOpen();
             }}
-            className="flex-1 py-3 pl-3.5 pr-4 active:opacity-70"
+            className="flex-1 py-3 pl-3.5 pr-4 hover:opacity-90 active:opacity-70"
           >
             <Row className="gap-3">
               <Avatar name={thread.sender || 'Schule'} size={40} color={unread ? colors.accent.coral : colors.accent.violet} />
@@ -428,7 +428,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                               hapticLight();
                               setAnswers((prev) => ({ ...prev, [String(question.id)]: option }));
                             }}
-                            className={`rounded-xl border px-3 py-2.5 ${
+                            className={`rounded-xl border px-3 py-2.5 hover:opacity-85 active:opacity-70 ${
                               active ? 'border-accent-amber bg-accent-amber/15' : 'border-line bg-canvas'
                             }`}
                           >
@@ -453,7 +453,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
             <Card padded={false}>
               {attachments.map((file, index) => (
                 <View key={String(file.id)}>
-                  <Pressable onPress={() => void download(file)} className="active:bg-line/40">
+                  <Pressable onPress={() => void download(file)} className="hover:bg-line/30 active:bg-line/50">
                     <Row className="gap-3 px-4 py-3">
                       <Paperclip size={18} strokeWidth={2} color={colors.accent.violet} />
                       <Text className="flex-1 text-[14px] text-ink">{file.name}</Text>

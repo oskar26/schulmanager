@@ -378,7 +378,7 @@ function OpenHomeworkCard({
     >
       <View className="flex-row">
         <View style={{ width: 4, backgroundColor: meta.urgent ? meta.color : style.color }} />
-        <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-2 active:opacity-70" accessibilityRole="button">
+        <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-2 hover:opacity-90 active:opacity-70" accessibilityRole="button">
           <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
             <Text className="text-[13px] font-extrabold" style={{ color: style.color }}>
               {item.subject}
@@ -393,12 +393,13 @@ function OpenHomeworkCard({
               .join(' · ') || '—'}
           </Muted>
         </Pressable>
-        {/* Action-Button: direkt abhaken */}
+        {/* Action-Button: direkt abhaken — 32 px Fläche + hitSlop = 44 px Target (Phase 4) */}
         <PressableScale
           onPress={onToggle}
           accessibilityRole="button"
           accessibilityLabel={`${item.subject}: als erledigt markieren`}
           className="justify-center pl-1.5 pr-3.5"
+          hitSlop={{ top: 6, bottom: 6 }}
           scale={0.85}
         >
           <View

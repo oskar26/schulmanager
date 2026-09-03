@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { BookOpen, Calculator, Lock, TrendingDown, TrendingUp } from 'lucide-react-native';
 
 import type { SubjectGrades } from '@/api/types';
@@ -10,7 +10,7 @@ import { formatRelativeDay } from '@/lib/date';
 import {
   Card, Chip, Divider, EmptyState, Muted, Row, Screen, Sheet, Skeleton, Title,
 } from '@/ui/primitives';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Progress, Switch } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
@@ -157,7 +157,7 @@ export default function GradesScreen() {
 
               return (
                 <FadeInUp key={String(subject.subjectId)} delay={index * 30}>
-                  <Pressable onPress={() => setSelected(subject)} className="mb-2 active:opacity-80">
+                  <PressableScale onPress={() => setSelected(subject)} className="mb-2" scale={0.98} accessibilityRole="button">
                     <Card style={{ backgroundColor: tint(style.color, 0.10) }}>
                       <Row className="gap-3">
                         <View
@@ -193,7 +193,7 @@ export default function GradesScreen() {
                         </View>
                       </Row>
                     </Card>
-                  </Pressable>
+                  </PressableScale>
                 </FadeInUp>
               );
             })}
@@ -288,15 +288,19 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
 
           <Row className="mt-3 flex-wrap gap-2">
             {targets.map((value) => (
-              <Pressable
+              <PressableOpacity
                 key={value}
                 onPress={() => setTarget(value)}
-                className={`rounded-xl px-3 py-1.5 ${target === value ? 'bg-accent-violet' : 'bg-line/60'}`}
+                className={`min-h-[44px] justify-center rounded-xl px-3.5 ${
+                  target === value ? 'bg-accent-violet' : 'bg-line/60 hover:bg-line'
+                }`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: target === value }}
               >
                 <Text className={`text-[12px] font-bold ${target === value ? 'text-on-violet' : 'text-muted'}`}>
                   {subject.gradingSystem === 1 ? `${value} P` : de(value, 1)}
                 </Text>
-              </Pressable>
+              </PressableOpacity>
             ))}
           </Row>
 
@@ -320,17 +324,19 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
           <Muted className="mt-3 text-[12px]">Wirkung einer Note simulieren:</Muted>
           <Row className="mt-2 flex-wrap gap-2">
             {options.map((value) => (
-              <Pressable
+              <PressableOpacity
                 key={value}
                 onPress={() => setSimulated(simulated === value ? null : value)}
-                className={`h-9 w-9 items-center justify-center rounded-xl ${
-                  simulated === value ? 'bg-accent-violet' : 'bg-line/60'
+                className={`h-11 w-11 items-center justify-center rounded-xl ${
+                  simulated === value ? 'bg-accent-violet' : 'bg-line/60 hover:bg-line'
                 }`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: simulated === value }}
               >
                 <Text className={`text-[13px] font-bold ${simulated === value ? 'text-on-violet' : 'text-muted'}`}>
                   {value}
                 </Text>
-              </Pressable>
+              </PressableOpacity>
             ))}
           </Row>
           {preview != null ? (

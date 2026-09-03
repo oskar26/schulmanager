@@ -21,7 +21,7 @@ const UIButton = createButton({
 });
 
 const buttonStyle = tva({
-  base: 'flex-row items-center justify-center gap-2 rounded-2xl active:opacity-80',
+  base: 'flex-row items-center justify-center gap-2 rounded-2xl hover:opacity-90 active:opacity-80',
   variants: {
     action: {
       primary: 'bg-accent-amber',
@@ -32,13 +32,14 @@ const buttonStyle = tva({
       success: 'bg-success',
     },
     size: {
-      sm: 'h-9 px-3',
+      // Phase 4: auch „sm“ erfüllt die 44-px-Touch-Target-Regel.
+      sm: 'h-11 px-4',
       md: 'h-12 px-5',
       lg: 'h-14 px-6',
       icon: 'h-11 w-11 px-0',
     },
     block: { true: 'w-full', false: '' },
-    disabled: { true: 'opacity-40', false: '' },
+    disabled: { true: 'opacity-40 hover:opacity-40 active:opacity-40', false: '' },
   },
   defaultVariants: { action: 'primary', size: 'md', block: false },
 });

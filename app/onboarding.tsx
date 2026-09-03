@@ -303,7 +303,7 @@ function WelcomeCTA({ colors, onNext }: { colors: ThemePalette; onNext: () => vo
         <Pressable
           onPress={onNext}
           accessibilityRole="button"
-          style={{
+          style={({ pressed }) => ({
             backgroundColor: colors.surface,
             borderRadius: 999,
             paddingVertical: 16,
@@ -312,7 +312,9 @@ function WelcomeCTA({ colors, onNext }: { colors: ThemePalette; onNext: () => vo
             alignItems: 'center',
             justifyContent: 'center',
             gap: 8,
-          }}
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          })}
         >
           <Text style={{ fontSize: 16, fontWeight: '800', color: colors.charcoal }}>Los geht’s</Text>
           <ArrowRight color={colors.charcoal} size={19} strokeWidth={2.5} />
@@ -471,7 +473,12 @@ function LoginContent(props: ChoiceProps & { connecting: boolean }) {
           autoCapitalize="none"
           style={{ flex: 1, fontSize: 15, color: colors.ink, height: '100%' }}
         />
-        <Pressable onPress={() => props.setShowPassword(!props.showPassword)} hitSlop={8}>
+        <Pressable
+          onPress={() => props.setShowPassword(!props.showPassword)}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={props.showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+        >
           {props.showPassword ? <EyeOff size={18} color={colors.muted} /> : <Eye size={18} color={colors.muted} />}
         </Pressable>
       </View>
@@ -518,7 +525,7 @@ function LoginContent(props: ChoiceProps & { connecting: boolean }) {
         onPress={props.onLogin}
         disabled={disabled}
         accessibilityRole="button"
-        style={{
+        style={({ pressed }) => ({
           marginTop: 24,
           borderRadius: 999,
           paddingVertical: 16,
@@ -527,7 +534,9 @@ function LoginContent(props: ChoiceProps & { connecting: boolean }) {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 8,
-        }}
+          opacity: pressed && !disabled ? 0.85 : 1,
+          transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
+        })}
       >
         <Text style={{ fontSize: 16, fontWeight: '800', color: disabled ? colors.faint : colors.on.amber }}>
           {props.connecting ? 'Verbinde …' : 'Verbinden'}
