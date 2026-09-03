@@ -11,11 +11,13 @@ import {
   Card, Chip, Divider, EmptyState, Muted, Row, Screen, Sheet, Skeleton, Title,
 } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Progress, Switch } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
 
 export default function GradesScreen() {
   const { data, isLoading } = useSnapshot();
+  const reserve = useTabNavReserve();
   const hidden = useSettings((state) => state.settings.hideGrades);
   const update = useSettings((state) => state.update);
   const [selected, setSelected] = useState<SubjectGrades | null>(null);
@@ -48,7 +50,7 @@ export default function GradesScreen() {
         </Row>
       </Row>
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 110 }}>
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
             <Skeleton className="h-28" />

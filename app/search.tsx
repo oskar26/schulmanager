@@ -197,7 +197,7 @@ export default function SearchScreen() {
                     </Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>
+                    <Text className="text-[14px] font-semibold leading-[17px] text-ink" numberOfLines={2}>
                       {hit.title}
                     </Text>
                     <Muted className="text-[12px]" numberOfLines={1}>

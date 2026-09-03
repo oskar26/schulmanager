@@ -49,7 +49,7 @@ export default function ThreadScreen() {
         <Row className="gap-2">
           <IconButton icon={X} onPress={() => router.back()} size={36} />
           <View className="flex-1">
-            <Title numberOfLines={1}>{params.sender || params.subject || 'Nachricht'}</Title>
+            <Title numberOfLines={2}>{params.sender || params.subject || 'Nachricht'}</Title>
             {params.subject && params.sender ? (
               <Muted className="text-[12px]" numberOfLines={1}>
                 {params.subject}

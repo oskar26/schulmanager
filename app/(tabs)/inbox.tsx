@@ -24,12 +24,14 @@ import { Card, Chip, Divider, EmptyState, Muted, Row, Screen, SectionHeader, Seg
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Avatar, Spinner } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
+import { useTabNavReserve } from '@/ui/nav-reserve';
 import { ErrorBoundary } from '@/ui/error-boundary';
 
 type Tab = 'letters' | 'messages' | 'board';
 
 export default function InboxScreen() {
   const { data, isLoading } = useSnapshot();
+  const reserve = useTabNavReserve();
   const [tab, setTab] = useState<Tab>('letters');
   const [letter, setLetter] = useState<Letter | null>(null);
   const [tile, setTile] = useState<Tile | null>(null);
@@ -62,7 +64,7 @@ export default function InboxScreen() {
         ) : null}
       </View>
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 110 }}>
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
             <Skeleton className="h-20" />
@@ -108,10 +110,10 @@ export default function InboxScreen() {
                         </View>
                         <View className="flex-1">
                           <Row className="justify-between">
-                            <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={1}>
+                            <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={2}>
                               {item.subject}
                             </Text>
-                            <Muted className="text-[11px]">{formatTimeAgo(item.createdAt)}</Muted>
+                            <Muted className="ml-2 self-start text-[11px]">{formatTimeAgo(item.createdAt)}</Muted>
                           </Row>
                           <Muted className="mt-0.5" numberOfLines={2}>
                             {item.content

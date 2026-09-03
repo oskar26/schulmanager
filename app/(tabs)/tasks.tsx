@@ -28,6 +28,7 @@ import {
   Title,
 } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Progress } from '@/ui/gluestack/feedback';
 
 type Tab = 'homework' | 'exams' | 'plan';
@@ -35,6 +36,7 @@ type Tab = 'homework' | 'exams' | 'plan';
 export default function TasksScreen() {
   const { data, isLoading } = useSnapshot();
   const toggle = useHomeworkDone((state) => state.toggle);
+  const reserve = useTabNavReserve();
   const [tab, setTab] = useState<Tab>('homework');
 
   const open = data?.homework.filter((item) => !item.done) ?? [];
@@ -78,7 +80,7 @@ export default function TasksScreen() {
         />
       </View>
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 110 }}>
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
             <Skeleton className="h-20" />
@@ -158,7 +160,7 @@ export default function TasksScreen() {
                         <Text
                           className="flex-1 text-[14px] text-muted"
                           style={{ textDecorationLine: 'line-through' }}
-                          numberOfLines={1}
+                          numberOfLines={2}
                         >
                           {item.subject}: {item.text}
                         </Text>

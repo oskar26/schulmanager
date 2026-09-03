@@ -11,6 +11,7 @@ import {
 import { useLayout } from '@/lib/breakpoints';
 import { AdaptiveContent, AvatarStack, Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 
 type ViewMode = 'week' | 'day';
@@ -147,9 +148,10 @@ function WeekGrid({
 }) {
   const maxRows = Math.max(...days.map((day) => byDay.get(day)?.length ?? 0), 0);
   const today = toISO(new Date());
+  const reserve = useTabNavReserve();
 
   return (
-    <ScrollView className="flex-1" contentContainerStyle={{ padding: 12, paddingBottom: 110 }}>
+    <ScrollView className="flex-1" contentContainerStyle={{ padding: 12, paddingBottom: reserve }}>
       <Row className="gap-1.5">
         {days.map((day) => {
           const date = new Date(day);
@@ -214,7 +216,9 @@ function LessonCell({
     >
       <Text
         className="text-[11px] font-bold"
-        numberOfLines={1}
+        numberOfLines={compact ? 1 : 2}
+        adjustsFontSizeToFit={compact}
+        minimumFontScale={0.8}
         style={{
           color: cancelled ? '#E24848' : style.color,
           textDecorationLine: cancelled ? 'line-through' : 'none',
@@ -257,6 +261,7 @@ function DayList({
   const lessons = byDay.get(active) ?? [];
   const now = nowMinutes();
   const isToday = active === toISO(new Date());
+  const reserve = useTabNavReserve();
 
   return (
     <View className="flex-1">
@@ -287,7 +292,7 @@ function DayList({
         </Row>
       </ScrollView>
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 110 }}>
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         <Muted className="mb-2 mt-1">{formatLongDay(active)}</Muted>
         {lessons.length === 0 ? (
           <EmptyState icon={Sun} iconColor="#48A3FF" title="Kein Unterricht" hint="Für diesen Tag ist nichts eingetragen." />
@@ -483,6 +488,7 @@ function TimeGrid({
 }) {
   const today = toISO(new Date());
   const now = nowMinutes();
+  const reserve = useTabNavReserve();
 
   const all = days.flatMap((day) => byDay.get(day) ?? []);
   const startMinute = Math.max(6 * 60, Math.min(8 * 60, ...all.map((l) => minutesOf(l.start))) - 15);
@@ -494,7 +500,7 @@ function TimeGrid({
   for (let m = Math.ceil(startMinute / 60) * 60; m < endMinute; m += 60) hourMarks.push(m);
 
   return (
-    <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 110 }}>
+    <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: reserve }}>
       {/* Wochentage-Kopf */}
       <Row className="pt-1" style={{ paddingLeft: RULER_WIDTH }}>
         {days.map((day) => {
