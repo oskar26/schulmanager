@@ -171,7 +171,9 @@ export default function SearchScreen() {
                 <Pressable
                   key={item}
                   onPress={() => setQuery(item)}
-                  className="rounded-full bg-line/60 px-3 py-2 active:opacity-70"
+                  className="rounded-full bg-line/60 px-3 py-2 hover:bg-line active:opacity-70"
+                  hitSlop={8}
+                  accessibilityRole="button"
                 >
                   <Text className="text-[13px] font-semibold text-muted">{item}</Text>
                 </Pressable>
@@ -186,7 +188,8 @@ export default function SearchScreen() {
             <FadeInUp key={hit.id} delay={Math.min(index, 8) * 30}>
               <Pressable
                 onPress={() => hit.href && router.push(hit.href as never)}
-                className="mb-2 active:opacity-80"
+                className="mb-2 hover:opacity-90 active:opacity-80"
+                accessibilityRole="button"
               >
               <Card>
                 <Row className="gap-3">

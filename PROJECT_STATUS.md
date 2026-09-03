@@ -2,7 +2,7 @@
 
 > **Single Source of Truth** für den UI-Relaunch. Diese Datei wird zu Beginn jeder
 > Session gelesen und nach jeder erledigten Phase aktualisiert.
-> Letztes Update: 2026-09-03 · Status: **Phase 3 — abgeschlossen ✅**
+> Letztes Update: 2026-09-03 · Status: **Phase 4 — Ready ✅**
 
 ---
 
@@ -149,12 +149,41 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 - [x] Noten-Seite an Lime/Erfolgs-Farben angepasst: großer **Lime-Hero** (Ø-Schnitt,
       Noten-Anzahl, stärkstes Fach & größter Hebel in einer Karte).
 
-### Phase 4 — UX-Polishing & Abnahme 🔄
-- [ ] Micro-Interactions: Press-States (Scale/Opacity), Hover (Web), sanfte
-      Layout-Animationen (`@legendapp/motion` vorhanden)
-- [ ] Abstände/Touch-Targets auf Mobile prüfen (≥44 px)
-- [ ] Dark-Mode-Stichprobe, typecheck + smoke
-- [ ] Status hier auf **„Ready ✅"** setzen + Abschluss-Screenshots
+### Phase 4 — UX-Polishing & Abnahme ✅ *abgeschlossen (2026-09-03)*
+- [x] **Micro-Interactions:** `src/ui/motion.tsx` ausgebaut —
+      · `PressableScale` mit Hover-Lift (Web, `hoverScale`) und sauberem
+        `disabled`-Verhalten (BentoCards heben sich dezent an),
+      · neu `PressableOpacity` (Spring-Opacity) als Standard für Text-Links und
+        kleine Chips (Section-Header-Aktionen, „Alle ansehen", Widget-Links),
+      · `FadeInUp`/`FadeInDown` tragen jetzt `LinearTransition`-Layout-Springs —
+        Listen rutschen sanft nach, wenn Einträge abgehakt/verschoben werden.
+      Fahrplan-Notiz: als Animations-Driver dient konsequent reanimated (wie in
+      Phase 2/3); `@legendapp/motion` wurde bewusst *nicht* zusätzlich
+      eingeführt, um kein zweites Motion-System zu schaffen.
+- [x] **Hover (Web) überall:** NativeWind-`hover:`-Klassen auf Listenzeilen
+      (ListRow, Widgets, Anhänge), Segment-Inaktiv-Chips, Fach-/Timetable-Karten,
+      gluestack-Buttons (`hover:opacity-90`), Such-Chips, Kalender-Zellen,
+      Retry-/Lock-Screens. Phone-Tab-Kapsel + Rail/Sidebar: haptisches Feedback
+      (`hapticLight`) beim Tab-Wechsel.
+- [x] **Touch-Targets ≥ 44 px:** zentrale Regel `touchSlopFor()` im `IconButton`
+      (hitSlop ergänzt automatisch bis 44 px), `SegmentedControl`-Optionen
+      `min-h-[44px]`, gluestack `sm` auf `h-11`, Noten-Rechner-Pills (Ziel +
+      Simulation) auf 44 px, „Heute“-/Ansicht-Toggle im Stundenplan, Theme-
+      Segmente, Krankmeldungs-/Beurlaubungs-Chips, Such-Vorschläge (hitSlop),
+      Passwort-Augen (hitSlop 12), HA-Check-Button (hitSlop), Live-Island-Close
+      (hitSlop 13). Sweep-Check: keine interaktive Fläche < 44 px (inkl. hitSlop).
+- [x] **Dark-Mode-Stichprobe:** neues `--dark`-Flag in `scripts/smoke.mjs`
+      (matchMedia → prefers-color-scheme) — alle 17 Routen auf Phone-Breite
+      rendern fehlerfrei im dunklen Theme.
+- [x] **Verifikation:** `npm run typecheck` ✅ · `npm run export:web` ✅ ·
+      `npm run smoke:matrix` ✅ (17 Routen × Phone/Tablet/Desktop = 51 Kombinationen).
+- [x] **Abschluss-Aufzeichnungen:** `docs/screenshots/` — 13 statische
+      DOM-Snapshots des echten Renderings (5 Tabs × light/dark @ Phone,
+      Dashboard/Stundenplan @ Desktop, Aufgaben dunkel @ Desktop; `--html-out`
+      in smoke.mjs). Browser-Binary war in der Sandbox nicht installierbar
+      (CDNs blockiert) — Live-Erlebnis der Micro-Interactions über
+      `npm run serve:web` bzw. `npx expo start`.
+- [x] Status auf **„Ready ✅"** gesetzt.
 
 ---
 
@@ -185,3 +214,4 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 | 2026-09-03 | Phase 1 | ✅ Abgeschlossen: `src/ui/nav-reserve.ts` (globale Bottom-Nav-Reserve ≥100 px, M1) + Truncation-Fixes M3/M4/M5 in Dashboard, Stundenplan, Aufgaben, Postfach, Noten, Widgets, LiveIsland, Kalender, Suche, Thread. Typecheck + Smoke (Phone & Desktop) grün. |
 | 2026-09-03 | Phase 2 | ✅ Abgeschlossen: Creme/Charcoal + Amber/Violet/Lime/Coral in CSS, NativeWind und RN-Tokens synchronisiert; globale Card-/Badge-Kontraste, Dark-Mode-Bridge und alle Detail-Screens einschließlich Onboarding/Live-Island migriert. PWA-/Native-Farben und Marken-Assets aktualisiert. Typecheck, Web-Export und vollständige 51er Smoke-Matrix grün. |
 | 2026-09-03 | Phase 3 | ✅ Abgeschlossen: Dashboard-Welcome-Banner (Charcoal-Hero + Fortschritt + Heute-Statistik), Stundenplan als vertikale Tages-Timeline mit Tages-Pills (Phone; kein Mini-Kachel-Raster mehr), farbcodierte Prioritäts-Karten mit Action-Buttons in Aufgaben (Coral/Amber/Lime/Violet, direktes Abhaken, Detail-Sheet) und Postfach (Briefe mit Inline-Bestätigen, Neu-Akzente), Noten-Hero auf Lime. Typecheck + Smoke-Matrix (quick 18 Kombinationen + alle 5 Screens inkl. Tablets/Desktop + Nachrichten-Tab) grün. |
+| 2026-09-03 | Phase 4 | ✅ **Ready.** Motion-Layer ausgebaut (PressableScale mit Hover/Disabled, neues PressableOpacity, LinearTransition-Layout-Springs in FadeInUp/Down), Hover-States webweit, Touch-Targets systematisch auf ≥ 44 px (touchSlopFor, min-h, hitSlop), Tab-Wechsel mit Haptik. Verifikation: typecheck ✅ · export:web ✅ · Smoke-Matrix 51/51 ✅ · Dark-Mode-Stichprobe 17/17 ✅ (neues `--dark`-Flag). Abschluss-Aufzeichnungen in `docs/screenshots/` (13 statische DOM-Snapshots). |

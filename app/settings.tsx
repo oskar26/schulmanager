@@ -151,7 +151,9 @@ export default function SettingsScreen() {
               <Pressable
                 onPress={() => setShowPassword((value) => !value)}
                 className="absolute right-3 top-3"
-                hitSlop={8}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
               >
                 {showPassword ? (
                   <EyeOff size={20} strokeWidth={2} color={colors.faint} />
@@ -184,7 +186,7 @@ export default function SettingsScreen() {
                   <Pressable
                     key={String(account.userId)}
                     onPress={() => void connect(email, password, { userId: account.userId })}
-                    className="rounded-2xl border border-line px-3 py-2.5 active:bg-line/40"
+                    className="rounded-2xl border border-line px-3 py-2.5 hover:bg-line/30 active:bg-line/50"
                   >
                     <Text className="text-[14px] font-semibold text-ink">
                       {account.firstname} {account.lastname}
@@ -393,9 +395,11 @@ export default function SettingsScreen() {
                 <Pressable
                   key={option}
                   onPress={() => update({ theme: option })}
-                  className={`flex-1 items-center rounded-2xl py-2.5 ${
+                  className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-2.5 hover:opacity-90 active:opacity-80 ${
                     settings.theme === option ? 'bg-accent-amber' : 'bg-line/50'
                   }`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: settings.theme === option }}
                 >
                   <Text
                     className={`text-[13px] font-semibold ${

@@ -46,7 +46,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       return (
         <View className="rounded-3xl bg-surface p-4">
           <Text className="text-[14px] font-semibold text-ink">Diese Karte konnte nicht geladen werden.</Text>
-          <Pressable onPress={this.reset} hitSlop={8}>
+          <Pressable onPress={this.reset} hitSlop={12} accessibilityRole="button">
             <Text className="mt-1 text-[13px] font-semibold text-accent-amber-deep">Erneut versuchen</Text>
           </Pressable>
         </View>
@@ -72,7 +72,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         ) : null}
         <Pressable
           onPress={this.reset}
-          className="mt-5 rounded-2xl bg-accent-amber px-6 py-3.5 active:opacity-80"
+          className="mt-5 rounded-2xl bg-accent-amber px-6 py-3.5 hover:opacity-90 active:opacity-80"
         >
           <Text className="text-[15px] font-bold text-on-amber">Neu versuchen</Text>
         </Pressable>

@@ -215,7 +215,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
             {lesson.hour}. Stunde · {lesson.start}–{lesson.end} Uhr
           </Text>
         </View>
-        <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Zuklappen">
+        <Pressable onPress={onClose} hitSlop={13} accessibilityLabel="Zuklappen">
           <Ionicons name="close" size={18} color={islandSub} />
         </Pressable>
       </View>

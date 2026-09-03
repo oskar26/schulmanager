@@ -80,7 +80,7 @@ export function LockGate({ children }: { children: React.ReactNode }) {
             : 'Entsperre Schulflow mit Fingerabdruck oder Gesicht.'
           : 'Biometrie ist auf diesem Gerät nicht eingerichtet. Du kannst die Sperre in den Einstellungen deaktivieren.'}
       </Text>
-      <Pressable onPress={() => void authenticate()} className="mt-5 rounded-2xl bg-accent-amber px-6 py-3.5 active:opacity-80">
+      <Pressable onPress={() => void authenticate()} className="mt-5 rounded-2xl bg-accent-amber px-6 py-3.5 hover:opacity-90 active:opacity-80">
         <Text className="text-[15px] font-bold text-on-amber">Entsperren</Text>
       </Pressable>
     </View>

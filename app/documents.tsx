@@ -197,6 +197,7 @@ function PressableList({
     <View>
       <Pressable
         onPress={onPress}
+        className="hover:bg-line/30"
         android_ripple={{ color: tint(colors.accent.violet, 0.10) }}
         style={({ pressed }: { pressed: boolean }) =>
           pressed ? { backgroundColor: tint(colors.accent.violet, 0.08) } : undefined

@@ -197,6 +197,8 @@ export function ErrorBoundary(props: { error: Error; retry: () => void }) {
       </ScrollView>
       <Pressable
         onPress={props.retry}
+        accessibilityRole="button"
+        className="hover:opacity-90 active:opacity-80"
         style={{ marginTop: 20, backgroundColor: colors.accent.amber, borderRadius: 999, paddingHorizontal: 26, paddingVertical: 13 }}
       >
         <Text style={{ fontSize: 15, fontWeight: '700', color: colors.on.amber }}>Neu versuchen</Text>

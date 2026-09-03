@@ -87,7 +87,7 @@ export default function SickNoteScreen() {
                 <Pressable
                   key={iso}
                   onPress={() => setStart(iso)}
-                  className={`flex-1 items-center rounded-2xl py-3 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
+                  className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-3 hover:opacity-90 active:opacity-80 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
                 >
                   <Text className={`text-[13px] font-bold ${active ? 'text-on-amber' : 'text-muted'}`}>
                     {offset === 0 ? 'Heute' : offset === 1 ? 'Morgen' : 'Übermorgen'}
@@ -106,7 +106,7 @@ export default function SickNoteScreen() {
               <Pressable
                 key={value}
                 onPress={() => setDays(value)}
-                className={`flex-1 items-center rounded-2xl py-3 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
+                className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-3 hover:opacity-90 active:opacity-80 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
               >
                 <Text className={`text-[15px] font-extrabold ${days === value ? 'text-on-amber' : 'text-muted'}`}>
                   {value}

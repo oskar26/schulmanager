@@ -17,7 +17,13 @@ import { foregroundOn, radius, resolveThemeColor, shadow } from '@/design/tokens
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
-import { PressableScale } from '@/ui/motion';
+import { PressableOpacity, PressableScale } from '@/ui/motion';
+
+/**
+ * Phase 4 · Touch-Targets: Kleine visuelle Flächen bekommen automatisch genug
+ * `hitSlop`, damit die effektive Trefferfläche ≥ 44 px bleibt (HIG/Material).
+ */
+const touchSlopFor = (size: number) => (size >= 44 ? 0 : Math.ceil((44 - size) / 2));
 
 /* ------------------------------------------------------------------ Text */
 
@@ -188,9 +194,9 @@ export function SectionHeader({
         <Text className="flex-shrink text-[18px] font-bold tracking-tight text-ink">{title}</Text>
       </Row>
       {action ? (
-        <Pressable onPress={onAction} hitSlop={8}>
+        <PressableOpacity onPress={onAction} hitSlop={14} accessibilityRole="button">
           <Text className="text-[13px] font-bold text-accent-amber-deep">{action}</Text>
-        </Pressable>
+        </PressableOpacity>
       ) : null}
     </Row>
   );
@@ -326,12 +332,15 @@ export function SegmentedControl<T extends string>({
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
-            className={`flex-1 flex-row items-center justify-center gap-1 rounded-xl px-1 py-2 ${
-              active ? 'bg-surface' : ''
+            className={`min-h-[44px] flex-1 flex-row items-center justify-center gap-1 rounded-xl px-1 py-1 active:opacity-80 ${
+              active ? 'bg-surface hover:bg-surface' : 'hover:bg-line'
             }`}
             style={active ? shadow.card : undefined}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
           >
-            {/* Phase 1 · M5: Label darf schrumpfen statt abzuschneiden („Hausaufga…“). */}
+            {/* Phase 1 · M5: Label darf schrumpfen statt abzuschneiden („Hausaufga…“).
+                Phase 4: min-h 44 px — Segment-Buttons sind volle Touch-Targets. */}
             <Text
               className={`text-[12.5px] font-semibold ${active ? 'text-ink' : 'text-muted'}`}
               numberOfLines={1}
@@ -388,7 +397,11 @@ export function ListRow({
 
   if (!onPress) return content;
   return (
-    <Pressable onPress={onPress} className="active:bg-line/40">
+    <Pressable
+      onPress={onPress}
+      className="hover:bg-line/40 active:bg-line/60"
+      accessibilityRole="button"
+    >
       {content}
     </Pressable>
   );
@@ -417,6 +430,8 @@ export function IconButton({
     <PressableScale
       onPress={onPress}
       accessibilityRole="button"
+      // Phase 4: kleine Icon-Buttons halten per hitSlop die 44-px-Regel ein.
+      hitSlop={touchSlopFor(size)}
       style={{ width: size, height: size }}
       scale={0.92}
       className={`items-center justify-center rounded-2xl ${background}`}
@@ -689,6 +704,7 @@ export function BentoCard({
       onPress={onPress}
       accessibilityRole="button"
       scale={0.97}
+      hoverScale={1.008}
       style={{ borderRadius: cardRadius }}
     >
       {inner}

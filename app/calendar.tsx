@@ -137,7 +137,7 @@ export default function CalendarScreen() {
                   key={iso}
                   onPress={() => dayEvents[0] && setSelected(dayEvents[0])}
                   style={{ width: `${100 / 7}%` }}
-                  className="aspect-square items-center justify-center p-0.5"
+                  className="aspect-square items-center justify-center p-0.5 hover:opacity-85 active:opacity-70"
                 >
                   <View
                     className={`h-full w-full items-center justify-center rounded-xl ${
@@ -174,7 +174,7 @@ export default function CalendarScreen() {
         ) : (
           merged.map((entry, index) => (
             <FadeInUp key={entry.id} delay={index * 25}>
-              <Pressable onPress={() => setSelected(entry)} className="mb-2 active:opacity-80">
+              <Pressable onPress={() => setSelected(entry)} className="mb-2 hover:opacity-90 active:opacity-80">
                 <Card padded={false}>
                   <Row className="gap-3 p-3">
                     <View
