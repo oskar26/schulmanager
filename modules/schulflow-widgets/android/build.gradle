@@ -1,63 +1,22 @@
-// Template-Konvention: entspricht `npx create-expo-module` (SDK 54).
-// Läuft nur in einem Dev-Build (`npx expo prebuild && npx expo run:android`) —
-// in Expo Go wird das Modul nicht gelinkt (die JS-Brücke fällt sauber zurück).
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+// Expo SDK 54 module convention. The Expo Gradle plugin owns the compatible
+// Android/Kotlin versions and wires expo-modules-core for local modules.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
 
 group = 'app.schulflow.widgets'
 version = '0.1.0'
 
-buildscript {
-  repositories {
-    google()
-    mavenCentral()
-  }
-  dependencies {
-    classpath('com.android.tools.build:gradle:8.5.2')
-    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')
-  }
-}
-
-apply from: './generated/gradle-native-dependencies.gradle'
-
-project.ext {
-  reactNativeArchitectures = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
-}
-
-def safeExtGet(prop, fallback) {
-  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+expoModule {
+  canBePublished false
 }
 
 android {
   namespace "app.schulflow.widgets"
-  compileSdkVersion safeExtGet('compileSdkVersion', 34)
-  publishNonDefault true
-  buildTypes {
-    release {
-      isMinifyEnabled false
-    }
-  }
+
   defaultConfig {
-    minSdkVersion safeExtGet('minSdkVersion', 23)
-    targetSdkVersion safeExtGet('targetSdkVersion', 34)
     versionCode 1
     versionName "0.1.0"
-    ndk {
-      abiFilters []
-      abiFilters += safeExtGet("reactNativeArchitectures", ["armeabi-v7a", "arm64-v8a", "x86", "x86_64"])
-    }
-    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", safeExtGet('expoGoIsNewArchEnabled', true).toString()
   }
-  sourceSets {
-    main {
-      java.srcDirs += ["generated/java"]
-    }
-  }
-  lint {
-    abortOnError false
-  }
-}
-
-dependencies {
-  api project(':expo-modules-core')
 }
