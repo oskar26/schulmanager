@@ -6,6 +6,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // "Bento / Soft-Brutalism" canvas + pastel color-blocks (siehe docs/UI-REBUILD.md)
+        canvas: 'rgb(var(--sf-bg) / <alpha-value>)', // Warm-Creme (light) / Slate-Navy (dark)
+        periwinkle: 'rgb(var(--sf-periwinkle) / <alpha-value>)',
+        'periwinkle-soft': 'rgb(var(--sf-periwinkle-soft) / <alpha-value>)',
+        amber: 'rgb(var(--sf-amber) / <alpha-value>)',
+        'amber-soft': 'rgb(var(--sf-amber-soft) / <alpha-value>)',
+        'mint-soft': 'rgb(var(--sf-mint-soft) / <alpha-value>)',
+        'coral-soft': 'rgb(var(--sf-coral-soft) / <alpha-value>)',
+        charcoal: 'rgb(var(--sf-charcoal) / <alpha-value>)',
+        charcoalElevated: 'rgb(var(--sf-charcoal-elevated) / <alpha-value>)',
         // Semantic tokens driven by CSS variables (light/dark in global.css)
         bg: 'rgb(var(--sf-bg) / <alpha-value>)',
         surface: 'rgb(var(--sf-surface) / <alpha-value>)',
