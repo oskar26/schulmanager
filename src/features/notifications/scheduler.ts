@@ -111,10 +111,10 @@ export function planNotifications(
           id: `sub-${key}`,
           title:
             lesson.state === 'cancelled'
-              ? `🎉 ${lesson.originalSubject ?? lesson.subject} fällt aus`
+              ? `${lesson.originalSubject ?? lesson.subject} fällt aus`
               : lesson.state === 'substitution'
-                ? `🔁 Vertretung in ${lesson.originalSubject ?? lesson.subject}`
-                : `🚪 Raumwechsel: ${lesson.subject}`,
+                ? `Vertretung in ${lesson.originalSubject ?? lesson.subject}`
+                : `Raumwechsel: ${lesson.subject}`,
           body: `${formatRelativeDay(lesson.date)}, ${lesson.hour}. Stunde${lesson.room ? ` · Raum ${lesson.room}` : ''}`,
           at: new Date().toISOString(),
           channel: 'timetable',
@@ -131,7 +131,7 @@ export function planNotifications(
     if (lessons[0]?.state === 'cancelled' && firstActive) {
       planned.push({
         id: `sleepin-${tomorrow}`,
-        title: '😴 Morgen länger schlafen',
+        title: 'Morgen länger schlafen',
         body: `Schulbeginn erst um ${firstActive.start} Uhr.`,
         at: at(today, '19:00'),
         channel: 'timetable',
@@ -145,7 +145,7 @@ export function planNotifications(
     if (due.length > 0) {
       planned.push({
         id: `hw-${tomorrow}`,
-        title: `📝 ${due.length} Hausaufgabe${due.length === 1 ? '' : 'n'} bis morgen`,
+        title: `${due.length} Hausaufgabe${due.length === 1 ? '' : 'n'} bis morgen`,
         body: due.map((item) => item.subject).join(', '),
         at: at(today, '18:00'),
         channel: 'tasks',
@@ -162,7 +162,7 @@ export function planNotifications(
         const reminderDay = toISO(addDays(new Date(exam.date), -offset));
         planned.push({
           id: `exam-${exam.id}-${offset}`,
-          title: offset === 1 ? `🔥 Morgen: ${exam.subject}` : `📊 In ${offset} Tagen: ${exam.subject}`,
+          title: offset === 1 ? `Morgen: ${exam.subject}` : `In ${offset} Tagen: ${exam.subject}`,
           body: `${exam.type ?? 'Leistungsnachweis'}${exam.comment ? ` · ${exam.comment}` : ''}`,
           at: at(reminderDay, '16:00'),
           channel: 'tasks',
@@ -178,7 +178,7 @@ export function planNotifications(
     if (prefs.newLetter && !seenLetters.has(id)) {
       planned.push({
         id: `letter-${id}`,
-        title: '✉️ Neuer Elternbrief',
+        title: 'Neuer Elternbrief',
         body: letter.subject,
         at: new Date().toISOString(),
         channel: 'inbox',
@@ -191,7 +191,7 @@ export function planNotifications(
       if (age > 2 * 86_400_000) {
         planned.push({
           id: `letter-reminder-${id}`,
-          title: '📌 Elternbrief noch unbestätigt',
+          title: 'Elternbrief noch unbestätigt',
           body: letter.subject,
           at: at(today, '17:30'),
           channel: 'inbox',
@@ -212,7 +212,7 @@ export function planNotifications(
         if (state.seenGrades.length === 0) return;
         planned.push({
           id: `grade-${id}`,
-          title: `🎯 Neue Note in ${subject.subject}`,
+          title: `Neue Note in ${subject.subject}`,
           body: `${grade.value}${grade.type ? ` · ${grade.type}` : ''}`,
           at: new Date().toISOString(),
           channel: 'grades',
@@ -227,7 +227,7 @@ export function planNotifications(
     if (unexcused.length > 0) {
       planned.push({
         id: `absence-${unexcused.length}`,
-        title: `🩹 ${unexcused.length} unentschuldigte Fehlzeit${unexcused.length === 1 ? '' : 'en'}`,
+        title: `${unexcused.length} unentschuldigte Fehlzeit${unexcused.length === 1 ? '' : 'en'}`,
         body: 'Entschuldigung nachreichen?',
         at: at(today, '17:00'),
         channel: 'inbox',
@@ -242,7 +242,7 @@ export function planNotifications(
       const items = packingList(snapshot, tomorrow);
       planned.push({
         id: `briefing-${tomorrow}`,
-        title: `☀️ ${lessons.length} Stunden, Start ${lessons[0].start}`,
+        title: `${lessons.length} Stunden, Start ${lessons[0].start}`,
         body: [lessons.map((lesson) => lesson.subject).slice(0, 4).join(' · '), items.join(' · ')]
           .filter(Boolean)
           .join('\n'),
@@ -256,7 +256,7 @@ export function planNotifications(
   if (prefs.eveningCheck) {
     planned.push({
       id: `evening-${today}`,
-      title: '🌙 Alles für morgen bereit?',
+      title: 'Alles für morgen bereit?',
       body: packingList(snapshot, tomorrow).join(' · ') || 'Tasche packen und gut schlafen.',
       at: at(today, '20:00'),
       channel: 'digest',
@@ -268,7 +268,7 @@ export function planNotifications(
     const sunday = toISO(addDays(new Date(), (7 - new Date().getDay()) % 7));
     planned.push({
       id: `weekly-${sunday}`,
-      title: '📅 Deine Woche im Überblick',
+      title: 'Deine Woche im Überblick',
       body: `${snapshot.exams.filter((exam) => daysUntil(exam.date) >= 0 && daysUntil(exam.date) <= 7).length} Arbeiten, ${
         snapshot.homework.filter((item) => !item.done).length
       } offene Aufgaben.`,

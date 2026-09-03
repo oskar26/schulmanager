@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Info, Receipt, Tag } from 'lucide-react-native';
+import { Check, ChevronLeft, Info, Receipt, Tag } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { formatDay } from '@/lib/date';
@@ -95,11 +95,15 @@ export default function PaymentsScreen() {
                       </Row>
                     ) : null}
                     {invoice.items.map((item) => (
-                      <Row key={String(item.id)} className="justify-between py-0.5">
-                        <Text className="flex-1 text-[12px] text-muted">
-                          {item.paid ? '✓ ' : '· '}
-                          {item.name}
-                        </Text>
+                      <Row key={String(item.id)} className="items-center justify-between py-0.5">
+                        <Row className="flex-1 items-center gap-1.5">
+                          {item.paid ? (
+                            <Check size={12} strokeWidth={3} color="#22B07A" />
+                          ) : (
+                            <View className="h-1 w-1 rounded-full bg-faint" />
+                          )}
+                          <Text className="flex-1 text-[12px] text-muted">{item.name}</Text>
+                        </Row>
                         <Text className="text-[12px] font-semibold text-muted">{eur(item.amount)}</Text>
                       </Row>
                     ))}

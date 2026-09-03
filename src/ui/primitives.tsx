@@ -162,15 +162,13 @@ export function SectionHeader({
   title,
   action,
   onAction,
-  emoji,
   icon,
   iconColor = '#6C5CE7',
 }: {
   title: string;
   action?: string;
   onAction?: () => void;
-  emoji?: string;
-  /** Emoji-freie Alternative: Lucide-Icon in getönter Kachel. */
+  /** Lucide-Icon in getönter Kachel (Phase E: Emojis komplett raus). */
   icon?: LucideIcon;
   iconColor?: string;
 }) {
@@ -185,8 +183,6 @@ export function SectionHeader({
           >
             <IconComponent size={16} strokeWidth={2.2} color={iconColor} />
           </View>
-        ) : emoji ? (
-          <Text className="text-[16px]">{emoji}</Text>
         ) : null}
         <Text className="text-[17px] font-bold tracking-tight text-ink">{title}</Text>
       </Row>
@@ -204,13 +200,11 @@ export function SectionHeader({
 export function Chip({
   label,
   color,
-  emoji,
   tone = 'tint',
   className = '',
 }: {
   label: string;
   color?: string;
-  emoji?: string;
   tone?: 'tint' | 'solid' | 'outline';
   className?: string;
 }) {
@@ -224,7 +218,6 @@ export function Chip({
 
   return (
     <View style={style} className={`flex-row items-center gap-1 rounded-full px-2.5 py-1 ${className}`}>
-      {emoji ? <Text className="text-[11px]">{emoji}</Text> : null}
       <Text
         className="text-[11px] font-bold"
         style={{ color: tone === 'solid' ? '#FFFFFF' : base }}
@@ -252,14 +245,12 @@ export function Skeleton({ className = '' }: { className?: string }) {
 }
 
 export function EmptyState({
-  emoji = '🌱',
   icon,
   iconColor = '#6C5CE7',
   title,
   hint,
 }: {
-  emoji?: string;
-  /** Emoji-freie Alternative: Lucide-Icon in einer getönten Kachel. */
+  /** Lucide-Icon in einer getönten Kachel (Phase E: Emojis komplett raus). */
   icon?: LucideIcon;
   iconColor?: string;
   title: string;
@@ -275,9 +266,7 @@ export function EmptyState({
         >
           <IconComponent size={26} strokeWidth={2} color={iconColor} />
         </View>
-      ) : (
-        <Text className="text-[40px]">{emoji}</Text>
-      )}
+      ) : null}
       <Text className="text-center text-[16px] font-bold text-ink">{title}</Text>
       {hint ? <Text className="text-center text-[13px] leading-5 text-muted">{hint}</Text> : null}
     </View>

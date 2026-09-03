@@ -14,6 +14,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { BookOpen } from 'lucide-react-native';
 
 import type { IslandState } from '@/features/island/use-island';
 import { hapticLight } from '@/lib/haptics';
@@ -106,7 +107,7 @@ function IslandPill({
           justifyContent: 'center',
         }}
       >
-        <Text style={{ fontSize: 13 }}>{state.emoji}</Text>
+        <BookOpen size={14} strokeWidth={2.4} color={ISLAND_TEXT} />
       </View>
 
       <View style={{ flexShrink: 1 }}>
@@ -194,7 +195,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: 20 }}>{state.emoji}</Text>
+          <BookOpen size={22} strokeWidth={2.2} color={ISLAND_TEXT} />
         </View>
         <View style={{ flex: 1 }}>
           <Text numberOfLines={1} style={{ color: ISLAND_TEXT, fontSize: 16, fontWeight: '800' }}>

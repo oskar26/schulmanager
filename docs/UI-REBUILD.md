@@ -110,7 +110,15 @@
 
 ### Phase E — Features darauf
 - [ ] Home-Screen-Widgets / Live Activities Integration.
-- [ ] Sämtliche restlichen System-Emojis entfernt & durch lucide Vektor-Icons ersetzt.
+  _(Android-Live-Update-Modul existiert bereits unter `modules/schulflow-live-island`;
+  iOS-Live-Activities brauchen die WidgetKit-Extension, Web-Home-Screen-Widgets
+  brauchen die `widgets/`-Bridge — Roadmap s. `docs/PLATTFORMEN.md` §3.)_
+- [x] Sämtliche restlichen System-Emojis entfernt & durch lucide Vektor-Icons ersetzt.
+  _(2026-09-03: `emoji`-Felder aus `SubjectStyle`, `Insight`, `IslandState` und
+  `WIDGET_META` entfernt; Packliste & Notification-Titel emoji-frei; Live-Island rendert
+  `lucide BookOpen` statt Fach-Emoji; `primitives.tsx` (`SectionHeader`, `Chip`,
+  `EmptyState`) ohne `emoji`-Fallback; Zahlungen: `lucide Check`/Punkt statt ✓/·.
+  Repo-weiter Scan: 0 Emojis in `app/` + `src/`. Typecheck + Smoke-Matrix grün.)_
 
 ---
 

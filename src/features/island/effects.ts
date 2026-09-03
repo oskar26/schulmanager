@@ -1,7 +1,7 @@
 /**
  * Live-Island — plattformabhängige Nebeneffekte.
  *
- * · Web      → Browser-Tab-Titel zeigt den Countdown (`📐 Mathe · noch 23 min — Schulflow`)
+ * · Web      → Browser-Tab-Titel zeigt den Countdown (`Mathe · noch 23 min — Schulflow`)
  * · Android  → dauerhafte Fortschritts-Notification, erst über das lokale
  *              native Modul (Dev-Build: echte ongoing/Live-Update-/HyperOS-
  *              Fokus-Notification), sonst als Expo-Go-Fallback über
@@ -46,7 +46,7 @@ function useWebTitle(state: IslandState | null, enabled: boolean) {
       return;
     }
     const headline = state.statusLabel.split('·')[0].trim();
-    document.title = `${state.emoji} ${state.title.replace(' (entfällt)', '')} · ${headline} — ${WEB_BASE_TITLE}`;
+    document.title = `${state.title.replace(' (entfällt)', '')} · ${headline} — ${WEB_BASE_TITLE}`;
     return () => {
       document.title = WEB_BASE_TITLE;
     };
@@ -76,7 +76,7 @@ function useAndroidIsland(state: IslandState | null, enabled: boolean) {
       const body = `${state.statusLabel} — ${state.lesson.start}–${state.lesson.end} Uhr`;
       if (island) {
         const ok = await island
-          .show(`${state.emoji} ${state.title}`, body, Math.round(state.progress * 100), state.targetAtMs)
+          .show(state.title, body, Math.round(state.progress * 100), state.targetAtMs)
           .catch(() => false);
         if (ok) return;
       }
@@ -104,7 +104,7 @@ async function showFallback(state: IslandState, body: string): Promise<void> {
     await Notifications.scheduleNotificationAsync({
       identifier: FALLBACK_ID,
       content: {
-        title: `${state.emoji} ${state.title}`,
+        title: state.title,
         body,
         sticky: true,
         autoDismiss: false,

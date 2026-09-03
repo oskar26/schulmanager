@@ -76,17 +76,17 @@ export const DEFAULT_WIDGETS: { id: WidgetId; enabled: boolean }[] = [
   { id: 'quick-actions', enabled: true },
 ];
 
-export const WIDGET_META: Record<WidgetId, { title: string; emoji: string; description: string }> = {
-  'next-lesson': { title: 'Nächste Stunde', emoji: '⏭️', description: 'Was als Nächstes ansteht — mit Countdown' },
-  'today-timeline': { title: 'Heute-Timeline', emoji: '🕒', description: 'Der ganze Tag mit Jetzt-Marker' },
-  homework: { title: 'Hausaufgaben', emoji: '📝', description: 'Offene Aufgaben nach Fälligkeit' },
-  exams: { title: 'Klassenarbeiten', emoji: '📊', description: 'Countdown zur nächsten Arbeit' },
-  grades: { title: 'Noten', emoji: '🎯', description: 'Schnitt und neueste Noten' },
-  letters: { title: 'Elternbriefe', emoji: '✉️', description: 'Unbestätigte Briefe zuerst' },
-  insights: { title: 'Smart Insights', emoji: '✨', description: 'Automatische Hinweise aus allen Daten' },
-  attendance: { title: 'Fehlzeiten', emoji: '🩹', description: 'Entschuldigt / unentschuldigt' },
-  board: { title: 'Schwarzes Brett', emoji: '📌', description: 'Aushänge der Schule' },
-  'quick-actions': { title: 'Schnellaktionen', emoji: '⚡', description: 'Krankmeldung, Beurlaubung, Suche' },
+export const WIDGET_META: Record<WidgetId, { title: string; description: string }> = {
+  'next-lesson': { title: 'Nächste Stunde', description: 'Was als Nächstes ansteht — mit Countdown' },
+  'today-timeline': { title: 'Heute-Timeline', description: 'Der ganze Tag mit Jetzt-Marker' },
+  homework: { title: 'Hausaufgaben', description: 'Offene Aufgaben nach Fälligkeit' },
+  exams: { title: 'Klassenarbeiten', description: 'Countdown zur nächsten Arbeit' },
+  grades: { title: 'Noten', description: 'Schnitt und neueste Noten' },
+  letters: { title: 'Elternbriefe', description: 'Unbestätigte Briefe zuerst' },
+  insights: { title: 'Smart Insights', description: 'Automatische Hinweise aus allen Daten' },
+  attendance: { title: 'Fehlzeiten', description: 'Entschuldigt / unentschuldigt' },
+  board: { title: 'Schwarzes Brett', description: 'Aushänge der Schule' },
+  'quick-actions': { title: 'Schnellaktionen', description: 'Krankmeldung, Beurlaubung, Suche' },
 };
 
 export const DEFAULT_SETTINGS: Settings = {
