@@ -32,51 +32,71 @@
 
 @layer base {
   :root {
-    --sf-bg: 248 249 253;
+    /* Bento / Soft-Brutalism — Light: warmes Off-White/Canvas + Pastell-Blöcke */
+    --sf-bg: 246 245 242;            /* #F6F5F2 Warm-Creme-Canvas */
     --sf-surface: 255 255 255;
     --sf-elevated: 255 255 255;
-    --sf-line: 232 234 243;
-    --sf-ink: 18 20 34;
-    --sf-muted: 106 112 134;
-    --sf-faint: 156 162 182;
+    --sf-line: 231 229 226;
+    --sf-ink: 24 24 27;              /* #18181B Charcoal-Tinte */
+    --sf-muted: 100 100 110;
+    --sf-faint: 160 158 152;
+
+    --sf-periwinkle: 140 142 255;    /* #8C8EFF */
+    --sf-periwinkle-soft: 237 233 254; /* #EDE9FE */
+    --sf-amber: 255 200 59;          /* #FFC83B */
+    --sf-amber-soft: 254 243 199;    /* #FEF3C7 */
+    --sf-mint-soft: 209 250 229;     /* #D1FAE5 */
+    --sf-coral-soft: 254 226 226;    /* #FEE2E2 */
+    --sf-charcoal: 24 24 27;         /* #18181B */
+    --sf-charcoal-elevated: 31 31 35;
 
     --sf-brand: 108 92 231;
     --sf-brand-soft: 237 234 254;
     --sf-brand-ink: 60 47 160;
 
-    --sf-mint: 46 204 168;
+    --sf-mint: 16 185 129;           /* #10B981 */
     --sf-lemon: 250 199 72;
-    --sf-coral: 255 118 117;
+    --sf-coral: 224 86 76;           /* #E0564C */
     --sf-sky: 72 163 255;
     --sf-grape: 189 122 246;
 
     --sf-success: 34 176 122;
     --sf-warning: 232 152 30;
-    --sf-danger: 226 72 72;
+    --sf-danger: 224 86 76;
   }
 
   .dark:root,
   .dark {
-    --sf-bg: 11 14 26;
-    --sf-surface: 20 24 40;
-    --sf-elevated: 27 32 52;
-    --sf-line: 39 45 68;
-    --sf-ink: 240 242 250;
-    --sf-muted: 154 161 184;
-    --sf-faint: 108 116 142;
+    /* Bento / Soft-Brutalism — Dark: tiefes Slate-Navy, abgedunkelte Karten */
+    --sf-bg: 15 23 42;               /* #0F172A */
+    --sf-surface: 30 41 59;          /* #1E293B */
+    --sf-elevated: 51 65 85;         /* #334155 */
+    --sf-line: 51 65 85;
+    --sf-ink: 248 250 252;
+    --sf-muted: 148 163 184;
+    --sf-faint: 100 116 139;
+
+    --sf-periwinkle: 165 167 255;
+    --sf-periwinkle-soft: 62 62 108;
+    --sf-amber: 255 200 59;
+    --sf-amber-soft: 68 56 20;
+    --sf-mint-soft: 19 70 48;
+    --sf-coral-soft: 76 33 31;
+    --sf-charcoal: 17 24 39;         /* #111827 */
+    --sf-charcoal-elevated: 30 41 59;
 
     --sf-brand: 138 124 255;
     --sf-brand-soft: 39 36 82;
     --sf-brand-ink: 205 198 255;
 
-    --sf-mint: 61 224 186;
+    --sf-mint: 52 211 153;
     --sf-lemon: 255 209 102;
-    --sf-coral: 255 135 133;
+    --sf-coral: 248 113 113;
     --sf-sky: 105 180 255;
     --sf-grape: 202 146 250;
 
     --sf-success: 62 202 146;
     --sf-warning: 245 174 66;
-    --sf-danger: 240 100 100;
+    --sf-danger: 248 113 113;
   }
 }

@@ -1,119 +1,181 @@
+import React from 'react';
+import { Pressable, Text, View, useColorScheme } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
-import { Platform, useColorScheme, View } from 'react-native';
-import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { LucideIcon } from 'lucide-react-native';
+import { Home, CalendarDays, ListChecks, BarChart3, Inbox } from 'lucide-react-native';
 
-import { palette } from '@/design/tokens';
 import { useSnapshot, useModuleActive } from '@/data/queries';
 import { useSettings } from '@/state/settings';
 import { useLayout } from '@/lib/breakpoints';
 import { AdaptiveTabBar } from '@/ui/shell';
 
+/**
+ * Icons pro Tab — nur Lucide-Vektoren. Bewusst sparsam: ein Icon, keine Labels
+ * auf der schwebenden Leiste (das Mobile-Hauptziel dieses Designs).
+ */
+const ICONS: Record<string, LucideIcon> = {
+  index: Home,
+  timetable: CalendarDays,
+  tasks: ListChecks,
+  grades: BarChart3,
+  inbox: Inbox,
+};
+
 export default function TabsLayout() {
   const system = useColorScheme();
   const theme = useSettings((state) => state.settings.theme);
   const dark = (theme === 'system' ? system : theme) === 'dark';
-  const { data } = useSnapshot();
   const layout = useLayout();
 
-  const inboxBadge =
-    (data?.letters.filter((letter) => letter.requiresConfirmation && !letter.confirmed).length ?? 0) +
-    (data?.threads.reduce((sum, thread) => sum + thread.unreadCount, 0) ?? 0);
-
-  const openTasks = data?.homework.filter((item) => !item.done).length ?? 0;
-
-  // Noten-Tab nur an Schulen mit gebuchtem Noten-Modul — das offizielle Menü
-  // macht es genauso. (href: null entfernt den Eintrag komplett aus der Leiste.)
   const gradesOn = useModuleActive('grades');
-
   const wide = layout.navigation !== 'bottom';
 
   return (
     <Tabs
-      // Ab Tablet zusammengelegt: Icon-Rail, ab Desktop volle Sidebar links.
+      initialRouteName="index"
       tabBar={(props: BottomTabBarProps) =>
-        wide ? <AdaptiveTabBar {...props} layout={layout} /> : <BottomTabBar {...props} />
+        wide ? <AdaptiveTabBar {...props} layout={layout} /> : <FloatingTabBar {...props} dark={dark} />
       }
-      // Linker Rand für die Sidebar — sonst läge sie über dem Inhalt.
       screenOptions={{
-        sceneStyle: wide ? { marginLeft: layout.navigationWidth } : undefined,
+        sceneStyle: wide ? { marginLeft: layout.navigationWidth } : { backgroundColor: dark ? '#0F172A' : '#F6F5F2' },
         headerShown: false,
-        tabBarActiveTintColor: dark ? '#8A7CFF' : palette.brand,
-        tabBarInactiveTintColor: dark ? '#6C748E' : palette.faint,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: -2 },
-        tabBarStyle: wide
-          ? { display: 'none' }
-          : {
-              position: 'absolute',
-              borderTopWidth: 0,
-              elevation: 0,
-              height: Platform.OS === 'ios' ? 84 : 66,
-              paddingTop: 8,
-              paddingBottom: Platform.OS === 'ios' ? 26 : 10,
-              backgroundColor: dark ? 'rgba(20,24,40,0.94)' : 'rgba(255,255,255,0.94)',
-            },
-        tabBarBackground: () => (
-          <View
-            style={{
-              flex: 1,
-              borderTopWidth: 1,
-              borderTopColor: dark ? '#272D44' : '#E8EAF3',
-            }}
-          />
-        ),
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Start',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="timetable"
-        options={{
-          title: 'Plan',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tasks"
-        options={{
-          title: 'Aufgaben',
-          tabBarBadge: openTasks > 0 ? openTasks : undefined,
-          tabBarBadgeStyle: { backgroundColor: palette.coral, fontSize: 10 },
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'checkbox' : 'checkbox-outline'} size={22} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: 'Start' }} />
+      <Tabs.Screen name="timetable" options={{ title: 'Plan' }} />
+      <Tabs.Screen name="tasks" options={{ title: 'Aufgaben' }} />
       <Tabs.Screen
         name="grades"
-        options={{
-          title: 'Noten',
-          href: gradesOn ? undefined : null,
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'stats-chart' : 'stats-chart-outline'} size={22} color={color} />
-          ),
-        }}
+        options={{ title: 'Noten', href: gradesOn ? undefined : null }}
       />
-      <Tabs.Screen
-        name="inbox"
-        options={{
-          title: 'Postfach',
-          tabBarBadge: inboxBadge > 0 ? inboxBadge : undefined,
-          tabBarBadgeStyle: { backgroundColor: palette.coral, fontSize: 10 },
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'mail' : 'mail-outline'} size={22} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="inbox" options={{ title: 'Postfach' }} />
     </Tabs>
+  );
+}
+
+/* ------------------------------------------------------------------ Floating Bar */
+
+interface TabSpec {
+  name: string;
+  icon: LucideIcon;
+  badge: number;
+  activeKey: boolean;
+}
+
+function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarProps & { dark: boolean }) {
+  const insets = useSafeAreaInsets();
+  const { data } = useSnapshot();
+
+  const inboxBadge =
+    (data?.letters.filter((letter) => letter.requiresConfirmation && !letter.confirmed).length ?? 0) +
+    (data?.threads.reduce((sum, thread) => sum + thread.unreadCount, 0) ?? 0);
+  const openTasks = data?.homework.filter((item) => !item.done).length ?? 0;
+
+  const items: TabSpec[] = state.routes
+    .filter(
+      (route) =>
+        ICONS[route.name] &&
+        (descriptors[route.key]?.options as { href?: string | null } | undefined)?.href !== null,
+    )
+    .map((route) => ({
+      name: route.name,
+      icon: ICONS[route.name],
+      badge: route.name === 'tasks' ? openTasks : route.name === 'inbox' ? inboxBadge : 0,
+      activeKey: route.key === state.routes[state.index]?.key,
+    }));
+
+  const goTab = (name: string, key: string) => {
+    const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
+    if (state.routes[state.index]?.key !== key && !event.defaultPrevented) {
+      navigation.navigate(name);
+    }
+  };
+
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        left: 16,
+        right: 16,
+        bottom: Math.max(insets.bottom, 14),
+        alignItems: 'center',
+      }}
+    >
+      {/* Schwebende dunkle Kapsel (Soft-Brutalism-Taskbar) */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          backgroundColor: '#111827',
+          borderRadius: 36,
+          paddingVertical: 10,
+          paddingHorizontal: 8,
+          shadowColor: '#000',
+          shadowOpacity: 0.28,
+          shadowRadius: 24,
+          shadowOffset: { width: 0, height: 14 },
+          elevation: 18,
+          maxWidth: 460,
+          width: '100%',
+        }}
+      >
+        {items.map((item) => {
+          const Icon = item.icon;
+          const active = item.activeKey;
+          return (
+            <Pressable
+              key={item.name}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={descriptors[state.routes.find((r) => r.name === item.name)?.key ?? '']?.options.title ?? item.name}
+              onPress={() => goTab(item.name, state.routes.find((r) => r.name === item.name)?.key ?? item.name)}
+              style={{ alignItems: 'center', justifyContent: 'center', width: 56, height: 48 }}
+            >
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: active ? (dark ? '#334155' : '#1E293B') : 'transparent',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon
+                  size={22}
+                  strokeWidth={active ? 2.5 : 2}
+                  color={active ? '#FFFFFF' : '#64748B'}
+                />
+              </View>
+              {/* Rote Badge-Pill oben rechts */}
+              {item.badge > 0 ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    minWidth: 18,
+                    height: 18,
+                    paddingHorizontal: 5,
+                    borderRadius: 9,
+                    backgroundColor: '#EF4444',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }

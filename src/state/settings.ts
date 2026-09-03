@@ -40,6 +40,8 @@ export interface Settings {
   email: string;
   hasPassword: boolean;
   demoMode: boolean;
+  /** Wurde der Onboarding-Flow (Welcome + Auth-Wahl) bereits abgeschlossen? */
+  onboarded: boolean;
   activeStudentId: string | null;
 
   /** Erscheinungsbild */
@@ -91,6 +93,7 @@ export const DEFAULT_SETTINGS: Settings = {
   email: '',
   hasPassword: false,
   demoMode: true,
+  onboarded: false,
   activeStudentId: null,
   theme: 'system',
   hapticFeedback: true,
@@ -126,6 +129,8 @@ interface SettingsStore {
   updateNotifications: (patch: Partial<NotificationPrefs>) => void;
   toggleWidget: (id: WidgetId) => void;
   moveWidget: (id: WidgetId, direction: -1 | 1) => void;
+  /** Onboarding abgeschlossen (Welcome gesehen + Demo- oder Login-Wahl). */
+  markOnboarded: () => void;
   /** Passwort landet ausschließlich im SecureStore, nie im State. */
   setCredentials: (email: string, password: string) => Promise<void>;
   getCredentials: () => Promise<{ email: string; password: string } | null>;
@@ -191,6 +196,12 @@ export const useSettings = create<SettingsStore>((set, get) => ({
     if (index < 0 || target < 0 || target >= widgets.length) return;
     [widgets[index], widgets[target]] = [widgets[target], widgets[index]];
     const next = { ...get().settings, widgets };
+    set({ settings: next });
+    persist(next);
+  },
+
+  markOnboarded: () => {
+    const next = { ...get().settings, onboarded: true };
     set({ settings: next });
     persist(next);
   },
