@@ -7,7 +7,7 @@ import { create } from 'zustand';
 
 import { SchulmanagerClient } from '@/api/client';
 import { SchulmanagerApi } from '@/api/endpoints';
-import { login as apiLogin, logout as apiLogout, refreshWithDevice } from '@/api/auth';
+import { isTokenValid, login as apiLogin, logout as apiLogout, refreshWithDevice, roleOf } from '@/api/auth';
 import type { AccountChoice, Session, SmStudent } from '@/api/types';
 import { KEYS, secureStorage } from '@/lib/storage';
 
@@ -84,9 +84,15 @@ export const useSession = create<SessionStore>((set, get) => {
         }
 
         currentToken = outcome.session.jwt;
+        // Nutzer mitspeichern — nach App-Neustart kennt die App das aktive Kind,
+        // ohne erst wieder alle Kinder laden zu müssen.
         await secureStorage.set(
           KEYS.session,
-          JSON.stringify({ jwt: outcome.session.jwt, device: outcome.session.device }),
+          JSON.stringify({
+            jwt: outcome.session.jwt,
+            device: outcome.session.device,
+            user: outcome.session.user,
+          }),
         );
 
         const own = outcome.session.user.associatedStudent ?? null;
@@ -112,22 +118,64 @@ export const useSession = create<SessionStore>((set, get) => {
       const raw = await secureStorage.get(KEYS.session);
       if (!raw) return false;
       try {
-        const stored = JSON.parse(raw) as { jwt?: string; device?: Session['device'] };
+        const stored = JSON.parse(raw) as {
+          jwt?: string;
+          device?: Session['device'];
+          user?: Session['user'];
+        };
+
+        // Gerät vs. altes JWT: beide Wege können scheitern (Gerät widerrufen,
+        // JWT abgelaufen) — dann sauber raus statt „halb angemeldet".
+        let jwt: string | null = null;
         if (stored.device) {
-          const jwt = await refreshWithDevice(client, stored.device);
-          currentToken = jwt;
-          set({ status: 'connected' });
-          return true;
+          try {
+            jwt = await refreshWithDevice(client, stored.device);
+          } catch {
+            jwt = null;
+          }
         }
-        if (stored.jwt) {
+        if (!jwt && stored.jwt) {
+          // Migration von älteren Speicherständen: noch einmal mit dem JWT probieren.
           currentToken = stored.jwt;
-          set({ status: 'connected' });
-          return true;
+          if (await isTokenValid(client)) jwt = stored.jwt;
         }
+        if (!jwt) {
+          await secureStorage.remove(KEYS.session);
+          return false;
+        }
+
+        currentToken = jwt;
+
+        if (stored.user) {
+          const own = stored.user.associatedStudent ?? null;
+          const students = own ? [own] : [];
+          set({
+            status: 'connected',
+            session: {
+              jwt,
+              user: stored.user,
+              role: roleOf(stored.user),
+              loggedInAt: new Date().toISOString(),
+              device: stored.device ?? null,
+            },
+            students,
+            activeStudent: students[0] ?? own,
+          });
+        } else {
+          set({ status: 'connected' });
+        }
+
+        // Kinder für Elternkonten nachladen (leise, Fehler nicht an die Oberfläche).
+        const state = get();
+        if (state.session && state.students.length === 0) {
+          const students = await api.students().catch(() => []);
+          if (students.length > 0) set({ students, activeStudent: students[0] });
+        }
+        return true;
       } catch {
         await secureStorage.remove(KEYS.session);
+        return false;
       }
-      return false;
     },
 
     disconnect: async () => {

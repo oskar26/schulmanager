@@ -1,0 +1,125 @@
+# ============================================================
+#  VORLAGE — bitte einmalig nach `.github/workflows/android-apk.yml`
+#  kopieren (genaue Schritte stehen in HANDY-TESTEN.md).
+#  Diese Datei liegt bewusst in scripts/, damit der Bot sie pushen
+#  darf — GitHub erlaubt ihm das Anlegen von Workflow-Dateien nicht.
+# ============================================================
+
+# Automatischer Android-APK-Build + Web-Deploy — komplett ohne eigenen PC.
+#
+# Bei jedem Push (und manuell per „Run workflow"-Knopf) baut GitHub Actions:
+#   1. die Android-APK  → https://github.com/oskar26/schulmanager/releases/latest
+#   2. die Web-Version  → https://oskar26.github.io/schulmanager/
+#
+# Die APK ist mit dem Debug-Keystore signiert — ideal zum Testen, nicht für den Play Store.
+
+name: Schulflow Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - arena/**
+
+concurrency:
+  group: schulflow-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    name: Android-APK bauen
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node 22 einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Java 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: versionCode auf Build-Nummer setzen (Updates lassen sich drüberinstallieren)
+        run: |
+          node -e "const fs=require('fs');const p='app.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.expo.android=j.expo.android||{};j.expo.android.versionCode=${{ github.run_number }};j.expo.android.versionName='1.0.'+${{ github.run_number }};fs.writeFileSync(p,JSON.stringify(j,null,2));"
+
+      - name: Natives Android-Projekt generieren (expo prebuild)
+        run: npx expo prebuild -p android --no-install
+
+      - name: Release-APK bauen (Gradle)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: APK bereitstellen
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/Schulflow-${{ github.run_number }}.apk"
+
+      - name: Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Schulflow-APK-${{ github.run_number }}
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - name: APK als Release veröffentlichen (Download ohne Login)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-build
+          name: Schulflow Android-APK
+          files: dist/*.apk
+          make_latest: true
+          body: |
+            **Test-APK der neuesten Version** (Build #${{ github.run_number }}).
+
+            ### Installation
+            1. APK unten herunterladen (Chrome-Warnung → „trotzdem behalten").
+            2. APK antippen → „Unbekannte Quellen erlauben" → installieren.
+            3. Updates: neue APK einfach drüberinstallieren.
+
+  web:
+    name: Web-Version deployen
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node 22 einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Base-URL für GitHub Pages setzen
+        run: |
+          node -e "const fs=require('fs');const p='app.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.expo.experiments=j.expo.experiments||{};j.expo.experiments.baseUrl='/schulmanager';fs.writeFileSync(p,JSON.stringify(j,null,2));"
+
+      - name: Web-Build erzeugen
+        run: npx expo export --platform web --output-dir web-build
+
+      - name: Auf gh-pages veröffentlichen
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./web-build
+          force_orphan: true
+          commit_message: "Web-Build #${{ github.run_number }}"

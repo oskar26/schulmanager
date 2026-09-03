@@ -166,7 +166,11 @@ export interface Letter {
   createdAt: string;
   requiresConfirmation?: boolean;
   confirmed?: boolean;
-  attachments?: { id: Id; name: string }[];
+  /** Id des StudentLetterStatus — wird für `letters/confirm` gebraucht. */
+  studentStatusId?: Id | null;
+  /** Abgabe-Frist einer evtl. Umfrage */
+  answerDeadline?: string | null;
+  attachments?: { id: Id; name: string; file?: unknown }[];
   questions?: { id: Id; question: string; options?: string[]; answer?: string | null }[];
 }
 
@@ -188,6 +192,7 @@ export interface ChatMessage {
   sender: string;
   sentAt: string;
   isOwn: boolean;
+  attachments?: { id: Id; name: string; file?: unknown }[];
 }
 
 export interface Tile {
@@ -253,6 +258,118 @@ export interface Exemption {
   granted: boolean | null;
 }
 
+/* ------------------------------------------------------------------ Zahlungen */
+
+export interface InvoiceItem {
+  id: Id;
+  name: string;
+  amount: number | null;
+  paid: boolean;
+}
+
+export interface Invoice {
+  id: Id;
+  /** Ganzzahl — Teil des Zahlungsreferenz-Codes */
+  number: number | null;
+  date?: string | null;
+  dueDate?: string | null;
+  /** Beträge kommen als Dezimal-Strings ("12.00") */
+  sum: number | null;
+  paidSum: number | null;
+  paid: boolean;
+  items: InvoiceItem[];
+}
+
+/* ------------------------------------------------------------------ Dokumente */
+
+export interface DocumentFolder {
+  id: Id;
+  name: string;
+  isRoot?: boolean;
+}
+
+export interface SchoolDocument {
+  id: Id;
+  name: string;
+  /** HTML-Seite (statt Datei) */
+  content?: string | null;
+  file?: unknown;
+  updatedAt?: string | null;
+}
+
+/* ------------------------------------------------------------------ Elternsprechtag */
+
+export interface ParentTalkAppointmentLite {
+  id: Id;
+  start?: string | null;
+  end?: string | null;
+  cancelled?: boolean;
+  teacher?: { id: Id; firstname?: string | null; lastname?: string | null; abbreviation?: string | null } | null;
+}
+
+export interface ParentTalkRound {
+  id: Id;
+  label: string;
+  start?: string | null;
+  end?: string | null;
+  inscriptionStart?: string | null;
+  inscriptionEnd?: string | null;
+  /** Slot-Länge in Millisekunden */
+  appointmentLength?: number | null;
+  appointments: ParentTalkAppointmentLite[];
+}
+
+/* ------------------------------------------------------------------ Wahlfächer */
+
+export interface Elective {
+  id: Id;
+  name: string;
+  electionId?: Id | null;
+}
+
+export interface Election {
+  id: Id;
+  name: string;
+  description?: string | null;
+  start?: string | null;
+  end?: string | null;
+  prioritiesPerStudent?: number | null;
+  finalized?: boolean | null;
+  useSubElections?: boolean | null;
+  electives: Elective[];
+  /** bereits gespeicherte Ränge: electiveId -> Rang 0..n */
+  submitted?: Record<string, number>;
+}
+
+/* ------------------------------------------------------------------ Ganztag */
+
+export interface AlldayOffer {
+  id: Id;
+  /** 0 = Sonntag … 6 = Samstag (JavaScript-Nummerierung!) */
+  weekday: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+}
+
+export interface AlldayNote {
+  id: Id;
+  date?: string | null;
+  message?: string | null;
+}
+
+/** Verschlüsselter Datei-Deskriptor (StoredFile) — 7-Element-Array als JSON-String. */
+export interface StoredFileParts {
+  institutionId: Id;
+  scope: string;
+  id: string;
+  key: string;
+  type: string;
+  size: number;
+  name: string;
+}
+
 /* ------------------------------------------------------------------ Aggregat */
 
 /** Ein vollständiger Sync-Snapshot — Grundlage für Dashboard, Insights, Widgets, Notifications. */
@@ -271,4 +388,10 @@ export interface Snapshot {
   events: CalendarEvent[];
   absences: Absence[];
   exemptions: Exemption[];
+  /** Nur geladen, wenn das Modul gebucht ist — sonst leer. */
+  invoices?: Invoice[];
+  parentTalkRounds?: ParentTalkRound[];
+  elections?: Election[];
+  alldayOffers?: AlldayOffer[];
+  alldayNotes?: AlldayNote[];
 }

@@ -3,6 +3,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useSnapshot } from '@/data/queries';
+import { useSession } from '@/state/session';
+import { shareIcalUrl } from '@/api/downloads';
 import { tint } from '@/design/subjects';
 import {
   MONTHS, WEEKDAYS_SHORT, addDays, daysUntil, formatRelativeDay, startOfWeek, toISO,
@@ -79,6 +81,20 @@ export default function CalendarScreen() {
           <Title>Kalender</Title>
           <Muted>Termine, Ferien und Arbeiten in einer Ansicht</Muted>
         </View>
+        <IconButton
+          icon="link-outline"
+          size={36}
+          color="#6C5CE7"
+          onPress={async () => {
+            try {
+              const { api } = useSession.getState();
+              const url = await api.icalToken();
+              if (url) await shareIcalUrl(url);
+            } catch {
+              /* Im Demo-Modus gibt es keinen echten iCal-Link */
+            }
+          }}
+        />
       </Row>
 
       <View className="px-4 pb-3">

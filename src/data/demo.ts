@@ -401,6 +401,7 @@ export function buildDemoSnapshot(): Snapshot {
     modules: [
       'classbook', 'exams', 'grades', 'letters', 'messenger', 'calendar',
       'sick', 'exemptions', 'documents', 'parenttalks', 'allday', 'tiles',
+      'invoicing', 'electives',
     ],
     lessons: buildLessons(),
     homework: buildHomework(),
@@ -412,5 +413,105 @@ export function buildDemoSnapshot(): Snapshot {
     events: buildEvents(),
     absences: buildAbsences(),
     exemptions: buildExemptions(),
+    invoices: buildInvoices(),
+    parentTalkRounds: buildParentTalkRounds(),
+    elections: buildElections(),
+    alldayOffers: buildAlldayOffers(),
+    alldayNotes: buildAlldayNotes(),
   };
+}
+
+/* ------------------------------------------------------------------ Zusatzmodule (Demo) */
+
+function isoInDays(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString();
+}
+
+function buildInvoices(): Snapshot['invoices'] {
+  return [
+    {
+      id: 'demo-inv-1',
+      number: 20260847,
+      date: isoInDays(-14),
+      dueDate: isoInDays(2),
+      sum: 168,
+      paidSum: 0,
+      paid: false,
+      items: [
+        { id: 'demo-inv-1-1', name: 'Klassenfahrt Berlin (Anzahlung)', amount: 90, paid: false },
+        { id: 'demo-inv-1-2', name: 'Materialgeld 2. Halbjahr', amount: 78, paid: false },
+      ],
+    },
+    {
+      id: 'demo-inv-2',
+      number: 20260612,
+      date: isoInDays(-68),
+      dueDate: isoInDays(-38),
+      sum: 45,
+      paidSum: 45,
+      paid: true,
+      items: [{ id: 'demo-inv-2-1', name: 'Taschenbuch-Set Deutsch', amount: 45, paid: true }],
+    },
+  ];
+}
+
+function buildParentTalkRounds(): Snapshot['parentTalkRounds'] {
+  return [
+    {
+      id: 'demo-round-1',
+      label: 'Elternsprechtag Herbst',
+      start: isoInDays(10),
+      end: isoInDays(10),
+      inscriptionStart: isoInDays(-3),
+      inscriptionEnd: isoInDays(7),
+      appointments: [
+        {
+          id: 'demo-apt-1',
+          cancelled: false,
+          start: `${isoInDays(10).slice(0, 10)}T16:00:00.000Z`,
+          teacher: { id: 101, firstname: 'Martina', lastname: 'Sommer', abbreviation: 'SO' },
+        },
+        {
+          id: 'demo-apt-2',
+          cancelled: false,
+          start: `${isoInDays(10).slice(0, 10)}T17:15:00.000Z`,
+          teacher: { id: 102, firstname: 'Jens', lastname: 'Winter', abbreviation: 'WI' },
+        },
+      ],
+    },
+  ];
+}
+
+function buildElections(): Snapshot['elections'] {
+  return [
+    {
+      id: 'demo-election-1',
+      name: 'Wahlpflichtkurs Klasse 9',
+      description: 'Wähle deinen Wunsch-Kurs für das nächste Schuljahr.',
+      end: isoInDays(6),
+      finalized: false,
+      prioritiesPerStudent: 3,
+      electives: [
+        { id: 'demo-el-1', name: 'Spanisch' },
+        { id: 'demo-el-2', name: 'Informatik' },
+        { id: 'demo-el-3', name: 'Darstellendes Spiel' },
+        { id: 'demo-el-4', name: 'Werken' },
+      ],
+    },
+  ];
+}
+
+function buildAlldayOffers(): Snapshot['alldayOffers'] {
+  // weekday in JS-Nummerierung (0 = Sonntag), wie die API sie liefert.
+  return [
+    { id: 'demo-allday-1', weekday: 1, startTime: '07:30', endTime: '08:10' },
+    { id: 'demo-allday-2', weekday: 3, startTime: '13:30', endTime: '16:00' },
+    { id: 'demo-allday-3', weekday: 4, startTime: '13:30', endTime: '15:30' },
+  ];
+}
+
+function buildAlldayNotes(): Snapshot['alldayNotes'] {
+  return [
+    { id: 'demo-note-1', date: isoInDays(-2), message: 'Am Freitag endet die Betreuung wegen Personalversammlung um 14:30.' },
+  ];
 }

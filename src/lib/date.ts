@@ -105,3 +105,9 @@ export const greeting = (): string => {
   if (hour < 18) return 'Guten Tag';
   return 'Guten Abend';
 };
+
+export const formatTime = (isoTimestamp: string): string => {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};

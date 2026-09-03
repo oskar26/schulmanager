@@ -160,14 +160,26 @@ export class SchulmanagerClient {
     }
 
     let response: Response;
+    // Timeout: Nach 30 s abbrechen, statt ewig zu warten (Bug: hängende Requests).
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
       response = await this.fetch(`${this.baseUrl}${path}`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body ?? {}),
+        signal: controller.signal,
       });
     } catch (error) {
-      throw new SchulmanagerError(String(error), 0, 'network');
+      const aborted = error instanceof Error && error.name === 'AbortError';
+      throw new SchulmanagerError(
+        aborted ? `Timeout bei ${path}` : String(error),
+        0,
+        'network',
+        aborted ? 'Die Schule antwortet nicht (Timeout). Prüfe deine Internetverbindung.' : undefined,
+      );
+    } finally {
+      clearTimeout(timeout);
     }
 
     const rotated = response.headers.get('x-new-bearer-token');
