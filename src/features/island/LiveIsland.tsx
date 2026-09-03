@@ -20,12 +20,10 @@ import type { IslandState } from '@/features/island/use-island';
 import { hapticLight } from '@/lib/haptics';
 import { useLayout } from '@/lib/breakpoints';
 import { tint } from '@/design/subjects';
+import { foregroundOn } from '@/design/tokens';
+import { useThemeColors } from '@/design/theme';
 import { LivePulse } from '@/ui/motion';
 
-const ISLAND_BG = '#101018';
-const ISLAND_TEXT = '#FFFFFF';
-const ISLAND_SUB = 'rgba(255,255,255,0.72)';
-const ISLAND_TRACK = 'rgba(255,255,255,0.14)';
 
 export function LiveIsland({ state }: { state: IslandState | null }) {
   const layout = useLayout();
@@ -71,6 +69,11 @@ function IslandPill({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { colors } = useThemeColors();
+  const islandText = colors.on.charcoal;
+  const islandSub = tint(colors.on.charcoal, 0.72);
+  const islandTrack = tint(colors.on.charcoal, 0.14);
+  const subjectForeground = foregroundOn(state.color, colors);
   const urgent = state.kind === 'break' || state.kind === 'before-school';
 
   return (
@@ -83,13 +86,13 @@ function IslandPill({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        backgroundColor: ISLAND_BG,
+        backgroundColor: colors.charcoal,
         borderRadius: 999,
         paddingVertical: 7,
         paddingLeft: 8,
         paddingRight: 14,
         maxWidth: '100%',
-        shadowColor: '#000',
+        shadowColor: colors.charcoal,
         shadowOpacity: 0.35,
         shadowRadius: 18,
         shadowOffset: { width: 0, height: 8 },
@@ -102,12 +105,12 @@ function IslandPill({
           width: 26,
           height: 26,
           borderRadius: 13,
-          backgroundColor: tint(state.color, 0.22),
+          backgroundColor: state.color,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <BookOpen size={14} strokeWidth={2.4} color={ISLAND_TEXT} />
+        <BookOpen size={14} strokeWidth={2.4} color={subjectForeground} />
       </View>
 
       <View style={{ flexShrink: 1 }}>
@@ -117,32 +120,32 @@ function IslandPill({
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.85}
-            style={{ color: ISLAND_TEXT, fontSize: 12.5, fontWeight: '800', letterSpacing: -0.1 }}
+            style={{ color: islandText, fontSize: 12.5, fontWeight: '800', letterSpacing: -0.1 }}
           >
             {state.title}
           </Text>
           {state.changed ? (
             <View
               style={{
-                backgroundColor: 'rgba(255,209,102,0.2)',
+                backgroundColor: tint(colors.accent.amber, 0.2),
                 paddingHorizontal: 6,
                 paddingVertical: 2,
                 borderRadius: 7,
               }}
             >
-              <Text style={{ color: '#FFD166', fontSize: 9, fontWeight: '800' }}>
+              <Text style={{ color: colors.accent.amber, fontSize: 9, fontWeight: '800' }}>
                 {state.cancelled ? 'AUSFALL' : 'GEÄNDERT'}
               </Text>
             </View>
           ) : null}
         </View>
-        <View style={{ height: 3, borderRadius: 2, backgroundColor: ISLAND_TRACK, marginTop: 4, overflow: 'hidden', minWidth: 96 }}>
+        <View style={{ height: 3, borderRadius: 2, backgroundColor: islandTrack, marginTop: 4, overflow: 'hidden', minWidth: 96 }}>
           <View
             style={{
               width: `${Math.round(state.progress * 100)}%`,
               height: 3,
               borderRadius: 2,
-              backgroundColor: urgent ? '#FFD166' : state.color,
+              backgroundColor: urgent ? colors.accent.amber : state.color,
             }}
           />
         </View>
@@ -151,7 +154,7 @@ function IslandPill({
       <Text
         numberOfLines={1}
         style={{
-          color: urgent ? '#FFD166' : ISLAND_SUB,
+          color: urgent ? colors.accent.amber : islandSub,
           fontSize: 11.5,
           fontWeight: '700',
           fontVariant: ['tabular-nums'],
@@ -160,7 +163,7 @@ function IslandPill({
       >
         {state.statusLabel.split('·')[0].trim()}
       </Text>
-      <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={13} color={ISLAND_SUB} />
+      <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={13} color={islandSub} />
     </Pressable>
   );
 }
@@ -168,6 +171,11 @@ function IslandPill({
 /* ------------------------------------------------------------------ Detailkarte */
 
 function IslandCard({ state, onClose }: { state: IslandState; onClose: () => void }) {
+  const { colors } = useThemeColors();
+  const islandText = colors.on.charcoal;
+  const islandSub = tint(colors.on.charcoal, 0.72);
+  const islandTrack = tint(colors.on.charcoal, 0.14);
+  const subjectForeground = foregroundOn(state.color, colors);
   const router = useRouter();
   const { lesson } = state;
 
@@ -176,10 +184,10 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
       style={{
         marginTop: 8,
         alignSelf: 'stretch',
-        backgroundColor: ISLAND_BG,
+        backgroundColor: colors.charcoal,
         borderRadius: 24,
         padding: 16,
-        shadowColor: '#000',
+        shadowColor: colors.charcoal,
         shadowOpacity: 0.35,
         shadowRadius: 24,
         shadowOffset: { width: 0, height: 12 },
@@ -192,29 +200,29 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
             width: 44,
             height: 44,
             borderRadius: 15,
-            backgroundColor: tint(state.color, 0.22),
+            backgroundColor: state.color,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <BookOpen size={22} strokeWidth={2.2} color={ISLAND_TEXT} />
+          <BookOpen size={22} strokeWidth={2.2} color={subjectForeground} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text numberOfLines={2} style={{ color: ISLAND_TEXT, fontSize: 16, fontWeight: '800', lineHeight: 19 }}>
+          <Text numberOfLines={2} style={{ color: islandText, fontSize: 16, fontWeight: '800', lineHeight: 19 }}>
             {lesson.subject}
           </Text>
-          <Text style={{ color: ISLAND_SUB, fontSize: 12, fontVariant: ['tabular-nums'] }}>
+          <Text style={{ color: islandSub, fontSize: 12, fontVariant: ['tabular-nums'] }}>
             {lesson.hour}. Stunde · {lesson.start}–{lesson.end} Uhr
           </Text>
         </View>
         <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Zuklappen">
-          <Ionicons name="close" size={18} color={ISLAND_SUB} />
+          <Ionicons name="close" size={18} color={islandSub} />
         </Pressable>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-        {lesson.room ? <MetaChip icon="location-outline" label={lesson.room} /> : null}
-        {lesson.teacher ? <MetaChip icon="person-outline" label={lesson.teacher} /> : null}
+        {lesson.room ? <MetaChip colors={colors} icon="location-outline" label={lesson.room} /> : null}
+        {lesson.teacher ? <MetaChip colors={colors} icon="person-outline" label={lesson.teacher} /> : null}
         <MetaChip
           icon="time-outline"
           label={
@@ -223,6 +231,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
               : state.statusLabel
           }
           accent
+          colors={colors}
         />
       </View>
 
@@ -231,12 +240,12 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
           style={{
             marginTop: 12,
             borderRadius: 12,
-            backgroundColor: state.cancelled ? 'rgba(226,72,72,0.16)' : 'rgba(46,204,168,0.14)',
+            backgroundColor: state.cancelled ? tint(colors.danger, 0.16) : tint(colors.success, 0.14),
             paddingHorizontal: 10,
             paddingVertical: 8,
           }}
         >
-          <Text style={{ color: state.cancelled ? '#FF8E8E' : '#63E0BE', fontSize: 11.5, fontWeight: '700' }}>
+          <Text style={{ color: state.cancelled ? colors.danger : colors.success, fontSize: 11.5, fontWeight: '700' }}>
             {state.cancelled
               ? `Entfällt${lesson.originalTeacher ? ` (statt ${lesson.originalTeacher})` : ''}`
               : lesson.state === 'substitution'
@@ -246,7 +255,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
         </View>
       ) : null}
 
-      <View style={{ height: 5, borderRadius: 3, backgroundColor: ISLAND_TRACK, marginTop: 14, overflow: 'hidden' }}>
+      <View style={{ height: 5, borderRadius: 3, backgroundColor: islandTrack, marginTop: 14, overflow: 'hidden' }}>
         <View
           style={{
             width: `${Math.round(state.progress * 100)}%`,
@@ -266,7 +275,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
         className="active:opacity-85"
         style={{
           marginTop: 14,
-          backgroundColor: 'rgba(255,255,255,0.10)',
+          backgroundColor: tint(colors.on.charcoal, 0.10),
           borderRadius: 14,
           paddingVertical: 9,
           alignItems: 'center',
@@ -275,18 +284,20 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
           gap: 6,
         }}
       >
-        <Ionicons name="calendar-outline" size={14} color={ISLAND_TEXT} />
-        <Text style={{ color: ISLAND_TEXT, fontSize: 12.5, fontWeight: '800' }}>Stundenplan öffnen</Text>
+        <Ionicons name="calendar-outline" size={14} color={islandText} />
+        <Text style={{ color: islandText, fontSize: 12.5, fontWeight: '800' }}>Stundenplan öffnen</Text>
       </Pressable>
     </View>
   );
 }
 
 function MetaChip({
+  colors,
   icon,
   label,
   accent = false,
 }: {
+  colors: ReturnType<typeof useThemeColors>['colors'];
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   accent?: boolean;
@@ -297,14 +308,14 @@ function MetaChip({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        backgroundColor: accent ? 'rgba(255,209,102,0.16)' : 'rgba(255,255,255,0.08)',
+        backgroundColor: accent ? tint(colors.accent.amber, 0.16) : tint(colors.on.charcoal, 0.08),
         borderRadius: 10,
         paddingHorizontal: 8,
         paddingVertical: 5,
       }}
     >
-      <Ionicons name={icon} size={11} color={accent ? '#FFD166' : ISLAND_SUB} />
-      <Text style={{ color: accent ? '#FFD166' : ISLAND_SUB, fontSize: 11, fontWeight: '700' }}>{label}</Text>
+      <Ionicons name={icon} size={11} color={accent ? colors.accent.amber : tint(colors.on.charcoal, 0.72)} />
+      <Text style={{ color: accent ? colors.accent.amber : tint(colors.on.charcoal, 0.72), fontSize: 11, fontWeight: '700' }}>{label}</Text>
     </View>
   );
 }

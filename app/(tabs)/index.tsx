@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { RefreshControl, ScrollView, Text, View, useColorScheme } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Search, Settings } from 'lucide-react-native';
 
@@ -10,14 +10,15 @@ import { useLayout } from '@/lib/breakpoints';
 import { Avatar } from '@/ui/gluestack/feedback';
 import { AdaptiveContent, BentoCard, BentoGrid, Muted, RoundActionButton, Row, Screen, Skeleton } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useThemeColors } from '@/design/theme';
+import { foregroundOn } from '@/design/tokens';
+import { tint } from '@/design/subjects';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const system = useColorScheme();
-  const theme = useSettings((state) => state.settings.theme);
-  const dark = (theme === 'system' ? system : theme) === 'dark';
+  const { colors, isDark } = useThemeColors();
   const { data, isLoading, refetch, isRefetching, isDemo } = useSnapshot();
   const widgets = useSettings((state) => state.settings.widgets);
   const layout = useLayout();
@@ -26,8 +27,8 @@ export default function DashboardScreen() {
   const enabled = useMemo(() => widgets.filter((widget) => widget.enabled), [widgets]);
   const name = data?.student?.firstname ?? 'Schulflow';
 
-  const iconColor = dark ? '#94A3B8' : '#6E6C66';
-  const chipBg = dark ? '#1E293B' : '#FFFFFF';
+  const iconColor = colors.muted;
+  const chipBg = colors.surface;
   const reserve = useTabNavReserve();
   // Datum vertikal gestapelt (Phase 1 · M3): Wochentag groß/fett, Datum darunter —
   // statt „Donnerstag, 3. …“ einzeilig abzuschneiden.
@@ -43,7 +44,7 @@ export default function DashboardScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingHorizontal: wide ? 0 : 18, paddingTop: 6, paddingBottom: reserve }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor="#6C5CE7" />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.accent.amber} />}
       >
         <AdaptiveContent dashboard>
           {/* Kopf: Begrüßung + Datum + Fortschritt, rechts Aktionen */}
@@ -58,7 +59,7 @@ export default function DashboardScreen() {
                   {/* Fortschritts-Pill (Bento-Hierarchie) */}
                   <Row className="mt-1.5 gap-2">
                     <View className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
-                      <View className="h-full rounded-full bg-brand" style={{ width: `${progress}%` }} />
+                      <View className="h-full rounded-full bg-accent-amber" style={{ width: `${progress}%` }} />
                     </View>
                     <Text className="text-[10px] font-bold text-muted">Fortschritt {progress}%</Text>
                   </Row>
@@ -91,10 +92,10 @@ export default function DashboardScreen() {
               {data?.institution?.name ?? 'Schule'}
               {data?.student?.className ? ` · Klasse ${data.student.className}` : ''}
             </Muted>
-            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: dark ? '#475569' : '#D6D3D1' }} />
+            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: isDark ? colors.charcoalElevated : colors.line }} />
             {isDemo ? (
-              <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                <Text style={{ fontSize: 10, fontWeight: '800', color: '#B45309' }}>DEMO</Text>
+              <View style={{ backgroundColor: tint(colors.accent.amber, 0.18), paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: foregroundOn(colors.accent.amber, colors) }}>DEMO</Text>
               </View>
             ) : (
               <Muted className="text-[11px]">{formatTimeAgo(data?.fetchedAt)}</Muted>
@@ -139,18 +140,19 @@ export default function DashboardScreen() {
                     : { width: '100%' }
                 }
               >
-                <BentoCard tone="#EDE9FE" className="items-center py-6">
-                  <Text className="text-center text-[15px] font-extrabold text-indigo-900">
+                <BentoCard tone={colors.accent.amber} className="items-center py-6">
+                  <Text className="text-center text-[15px] font-extrabold text-on-amber">
                     Dashboard anpassen
                   </Text>
-                  <Muted className="mt-1 text-center text-[13px] leading-5">
+                  <Text className="mt-1 text-center text-[13px] leading-5" style={{ color: foregroundOn(colors.accent.amber, colors), opacity: 0.74 }}>
                     Bestimme, welche Karten hier erscheinen und in welcher Reihenfolge.
-                  </Muted>
+                  </Text>
                   <View className="mt-3">
                     <RoundActionButton
                       icon={Settings}
                       onPress={() => router.push('/settings')}
-                      color="#6C5CE7"
+                      color={colors.on.amber}
+                      background={colors.surface}
                       accessibilityLabel="Einstellungen"
                     />
                   </View>

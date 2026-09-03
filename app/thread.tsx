@@ -10,8 +10,10 @@ import { hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, EmptyState, IconButton, Muted, Row, Screen, Skeleton, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { Avatar, Spinner } from '@/ui/gluestack/feedback';
+import { useThemeColors } from '@/design/theme';
 
 export default function ThreadScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const params = useLocalSearchParams<{
     subscriptionId: string;
@@ -80,7 +82,7 @@ export default function ThreadScreen() {
           ) : !data || data.length === 0 ? (
             <EmptyState
               icon={MessageSquare}
-              iconColor="#48A3FF"
+              iconColor={colors.accent.violet}
               title="Keine Nachrichten im Verlauf"
               hint={params.preview ? params.preview : 'Hier erscheinen Antworten und alte Nachrichten.'}
             />
@@ -91,18 +93,18 @@ export default function ThreadScreen() {
                 <View
                   key={String(message.id)}
                   className={`mb-2 max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
-                    message.isOwn ? 'ml-auto bg-brand' : 'bg-surface'
+                    message.isOwn ? 'ml-auto bg-accent-amber' : 'bg-surface'
                   }`}
-                  style={message.isOwn ? undefined : { shadowColor: '#1B1F3B', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 }}
+                  style={message.isOwn ? undefined : { shadowColor: colors.charcoal, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 }}
                 >
                   {!message.isOwn && message.sender ? (
-                    <Text className="mb-0.5 text-[11px] font-bold text-brand">{message.sender}</Text>
+                    <Text className="mb-0.5 text-[11px] font-bold text-accent-amber-deep">{message.sender}</Text>
                   ) : null}
-                  <Text className={`text-[14px] leading-5 ${message.isOwn ? 'text-white' : 'text-ink'}`}>
+                  <Text className={`text-[14px] leading-5 ${message.isOwn ? 'text-on-amber' : 'text-ink'}`}>
                     {message.text}
                   </Text>
                   <Text
-                    className={`mt-1 self-end text-[10px] ${message.isOwn ? 'text-white/70' : 'text-faint'}`}
+                    className={`mt-1 self-end text-[10px] ${message.isOwn ? 'text-on-amber/70' : 'text-faint'}`}
                   >
                     {formatTimeAgo(message.sentAt)}
                   </Text>
@@ -120,30 +122,30 @@ export default function ThreadScreen() {
         {/* Antwortfeld */}
         <View className="border-t border-line bg-surface px-3 py-2.5">
           <Row className="gap-2">
-            <View className="h-9 w-9 items-center justify-center rounded-full bg-brand-soft">
+            <View className="h-9 w-9 items-center justify-center rounded-full bg-accent-amber/15">
               {send.isPending ? (
                 <Spinner size="small" />
               ) : (
-                <MessageSquare size={16} strokeWidth={2} color="#6C5CE7" />
+                <MessageSquare size={16} strokeWidth={2} color={colors.accent.violet} />
               )}
             </View>
             <TextInput
               value={draft}
               onChangeText={setDraft}
               placeholder="Antworten …"
-              placeholderTextColor="#9CA2B6"
+              placeholderTextColor={colors.faint}
               multiline
-              className="flex-1 rounded-2xl bg-bg px-3.5 py-2.5 text-[14px] text-ink"
+              className="flex-1 rounded-2xl bg-canvas px-3.5 py-2.5 text-[14px] text-ink"
               onSubmitEditing={sendDraft}
             />
             <Pressable
               onPress={sendDraft}
               disabled={draft.trim().length === 0 || send.isPending}
               className={`h-11 w-11 items-center justify-center rounded-2xl ${
-                draft.trim().length === 0 ? 'bg-line/50' : 'bg-brand active:opacity-80'
+                draft.trim().length === 0 ? 'bg-line/50' : 'bg-accent-amber active:opacity-80'
               }`}
             >
-              <Send size={18} strokeWidth={2} color={draft.trim().length === 0 ? '#9CA2B6' : '#FFFFFF'} />
+              <Send size={18} strokeWidth={2} color={draft.trim().length === 0 ? colors.faint : colors.on.amber} />
             </Pressable>
           </Row>
         </View>

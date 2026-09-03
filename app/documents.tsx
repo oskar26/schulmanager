@@ -11,6 +11,8 @@ import { htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, Divider, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useThemeColors } from '@/design/theme';
+import { tint } from '@/design/subjects';
 
 interface Crumb {
   id: string;
@@ -18,6 +20,7 @@ interface Crumb {
 }
 
 export default function DocumentsScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { api } = useSession.getState();
   const isDemo = useSession((state) => state.status !== 'connected');
@@ -124,7 +127,7 @@ export default function DocumentsScreen() {
         ) : folders.length === 0 && documents.length === 0 ? (
           <EmptyState
             icon={FolderOpen}
-            iconColor="#FAC748"
+            iconColor={colors.accent.amber}
             title="Kein Inhalt"
             hint="Dieser Ordner ist leer — oder das Modul „Dokumente“ ist nicht gebucht."
           />
@@ -135,9 +138,9 @@ export default function DocumentsScreen() {
               <View key={`f-${String(folder.id)}`}>
                 <PressableList
                   onPress={() => openFolder(folder)}
-                  icon={<Folder size={19} strokeWidth={2} color="#FAC748" />}
+                  icon={<Folder size={19} strokeWidth={2} color={colors.accent.amber} />}
                   title={folder.name || 'Ordner'}
-                  right={<ChevronRight size={16} color="#9CA2B6" />}
+                  right={<ChevronRight size={16} color={colors.faint} />}
                 />
                 {index < folders.length - 1 || documents.length > 0 ? <Divider className="ml-14" /> : null}
               </View>
@@ -148,15 +151,15 @@ export default function DocumentsScreen() {
                   onPress={() => openDocument(document)}
                   icon={
                     downloading === String(document.id) ? (
-                      <ActivityIndicator size="small" color="#6C5CE7" />
+                      <ActivityIndicator size="small" color={colors.accent.violet} />
                     ) : (
-                      <FileText size={19} strokeWidth={2} color="#6C5CE7" />
+                      <FileText size={19} strokeWidth={2} color={colors.accent.violet} />
                     )
                   }
                   title={document.name || 'Dokument'}
                   subtitle={document.updatedAt ? formatDay(document.updatedAt.slice(0, 10)) : undefined}
                   right={
-                    document.file ? <Download size={16} strokeWidth={2} color="#9CA2B6" /> : undefined
+                    document.file ? <Download size={16} strokeWidth={2} color={colors.faint} /> : undefined
                   }
                 />
                 {index < documents.length - 1 ? <Divider className="ml-14" /> : null}
@@ -189,13 +192,14 @@ function PressableList({
   subtitle?: string;
   right?: React.ReactNode;
 }) {
+  const { colors } = useThemeColors();
   return (
     <View>
       <Pressable
         onPress={onPress}
-        android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
+        android_ripple={{ color: tint(colors.accent.violet, 0.10) }}
         style={({ pressed }: { pressed: boolean }) =>
-          pressed ? { backgroundColor: 'rgba(108,92,231,0.06)' } : undefined
+          pressed ? { backgroundColor: tint(colors.accent.violet, 0.08) } : undefined
         }
       >
         <View className="flex-row items-center gap-3 px-4 py-3.5">

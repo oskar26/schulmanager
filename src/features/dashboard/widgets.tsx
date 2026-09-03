@@ -58,6 +58,8 @@ import {
 import { LivePulse, PressableScale } from '@/ui/motion';
 import { Progress } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
+import { useThemeColors } from '@/design/theme';
+import { foregroundOn } from '@/design/tokens';
 
 interface WidgetProps {
   snapshot: Snapshot;
@@ -74,7 +76,7 @@ const tomorrowISO = () => toISO(addDays(new Date(), 1));
  */
 function WidgetHeader({
   icon: IconComponent,
-  iconColor = '#6C5CE7',
+  iconColor,
   title,
   action,
   onAction,
@@ -87,14 +89,16 @@ function WidgetHeader({
   onAction?: () => void;
   badge?: number;
 }) {
+  const { colors } = useThemeColors();
+  const resolvedIconColor = iconColor ?? colors.accent.violet;
   return (
     <Row className="justify-between px-5 pb-1 pt-5">
       <Row className="flex-1 gap-2.5">
         <View
           className="h-8 w-8 items-center justify-center rounded-[10px]"
-          style={{ backgroundColor: tint(iconColor, 0.14) }}
+          style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
         >
-          <IconComponent size={17} strokeWidth={2.2} color={iconColor} />
+          <IconComponent size={17} strokeWidth={2.2} color={resolvedIconColor} />
         </View>
         <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={1}>
           {title}
@@ -104,10 +108,10 @@ function WidgetHeader({
         <Badge count={badge} />
       ) : action ? (
         <Pressable onPress={onAction} hitSlop={8}>
-          <Text className="text-[12px] font-semibold text-brand">{action}</Text>
+          <Text className="text-[12px] font-semibold text-accent-amber-deep">{action}</Text>
         </Pressable>
       ) : onAction ? (
-        <RoundActionButton onPress={onAction} size={34} color={iconColor} accessibilityLabel={title} />
+        <RoundActionButton onPress={onAction} size={34} color={resolvedIconColor} accessibilityLabel={title} />
       ) : null}
     </Row>
   );
@@ -116,6 +120,7 @@ function WidgetHeader({
 /* ------------------------------------------------------------------ Nächste Stunde */
 
 export function NextLessonWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const status = computeNow(snapshot);
   const lesson = status.lesson ?? status.next;
@@ -124,11 +129,11 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
   if (!lesson) {
     return (
       <Card className="overflow-hidden">
-        <WidgetHeader icon={BookOpen} iconColor="#48A3FF" title="Nächste Stunde" />
+        <WidgetHeader icon={BookOpen} iconColor={colors.accent.violet} title="Nächste Stunde" />
         <View className="px-6 pb-8 pt-2">
           <EmptyState
             icon={Sun}
-            iconColor="#48A3FF"
+            iconColor={colors.accent.violet}
             title="Kein Unterricht"
             hint={status.label}
           />
@@ -164,7 +169,7 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
               className="h-14 w-14 items-center justify-center rounded-2xl"
               style={{ backgroundColor: style.color }}
             >
-              <BookOpen color="#FFFFFF" size={24} strokeWidth={2.2} />
+              <BookOpen color={foregroundOn(style.color, colors)} size={24} strokeWidth={2.2} />
             </View>
             <View className="flex-1">
               <Text className="text-[20px] font-extrabold leading-[22px] tracking-tight text-ink" numberOfLines={2}>
@@ -194,7 +199,7 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
                       ? 'Vertretung'
                       : 'Raumwechsel'
                 }
-                color={lesson.state === 'cancelled' ? '#E24848' : '#22B07A'}
+                color={lesson.state === 'cancelled' ? colors.danger : colors.success}
                 tone="solid"
               />
               {lesson.comment ? <Muted className="flex-1">{lesson.comment}</Muted> : null}
@@ -217,6 +222,7 @@ const INSIGHT_ICON: Record<string, LucideIcon> = {
 };
 
 export function InsightsWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   // Bugfix: computeInsights lief einmal pro Render (teils doppelt) — jetzt memoized.
   const all = useMemo(() => computeInsights(snapshot), [snapshot]);
@@ -224,30 +230,30 @@ export function InsightsWidget({ snapshot }: WidgetProps) {
   if (insights.length === 0) return null;
 
   const toneColor: Record<string, string> = {
-    positive: '#22B07A',
-    warning: '#E8981E',
-    critical: '#E24848',
-    fun: '#BD7AF6',
-    neutral: '#48A3FF',
+    positive: colors.success,
+    warning: colors.warning,
+    critical: colors.danger,
+    fun: colors.accent.violet,
+    neutral: colors.accent.violet,
   };
 
   return (
     <Card padded={false} className="overflow-hidden">
       <WidgetHeader
         icon={Sparkles}
-        iconColor="#BD7AF6"
+        iconColor={colors.accent.violet}
         title="Smart Insights"
         action={`${insights.length} von ${all.length}`}
       />
 
       {insights.map((insight, index) => {
         const Icon = INSIGHT_ICON[insight.tone] ?? Info;
-        const tone = toneColor[insight.tone] ?? '#48A3FF';
+        const tone = toneColor[insight.tone] ?? colors.accent.violet;
         return (
           <Pressable
             key={insight.id}
             onPress={() => insight.action && router.push(insight.action.href as never)}
-            className="active:bg-line/30"
+            className="active:bg-line/40"
           >
             <Row className="gap-3 px-5 py-3">
               <View
@@ -264,7 +270,7 @@ export function InsightsWidget({ snapshot }: WidgetProps) {
                   </Text>
                 ) : null}
               </View>
-              {insight.action ? <ArrowUpRight size={15} color="#9CA2B6" /> : null}
+              {insight.action ? <ArrowUpRight size={15} color={colors.faint} /> : null}
             </Row>
             {index < insights.length - 1 ? <Divider className="ml-16" /> : null}
           </Pressable>
@@ -278,6 +284,7 @@ export function InsightsWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Heute-Timeline */
 
 export function TodayTimelineWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const iso = todayISO();
   let lessons = lessonsOn(snapshot, iso);
@@ -291,8 +298,8 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
   if (lessons.length === 0) {
     return (
       <Card>
-        <WidgetHeader icon={CalendarDays} iconColor="#48A3FF" title="Stundenplan" />
-        <EmptyState icon={Sun} iconColor="#48A3FF" title="Kein Unterricht" hint="Genieß den freien Tag." />
+        <WidgetHeader icon={CalendarDays} iconColor={colors.accent.violet} title="Stundenplan" />
+        <EmptyState icon={Sun} iconColor={colors.accent.violet} title="Kein Unterricht" hint="Genieß den freien Tag." />
       </Card>
     );
   }
@@ -304,7 +311,7 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
     <Card padded={false} className="overflow-hidden">
       <WidgetHeader
         icon={CalendarDays}
-        iconColor="#48A3FF"
+        iconColor={colors.accent.violet}
         title={label}
         action="Ganze Woche"
         onAction={() => router.push('/timetable')}
@@ -327,7 +334,7 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
               <View className="items-center">
                 <View
                   className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: cancelled ? '#E24848' : style.color }}
+                  style={{ backgroundColor: cancelled ? colors.danger : style.color }}
                 />
                 <View className="w-[2px] flex-1 bg-line" />
               </View>
@@ -337,13 +344,13 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
                 style={{
                   backgroundColor: running ? tint(style.color, 0.18) : 'transparent',
                   borderWidth: running ? 0 : 1,
-                  borderColor: 'rgba(0,0,0,0.05)',
+                  borderColor: colors.line,
                 }}
               >
                 <Row className="justify-between" style={{ alignItems: 'flex-start' }}>
                   <Text
                     className="flex-1 text-[14px] font-semibold leading-[17px] text-ink"
-                    style={cancelled ? { textDecorationLine: 'line-through', color: '#9CA2B6' } : undefined}
+                    style={cancelled ? { textDecorationLine: 'line-through', color: colors.faint } : undefined}
                     numberOfLines={2}
                   >
                     {cancelled ? (lesson.originalSubject ?? lesson.subject) : lesson.subject}
@@ -353,7 +360,7 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
                 {lesson.state !== 'regular' ? (
                   <Text
                     className="mt-0.5 text-[11px] font-semibold"
-                    style={{ color: cancelled ? '#E24848' : '#22B07A' }}
+                    style={{ color: cancelled ? colors.danger : colors.success }}
                   >
                     {lesson.comment ?? (lesson.state === 'substitution' ? 'Vertretung' : 'Raumwechsel')}
                   </Text>
@@ -370,6 +377,7 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Hausaufgaben */
 
 export function HomeworkWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const toggle = useHomeworkDone((state) => state.toggle);
   const open = snapshot.homework.filter((item) => !item.done).slice(0, 4);
@@ -380,7 +388,7 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
     <Card padded={false} className="overflow-hidden">
       <WidgetHeader
         icon={ListChecks}
-        iconColor="#22B07A"
+        iconColor={colors.success}
         title="Hausaufgaben"
         action="Alle"
         onAction={() => router.push('/tasks')}
@@ -396,13 +404,13 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
       ) : null}
 
       {open.length === 0 ? (
-        <EmptyState icon={PartyPopper} iconColor="#22B07A" title="Nichts offen" hint="Alle Aufgaben erledigt." />
+        <EmptyState icon={PartyPopper} iconColor={colors.success} title="Nichts offen" hint="Alle Aufgaben erledigt." />
       ) : (
         open.map((item) => {
           const style = subjectStyle(item.subject);
           const days = daysUntil(item.due);
           return (
-            <Pressable key={item.id} onPress={() => toggle(item.id)} className="active:bg-line/30">
+            <Pressable key={item.id} onPress={() => toggle(item.id)} className="active:bg-line/40">
               <Row className="gap-3 px-5 py-2.5">
                 <View
                   className="h-5 w-5 items-center justify-center rounded-md border-2"
@@ -415,7 +423,7 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
                     </Text>
                     <Pill
                       label={formatRelativeDay(item.due)}
-                      color={days <= 0 ? '#E24848' : days === 1 ? '#E8981E' : '#9CA2B6'}
+                      color={days <= 0 ? colors.danger : days === 1 ? colors.warning : colors.faint}
                     />
                   </Row>
                   <Text className="mt-0.5 text-[13px] leading-[18px] text-muted" numberOfLines={2}>
@@ -435,6 +443,7 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Klassenarbeiten */
 
 export function ExamsWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const upcoming = snapshot.exams
     .filter((exam) => daysUntil(exam.date) >= 0)
@@ -447,7 +456,7 @@ export function ExamsWidget({ snapshot }: WidgetProps) {
     <Card padded={false} className="overflow-hidden">
       <WidgetHeader
         icon={BarChart3}
-        iconColor="#E8981E"
+        iconColor={colors.warning}
         title="Klassenarbeiten"
         action="Lernplan"
         onAction={() => router.push('/tasks')}
@@ -488,6 +497,7 @@ export function ExamsWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Noten */
 
 export function GradesWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const hidden = useSettings((state) => state.settings.hideGrades);
   const withAverage = snapshot.subjects.filter((subject) => subject.average != null);
@@ -505,13 +515,13 @@ export function GradesWidget({ snapshot }: WidgetProps) {
   return (
     <PressableScale onPress={() => router.push('/grades')}>
       <Card>
-        <WidgetHeader icon={BarChart3} iconColor="#8C8EFF" title="Noten" action={`${withAverage.length} Fächer`} />
+        <WidgetHeader icon={BarChart3} iconColor={colors.accent.violet} title="Noten" action={`${withAverage.length} Fächer`} />
         <Row className="mt-1 gap-4 px-1">
-          <View className="items-center rounded-2xl bg-brand-soft px-4 py-3">
-            <Text className="text-[26px] font-extrabold text-brand-ink">
+          <View className="items-center rounded-2xl bg-accent-lime px-4 py-3">
+            <Text className="text-[26px] font-extrabold text-on-lime">
               {hidden ? '•••' : de(overall)}
             </Text>
-            <Text className="text-[10px] font-bold uppercase tracking-wider text-brand-ink">Schnitt</Text>
+            <Text className="text-[10px] font-bold uppercase tracking-wider text-on-lime">Schnitt</Text>
           </View>
 
           <View className="flex-1 gap-1.5">
@@ -543,6 +553,7 @@ export function GradesWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Elternbriefe */
 
 export function LettersWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const pending = snapshot.letters.filter((letter) => letter.requiresConfirmation && !letter.confirmed);
   const latest = pending.length > 0 ? pending : snapshot.letters.slice(0, 2);
@@ -552,7 +563,7 @@ export function LettersWidget({ snapshot }: WidgetProps) {
     <Card padded={false} className="overflow-hidden">
       <WidgetHeader
         icon={Mail}
-        iconColor="#6C5CE7"
+        iconColor={colors.accent.violet}
         title="Elternbriefe"
         badge={pending.length}
       />
@@ -561,11 +572,11 @@ export function LettersWidget({ snapshot }: WidgetProps) {
         <Pressable
           key={String(letter.id)}
           onPress={() => router.push('/inbox')}
-          className="active:bg-line/30"
+          className="active:bg-line/40"
         >
           <Row className="gap-3 px-5 py-2.5">
-            <View className="h-9 w-9 items-center justify-center rounded-xl bg-brand-soft">
-              <Mail size={17} strokeWidth={2.1} color="#6C5CE7" />
+            <View className="h-9 w-9 items-center justify-center rounded-xl bg-accent-violet/15">
+              <Mail size={17} strokeWidth={2.1} color={colors.accent.violet} />
             </View>
             <View className="flex-1">
               <Text className="text-[14px] font-semibold leading-[17px] text-ink" numberOfLines={2}>
@@ -576,7 +587,7 @@ export function LettersWidget({ snapshot }: WidgetProps) {
               </Muted>
             </View>
             {letter.requiresConfirmation && !letter.confirmed ? (
-              <View className="h-2 w-2 rounded-full bg-coral" />
+              <View className="h-2 w-2 rounded-full bg-accent-coral" />
             ) : null}
           </Row>
         </Pressable>
@@ -589,6 +600,7 @@ export function LettersWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Fehlzeiten */
 
 export function AttendanceWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const total = snapshot.absences.length;
   if (total === 0) return null;
@@ -599,7 +611,7 @@ export function AttendanceWidget({ snapshot }: WidgetProps) {
       <Card>
         <WidgetHeader
           icon={FileText}
-          iconColor="#E8981E"
+          iconColor={colors.warning}
           title="Fehlzeiten"
           onAction={() => router.push('/attendance')}
         />
@@ -610,11 +622,11 @@ export function AttendanceWidget({ snapshot }: WidgetProps) {
           </View>
           <View
             className="flex-1 rounded-2xl p-3"
-            style={{ backgroundColor: tint(unexcused > 0 ? '#E24848' : '#22B07A', 0.14) }}
+            style={{ backgroundColor: tint(unexcused > 0 ? colors.danger : colors.success, 0.14) }}
           >
             <Text
               className="text-[22px] font-extrabold"
-              style={{ color: unexcused > 0 ? '#E24848' : '#22B07A' }}
+              style={{ color: unexcused > 0 ? colors.danger : colors.success }}
             >
               {unexcused}
             </Text>
@@ -629,17 +641,18 @@ export function AttendanceWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Schwarzes Brett */
 
 export function BoardWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const tiles = snapshot.tiles.slice(0, 3);
   if (tiles.length === 0) return null;
 
   return (
     <Card padded={false} className="overflow-hidden">
-      <WidgetHeader icon={Inbox} iconColor="#48A3FF" title="Schwarzes Brett" />
+      <WidgetHeader icon={Inbox} iconColor={colors.accent.violet} title="Schwarzes Brett" />
       {tiles.map((tile, index) => (
         <View key={String(tile.id)}>
           <View className="px-5 py-2.5">
             <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
-              {tile.pinned ? <Sun size={12} color="#E8981E" /> : null}
+              {tile.pinned ? <Sun size={12} color={colors.warning} /> : null}
               <Text className="flex-1 text-[14px] font-semibold leading-[17px] text-ink" numberOfLines={2}>
                 {tile.title}
               </Text>
@@ -659,28 +672,29 @@ export function BoardWidget({ snapshot }: WidgetProps) {
 /* ------------------------------------------------------------------ Schnellaktionen */
 
 export function QuickActionsWidget({ snapshot }: WidgetProps) {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const items = packingList(snapshot, tomorrowISO());
 
   const actions: { icon: LucideIcon; label: string; color: string; href: string }[] = [
-    { icon: Stethoscope, label: 'Krankmeldung', color: '#E24848', href: '/sick-note' },
-    { icon: Plane, label: 'Beurlaubung', color: '#48A3FF', href: '/exemption' },
-    { icon: CalendarDays, label: 'Kalender', color: '#BD7AF6', href: '/calendar' },
-    { icon: Search, label: 'Suche', color: '#22B07A', href: '/search' },
+    { icon: Stethoscope, label: 'Krankmeldung', color: colors.danger, href: '/sick-note' },
+    { icon: Plane, label: 'Beurlaubung', color: colors.accent.violet, href: '/exemption' },
+    { icon: CalendarDays, label: 'Kalender', color: colors.accent.violet, href: '/calendar' },
+    { icon: Search, label: 'Suche', color: colors.success, href: '/search' },
   ];
 
   // Gebuchte Zusatzmodule (im Demo-Modus alle) als zweite Reihe.
   const moduleActions: { id: string; icon: LucideIcon; label: string; color: string; href: string }[] = [
-    { id: 'invoicing', icon: CreditCard, label: 'Zahlungen', color: '#22B07A', href: '/payments' },
-    { id: 'documents', icon: FolderOpen, label: 'Dokumente', color: '#FAC748', href: '/documents' },
-    { id: 'parenttalks', icon: Users, label: 'Sprechtag', color: '#E8981E', href: '/parent-talks' },
-    { id: 'electives', icon: GitBranch, label: 'Wahl', color: '#BD7AF6', href: '/electives' },
-    { id: 'allday', icon: Sun, label: 'Ganztag', color: '#48A3FF', href: '/allday' },
+    { id: 'invoicing', icon: CreditCard, label: 'Zahlungen', color: colors.success, href: '/payments' },
+    { id: 'documents', icon: FolderOpen, label: 'Dokumente', color: colors.accent.amber, href: '/documents' },
+    { id: 'parenttalks', icon: Users, label: 'Sprechtag', color: colors.warning, href: '/parent-talks' },
+    { id: 'electives', icon: GitBranch, label: 'Wahl', color: colors.accent.violet, href: '/electives' },
+    { id: 'allday', icon: Sun, label: 'Ganztag', color: colors.accent.violet, href: '/allday' },
   ].filter((action) => snapshot.modules.length === 0 || snapshot.modules.includes(action.id));
 
   return (
     <Card padded={false} className="overflow-hidden">
-      <WidgetHeader icon={Sparkles} iconColor="#6C5CE7" title="Schnellaktionen" />
+      <WidgetHeader icon={Sparkles} iconColor={colors.accent.violet} title="Schnellaktionen" />
       <View className="px-5 pb-5 pt-1">
         <Row className="gap-3">
           {actions.map((action) => (
@@ -720,12 +734,12 @@ export function QuickActionsWidget({ snapshot }: WidgetProps) {
       {items.length > 0 ? (
         <View className="border-t border-line px-5 pt-3 pb-5">
           <Row className="gap-2">
-            <ShoppingBag size={15} strokeWidth={2.1} color="#6C5CE7" />
+            <ShoppingBag size={15} strokeWidth={2.1} color={colors.accent.violet} />
             <Text className="text-[15px] font-bold text-ink">Für morgen einpacken</Text>
           </Row>
           <Row className="mt-2 flex-wrap gap-2">
             {items.map((item) => (
-              <Pill key={item} label={item} color="#6C5CE7" />
+              <Pill key={item} label={item} color={colors.accent.violet} />
             ))}
           </Row>
         </View>

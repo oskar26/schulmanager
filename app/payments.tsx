@@ -7,6 +7,7 @@ import { useSnapshot } from '@/data/queries';
 import { formatDay } from '@/lib/date';
 import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useThemeColors } from '@/design/theme';
 
 /** Deutsche Währungsformatierung aus den Dezimal-Strings der API. */
 const eur = (value: number | null | undefined): string =>
@@ -15,6 +16,7 @@ const eur = (value: number | null | undefined): string =>
     : value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
 export default function PaymentsScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const invoices = data?.invoices ?? [];
@@ -51,7 +53,7 @@ export default function PaymentsScreen() {
         {invoices.length === 0 ? (
           <EmptyState
             icon={Receipt}
-            iconColor="#22B07A"
+            iconColor={colors.success}
             title="Keine Rechnungen"
             hint="Entweder ist alles bezahlt — oder das Modul „Zahlungen“ ist nicht gebucht."
           />
@@ -77,9 +79,9 @@ export default function PaymentsScreen() {
                       {eur(invoice.sum)}
                     </Text>
                     {invoice.paid ? (
-                      <Chip label="bezahlt" color="#22B07A" />
+                      <Chip label="bezahlt" color={colors.success} />
                     ) : (
-                      <Chip label="offen" color="#E8981E" tone="solid" />
+                      <Chip label="offen" color={colors.warning} tone="solid" />
                     )}
                   </View>
                 </Row>
@@ -87,7 +89,7 @@ export default function PaymentsScreen() {
                   <View className="border-t border-line px-4 py-2.5">
                     {invoice.number != null ? (
                       <Row className="gap-1.5">
-                        <Tag size={13} strokeWidth={2} color="#9CA2B6" />
+                        <Tag size={13} strokeWidth={2} color={colors.faint} />
                         <Muted className="flex-1 text-[11px]">
                           Verwendungszweck: {invoice.number}
                           {data?.student?.id != null ? ` / ${data.student.id}` : ''}
@@ -98,7 +100,7 @@ export default function PaymentsScreen() {
                       <Row key={String(item.id)} className="items-center justify-between py-0.5">
                         <Row className="flex-1 items-center gap-1.5">
                           {item.paid ? (
-                            <Check size={12} strokeWidth={3} color="#22B07A" />
+                            <Check size={12} strokeWidth={3} color={colors.success} />
                           ) : (
                             <View className="h-1 w-1 rounded-full bg-faint" />
                           )}
@@ -114,7 +116,7 @@ export default function PaymentsScreen() {
           ))
         )}
 
-        <SectionHeader title="Hinweis" icon={Info} iconColor="#48A3FF" />
+        <SectionHeader title="Hinweis" icon={Info} iconColor={colors.accent.violet} />
         <Card>
           <Muted className="text-[12px] leading-5">
             Schulflow liest die Rechnungen nur. Bezahlt wird wie bisher direkt an die Schule — Überweisung mit dem

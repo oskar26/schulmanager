@@ -11,8 +11,10 @@ import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Title } from '@
 import { FadeInUp } from '@/ui/motion';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
+import { useThemeColors } from '@/design/theme';
 
 export default function ElectivesScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const elections = data?.elections ?? [];
@@ -72,7 +74,7 @@ export default function ElectivesScreen() {
         {elections.length === 0 ? (
           <EmptyState
             icon={Vote}
-            iconColor="#BD7AF6"
+            iconColor={colors.accent.violet}
             title="Keine Wahlen offen"
             hint="Wenn deine Schule Wahlfächer anbietet, erscheinen sie hier."
           />
@@ -95,9 +97,9 @@ export default function ElectivesScreen() {
                     ) : null}
                   </View>
                   {closed ? (
-                    <Chip label="abgeschlossen" color="#9CA2B6" />
+                    <Chip label="abgeschlossen" color={colors.faint} />
                   ) : (
-                    <Chip label={`${max} Wünsche`} color="#6C5CE7" />
+                    <Chip label={`${max} Wünsche`} color={colors.accent.violet} />
                   )}
                 </Row>
 
@@ -112,11 +114,11 @@ export default function ElectivesScreen() {
                         <Row key={String(elective.id)} className="gap-2">
                           <View
                             className={`h-8 w-8 items-center justify-center rounded-xl ${
-                              index < max ? 'bg-brand' : 'bg-line/50'
+                              index < max ? 'bg-accent-violet' : 'bg-line/50'
                             }`}
                           >
                             <Text
-                              className={`text-[13px] font-extrabold ${index < max ? 'text-white' : 'text-faint'}`}
+                              className={`text-[13px] font-extrabold ${index < max ? 'text-on-violet' : 'text-faint'}`}
                             >
                               {index + 1}
                             </Text>
@@ -145,7 +147,7 @@ export default function ElectivesScreen() {
                       className="mt-4"
                       onPress={() => submit(election)}
                     >
-                      {save.isPending ? <Spinner color="#FFFFFF" /> : null}
+                      {save.isPending ? <Spinner color={colors.on.amber} /> : null}
                       <ButtonText>Wünsche abgeben</ButtonText>
                     </Button>
                   </>

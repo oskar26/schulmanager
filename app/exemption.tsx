@@ -9,8 +9,10 @@ import { Card, Chip, Divider, IconButton, Muted, Row, Screen, Title } from '@/ui
 import { FadeInUp } from '@/ui/motion';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
+import { useThemeColors } from '@/design/theme';
 
 export default function ExemptionScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const mutation = useRequestExemption();
@@ -27,8 +29,8 @@ export default function ExemptionScreen() {
     return (
       <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
-          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-brand-soft">
-            <Send color="#6C5CE7" size={32} strokeWidth={2} />
+          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-accent-amber/15">
+            <Send color={colors.accent.violet} size={32} strokeWidth={2} />
           </View>
           <Title>Antrag gestellt</Title>
           <Muted className="text-center">
@@ -46,7 +48,7 @@ export default function ExemptionScreen() {
   return (
     <Screen adaptive="narrow">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={X} onPress={() => router.back()} color="#6A7086" size={36} />
+        <IconButton icon={X} onPress={() => router.back()} size={36} />
         <Title className="ml-2">Beurlaubung</Title>
       </Row>
 
@@ -62,9 +64,9 @@ export default function ExemptionScreen() {
                 <Pressable
                   key={offset}
                   onPress={() => setStart(iso)}
-                  className={`flex-1 items-center rounded-2xl py-2.5 ${active ? 'bg-brand' : 'bg-line/50'}`}
+                  className={`flex-1 items-center rounded-2xl py-2.5 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
                 >
-                  <Text className={`text-[12px] font-bold ${active ? 'text-white' : 'text-muted'}`}>
+                  <Text className={`text-[12px] font-bold ${active ? 'text-on-amber' : 'text-muted'}`}>
                     in {offset} T.
                   </Text>
                 </Pressable>
@@ -77,9 +79,9 @@ export default function ExemptionScreen() {
               <Pressable
                 key={value}
                 onPress={() => setDays(value)}
-                className={`flex-1 items-center rounded-2xl py-2.5 ${days === value ? 'bg-brand' : 'bg-line/50'}`}
+                className={`flex-1 items-center rounded-2xl py-2.5 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
               >
-                <Text className={`text-[13px] font-bold ${days === value ? 'text-white' : 'text-muted'}`}>
+                <Text className={`text-[13px] font-bold ${days === value ? 'text-on-amber' : 'text-muted'}`}>
                   {value} {value === 1 ? 'Tag' : 'Tage'}
                 </Text>
               </Pressable>
@@ -101,9 +103,9 @@ export default function ExemptionScreen() {
             value={comment}
             onChangeText={setComment}
             placeholder="z. B. Familienfeier, Facharzttermin, Wettkampf"
-            placeholderTextColor="#9CA2B6"
+            placeholderTextColor={colors.faint}
             multiline
-            className="mt-2 min-h-[90px] rounded-2xl border border-line bg-bg p-3 text-[15px] text-ink"
+            className="mt-2 min-h-[90px] rounded-2xl border border-line bg-canvas p-3 text-[15px] text-ink"
           />
         </Card>
         </FadeInUp>
@@ -116,11 +118,11 @@ export default function ExemptionScreen() {
               <View key={String(entry.id)}>
                 <Row className="gap-3 px-4 py-3">
                   {entry.granted === null ? (
-                    <Clock size={18} strokeWidth={2} color="#E8981E" />
+                    <Clock size={18} strokeWidth={2} color={colors.warning} />
                   ) : entry.granted ? (
-                    <CheckCircle2 size={18} strokeWidth={2} color="#22B07A" />
+                    <CheckCircle2 size={18} strokeWidth={2} color={colors.success} />
                   ) : (
-                    <XCircle size={18} strokeWidth={2} color="#E24848" />
+                    <XCircle size={18} strokeWidth={2} color={colors.danger} />
                   )}
                   <View className="flex-1">
                     <Text className="text-[14px] font-semibold text-ink">{entry.comment ?? 'Beurlaubung'}</Text>
@@ -132,7 +134,7 @@ export default function ExemptionScreen() {
                   </View>
                   <Chip
                     label={entry.granted === null ? 'offen' : entry.granted ? 'genehmigt' : 'abgelehnt'}
-                    color={entry.granted === null ? '#E8981E' : entry.granted ? '#22B07A' : '#E24848'}
+                    color={entry.granted === null ? colors.warning : entry.granted ? colors.success : colors.danger}
                   />
                 </Row>
                 {index < existing.length - 1 ? <Divider className="ml-12" /> : null}
@@ -152,7 +154,7 @@ export default function ExemptionScreen() {
             mutation.mutate({ startDate: start, endDate: end, comment }, { onSuccess: () => setSent(true) })
           }
         >
-          {mutation.isPending ? <Spinner color="#FFFFFF" /> : null}
+          {mutation.isPending ? <Spinner color={colors.on.amber} /> : null}
           <ButtonText>Antrag absenden</ButtonText>
         </Button>
       </ScrollView>

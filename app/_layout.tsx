@@ -1,7 +1,7 @@
 import '../global.css';
 
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { AppState, Platform, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
@@ -15,6 +15,8 @@ import { colorScheme as nativewindColorScheme } from 'nativewind';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import tamaguiConfig from '@/design/tamagui.config';
+import { paletteFor } from '@/design/tokens';
+import { useThemeColors } from '@/design/theme';
 import { useSettings } from '@/state/settings';
 import { useSession } from '@/state/session';
 import { registerNotificationHandler } from '@/features/notifications/scheduler';
@@ -75,13 +77,20 @@ export default function RootLayout() {
   const resolved = theme === 'system' ? (system ?? 'light') : theme;
 
   useEffect(() => {
-    nativewindColorScheme.set(resolved === 'dark' ? 'dark' : 'light');
+    const nextScheme = resolved === 'dark' ? 'dark' : 'light';
+    // NativeWind aktualisiert die RN-Styles. Die explizite HTML-Klasse hält
+    // zusätzlich unsere CSS-Variablen in `global.css` beim Theme-Wechsel synchron.
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', nextScheme === 'dark');
+    }
+    nativewindColorScheme.set(nextScheme);
   }, [resolved]);
 
   // APK-Stabilität: Kein freischwebender, halb initialisierter Start.
   // Boot-View mit fester Füllhöhe zeigen, bis die Einstellungen hydratisiert sind
   // (Thema, Demo-Modus bekannt) — nie ein leerer/transparenter Bildschirm.
   const dark = resolved === 'dark';
+  const colors = paletteFor(dark);
 
   // Erstmalig? Nur wenn kein Konto verbunden ist, führt der Onboarding-Flow.
   const needsOnboarding = !onboarded && status !== 'connected';
@@ -102,7 +111,7 @@ export default function RootLayout() {
                     <StatusBar style={dark ? 'light' : 'dark'} />
                     <Stack
                       initialRouteName={needsOnboarding ? 'onboarding' : '(tabs)'}
-                      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}
+                      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
                     >
                       <Stack.Screen name="(tabs)" />
                       <Stack.Screen name="onboarding" />
@@ -141,20 +150,21 @@ const styles = StyleSheet.create({
 /** Marken-Startbildschirm — ersetzt einen leeren/weißen ersten Frame im APK. */
 function BootScreen({ dark }: { dark: boolean }) {
   const [nudge, setNudge] = useState(false);
+  const colors = paletteFor(dark);
   useEffect(() => {
     // Safety-Net: Selbst wenn Hydration je hängen sollte, nie endlos Boot.
     const t = setTimeout(() => setNudge(true), 4000);
     return () => clearTimeout(t);
   }, []);
   return (
-    <View style={[styles.root, { alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0F172A' : '#F6F5F2' }]}>
-      <View style={{ width: 72, height: 72, borderRadius: 26, backgroundColor: '#6C5CE7', alignItems: 'center', justifyContent: 'center' }}>
-        <GraduationCap color="#FFFFFF" size={34} strokeWidth={2.2} />
+    <View style={[styles.root, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.canvas }]}>
+      <View style={{ width: 72, height: 72, borderRadius: 26, backgroundColor: colors.accent.amber, alignItems: 'center', justifyContent: 'center' }}>
+        <GraduationCap color={colors.on.amber} size={34} strokeWidth={2.2} />
       </View>
-      <Text style={{ marginTop: 14, fontSize: 22, fontWeight: '800', letterSpacing: -0.4, color: dark ? '#F8FAFC' : '#18181B' }}>
+      <Text style={{ marginTop: 14, fontSize: 22, fontWeight: '800', letterSpacing: -0.4, color: colors.ink }}>
         Schulflow
       </Text>
-      <Text style={{ marginTop: 4, fontSize: 12, fontWeight: '600', color: dark ? '#94A3B8' : '#6E6C66' }}>
+      <Text style={{ marginTop: 4, fontSize: 12, fontWeight: '600', color: colors.muted }}>
         {nudge ? 'Einen Moment – deine Daten werden vorbereitet …' : 'Wird geladen …'}
       </Text>
     </View>
@@ -170,25 +180,26 @@ function IslandHost() {
 
 /** Expo-Router-Fehlergrenze — fängt Routing-/Render-Fehler auf Root-Ebene. */
 export function ErrorBoundary(props: { error: Error; retry: () => void }) {
+  const { colors } = useThemeColors();
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F6F5F2', padding: 32 }}>
-      <View style={{ width: 64, height: 64, borderRadius: 22, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' }}>
-        <CircleAlert color="#E0564C" size={30} strokeWidth={2.2} />
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.canvas, padding: 32 }}>
+      <View style={{ width: 64, height: 64, borderRadius: 22, backgroundColor: `${colors.accent.coral}22`, alignItems: 'center', justifyContent: 'center' }}>
+        <CircleAlert color={colors.danger} size={30} strokeWidth={2.2} />
       </View>
-      <Text style={{ marginTop: 16, fontSize: 20, fontWeight: '800', color: '#18181B', textAlign: 'center' }}>
+      <Text style={{ marginTop: 16, fontSize: 20, fontWeight: '800', color: colors.ink, textAlign: 'center' }}>
         Da ist Schulflow gestolpert
       </Text>
-      <Text style={{ marginTop: 6, fontSize: 13, lineHeight: 20, color: '#6E6C66', textAlign: 'center' }}>
+      <Text style={{ marginTop: 6, fontSize: 13, lineHeight: 20, color: colors.muted, textAlign: 'center' }}>
         Deine Daten sind unberührt. Versuche den Bildschirm neu zu laden.
       </Text>
-      <ScrollView style={{ maxHeight: 96, marginTop: 14, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 12 }}>
-        <Text style={{ fontSize: 11, color: '#6E6C66' }}>{props.error?.message}</Text>
+      <ScrollView style={{ maxHeight: 96, marginTop: 14, backgroundColor: colors.surface, borderRadius: 16, padding: 12 }}>
+        <Text style={{ fontSize: 11, color: colors.muted }}>{props.error?.message}</Text>
       </ScrollView>
       <Pressable
         onPress={props.retry}
-        style={{ marginTop: 20, backgroundColor: '#6C5CE7', borderRadius: 999, paddingHorizontal: 26, paddingVertical: 13 }}
+        style={{ marginTop: 20, backgroundColor: colors.accent.amber, borderRadius: 999, paddingHorizontal: 26, paddingVertical: 13 }}
       >
-        <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Neu versuchen</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.on.amber }}>Neu versuchen</Text>
       </Pressable>
     </View>
   );

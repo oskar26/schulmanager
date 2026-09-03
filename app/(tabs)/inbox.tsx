@@ -15,7 +15,8 @@ import {
 import type { Letter, MessageThread, Tile } from '@/api/types';
 import { useSession } from '@/state/session';
 import { useConfirmLetter, useMarkThreadRead, useModuleActive, useSnapshot } from '@/data/queries';
-import { subjectStyle } from '@/design/subjects';
+import { tint } from '@/design/subjects';
+import { useThemeColors } from '@/design/theme';
 import { downloadStoredFile } from '@/api/downloads';
 import { formatRelativeDay, formatTimeAgo } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
@@ -30,6 +31,7 @@ import { ErrorBoundary } from '@/ui/error-boundary';
 type Tab = 'letters' | 'messages' | 'board';
 
 export default function InboxScreen() {
+  const { colors } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const reserve = useTabNavReserve();
   const [tab, setTab] = useState<Tab>('letters');
@@ -73,13 +75,13 @@ export default function InboxScreen() {
         ) : tabs.length === 0 ? (
           <EmptyState
             icon={Inbox}
-            iconColor="#6C5CE7"
+            iconColor={colors.accent.violet}
             title="Postfach nicht gebucht"
             hint="Deine Schule hat weder Elternbriefe, Nachrichten noch Aushänge freigeschaltet."
           />
         ) : activeTab === 'letters' ? (
           data.letters.length === 0 ? (
-            <EmptyState icon={MailOpen} iconColor="#6C5CE7" title="Keine Elternbriefe" />
+            <EmptyState icon={MailOpen} iconColor={colors.accent.violet} title="Keine Elternbriefe" />
           ) : (
             data.letters.map((item, index) => {
               const needsAction = item.requiresConfirmation && !item.confirmed;
@@ -94,18 +96,18 @@ export default function InboxScreen() {
                   >
                     <Card
                       className={needsAction ? 'border border-warning/40' : ''}
-                      style={{ backgroundColor: needsAction ? 'rgba(232,152,30,0.08)' : undefined }}
+                      style={{ backgroundColor: needsAction ? tint(colors.warning, 0.08) : undefined }}
                     >
                       <Row className="gap-3">
                         <View
                           className={`h-10 w-10 items-center justify-center rounded-2xl ${
-                            needsAction ? 'bg-warning/15' : 'bg-brand-soft'
+                            needsAction ? 'bg-warning/15' : 'bg-accent-violet/15'
                           }`}
                         >
                           {needsAction ? (
-                            <AlertCircle size={19} strokeWidth={2.1} color="#E8981E" />
+                            <AlertCircle size={19} strokeWidth={2.1} color={colors.warning} />
                           ) : (
-                            <MailOpen size={19} strokeWidth={2.1} color="#6C5CE7" />
+                            <MailOpen size={19} strokeWidth={2.1} color={colors.accent.violet} />
                           )}
                         </View>
                         <View className="flex-1">
@@ -121,9 +123,9 @@ export default function InboxScreen() {
                               : `${item.sender ?? 'Schule'} · zum Lesen antippen`}
                           </Muted>
                           <Row className="mt-2 gap-2">
-                            <Chip label={item.sender ?? 'Schule'} color="#9CA2B6" />
-                            {needsAction ? <Chip label="Bestätigung nötig" color="#E8981E" tone="solid" /> : null}
-                            {item.confirmed ? <Chip label="bestätigt" color="#22B07A" /> : null}
+                            <Chip label={item.sender ?? 'Schule'} color={colors.faint} />
+                            {needsAction ? <Chip label="Bestätigung nötig" color={colors.warning} tone="solid" /> : null}
+                            {item.confirmed ? <Chip label="bestätigt" color={colors.success} /> : null}
                           </Row>
                         </View>
                       </Row>
@@ -135,7 +137,7 @@ export default function InboxScreen() {
           )
         ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
-            <EmptyState icon={MessagesSquare} iconColor="#48A3FF" title="Keine Nachrichten" hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht." />
+            <EmptyState icon={MessagesSquare} iconColor={colors.accent.violet} title="Keine Nachrichten" hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht." />
           ) : (
             data.threads.map((item, index) => (
               <ThreadRow key={String(item.subscriptionId)} thread={item} index={index} onOpen={() => {
@@ -155,7 +157,7 @@ export default function InboxScreen() {
             ))
           )
         ) : data.tiles.length === 0 ? (
-          <EmptyState icon={MapPin} iconColor="#E8981E" title="Kein Aushang" />
+          <EmptyState icon={MapPin} iconColor={colors.warning} title="Kein Aushang" />
         ) : (
           data.tiles.map((item, index) => (
             <FadeInUp key={String(item.id)} delay={Math.min(index, 8) * 30}>
@@ -168,7 +170,7 @@ export default function InboxScreen() {
               >
                 <Card>
                   <Row className="gap-2">
-                    {item.pinned ? <MapPin size={15} strokeWidth={2.1} color="#E8981E" /> : null}
+                    {item.pinned ? <MapPin size={15} strokeWidth={2.1} color={colors.warning} /> : null}
                     <Text className="flex-1 text-[15px] font-bold text-ink">{item.title}</Text>
                   </Row>
                   <Muted className="mt-1" numberOfLines={3}>
@@ -195,6 +197,7 @@ export default function InboxScreen() {
 /* ------------------------------------------------------------------ Thread-Zeile */
 
 function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: number; onOpen: () => void }) {
+  const { colors } = useThemeColors();
   const markRead = useMarkThreadRead();
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
@@ -207,7 +210,7 @@ function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: nu
       >
         <Card>
           <Row className="gap-3">
-            <Avatar name={thread.sender || 'Schule'} size={40} color="#48A3FF" />
+            <Avatar name={thread.sender || 'Schule'} size={40} color={colors.accent.violet} />
             <View className="flex-1">
               <Row className="justify-between">
                 <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={1}>
@@ -225,8 +228,8 @@ function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: nu
               ) : null}
             </View>
             {thread.unreadCount > 0 ? (
-              <View className="h-6 min-w-[24px] items-center justify-center rounded-full bg-coral px-1.5">
-                <Text className="text-[11px] font-bold text-white">{thread.unreadCount}</Text>
+              <View className="h-6 min-w-[24px] items-center justify-center rounded-full bg-accent-coral px-1.5">
+                <Text className="text-[11px] font-bold text-on-coral">{thread.unreadCount}</Text>
               </View>
             ) : null}
           </Row>
@@ -239,6 +242,7 @@ function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: nu
 /* ------------------------------------------------------------------ Brief-Detail */
 
 function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () => void }) {
+  const { colors } = useThemeColors();
   const confirm = useConfirmLetter();
   const { api } = useSession.getState();
   const isDemo = useSession((state) => state.status !== 'connected');
@@ -295,7 +299,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
       {letter ? (
         <View className="gap-3">
           <Row className="gap-2">
-            <Chip label={letter.sender ?? 'Schule'} color="#6C5CE7" />
+            <Chip label={letter.sender ?? 'Schule'} color={colors.accent.violet} />
             <Muted className="text-[11px]">{formatTimeAgo(letter.createdAt)}</Muted>
           </Row>
 
@@ -329,10 +333,10 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                               setAnswers((prev) => ({ ...prev, [String(question.id)]: option }));
                             }}
                             className={`rounded-xl border px-3 py-2.5 ${
-                              active ? 'border-brand bg-brand-soft' : 'border-line bg-bg'
+                              active ? 'border-accent-amber bg-accent-amber/15' : 'border-line bg-canvas'
                             }`}
                           >
-                            <Text className={`text-[13px] ${active ? 'font-bold text-brand-ink' : 'text-ink'}`}>
+                            <Text className={`text-[13px] ${active ? 'font-bold text-on-amber' : 'text-ink'}`}>
                               {option}
                             </Text>
                           </Pressable>
@@ -353,14 +357,14 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
             <Card padded={false}>
               {attachments.map((file, index) => (
                 <View key={String(file.id)}>
-                  <Pressable onPress={() => void download(file)} className="active:bg-line/30">
+                  <Pressable onPress={() => void download(file)} className="active:bg-line/40">
                     <Row className="gap-3 px-4 py-3">
-                      <Paperclip size={18} strokeWidth={2} color="#6C5CE7" />
+                      <Paperclip size={18} strokeWidth={2} color={colors.accent.violet} />
                       <Text className="flex-1 text-[14px] text-ink">{file.name}</Text>
                       {downloading === String(file.id) ? (
                         <Spinner />
                       ) : (
-                        <Download size={18} strokeWidth={2} color="#9CA2B6" />
+                        <Download size={18} strokeWidth={2} color={colors.faint} />
                       )}
                     </Row>
                   </Pressable>
@@ -397,12 +401,12 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                 );
               }}
             >
-              {confirm.isPending ? <Spinner color="#FFFFFF" /> : null}
+              {confirm.isPending ? <Spinner color={colors.on.amber} /> : null}
               <ButtonText>Kenntnisnahme bestätigen</ButtonText>
             </Button>
           ) : (
             <Row className="justify-center gap-2 rounded-2xl bg-success/10 py-3">
-              <CheckCheck size={18} strokeWidth={2.2} color="#22B07A" />
+              <CheckCheck size={18} strokeWidth={2.2} color={colors.success} />
               <Text className="text-[14px] font-semibold text-success">
                 {letter.confirmed || localConfirmed ? 'Bestätigt' : 'Keine Bestätigung nötig'}
               </Text>

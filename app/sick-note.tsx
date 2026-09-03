@@ -10,8 +10,10 @@ import { Card, Chip, IconButton, Muted, Row, Screen, Title } from '@/ui/primitiv
 import { FadeInUp } from '@/ui/motion';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
+import { useThemeColors } from '@/design/theme';
 
 export default function SickNoteScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const mutation = useCreateSickNote();
@@ -32,8 +34,8 @@ export default function SickNoteScreen() {
     return (
       <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
-          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-danger/12">
-            <Stethoscope color="#E24848" size={32} strokeWidth={2} />
+          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-danger/15">
+            <Stethoscope color={colors.danger} size={32} strokeWidth={2} />
           </View>
           <Title>Krankmeldung übermittelt</Title>
           <Muted className="text-center">
@@ -51,20 +53,20 @@ export default function SickNoteScreen() {
     <Screen adaptive="narrow">
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
-          <IconButton icon={X} onPress={() => router.back()} color="#6A7086" size={36} />
+          <IconButton icon={X} onPress={() => router.back()} size={36} />
           <Title>Krankmeldung</Title>
         </Row>
       </Row>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
         <FadeInUp>
-        <Card className="mb-3 bg-brand-soft">
+        <Card className="mb-3 bg-accent-amber/15">
           <Row className="gap-3">
-            <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/15">
-              <Stethoscope size={20} strokeWidth={2} color="#6C5CE7" />
+            <View className="h-10 w-10 items-center justify-center rounded-xl bg-accent-amber/15">
+              <Stethoscope size={20} strokeWidth={2} color={colors.accent.amberDeep} />
             </View>
             <View className="flex-1">
-              <Text className="text-[14px] font-bold text-brand-ink">In zwei Schritten erledigt</Text>
+              <Text className="text-[14px] font-bold text-on-amber">In zwei Schritten erledigt</Text>
               <Muted className="mt-0.5 text-[12px]">
                 Zeitraum wählen, kurz begründen, absenden. Die Fehlzeiten werden automatisch als
                 entschuldigt geführt, sobald die Schule bestätigt.
@@ -85,12 +87,12 @@ export default function SickNoteScreen() {
                 <Pressable
                   key={iso}
                   onPress={() => setStart(iso)}
-                  className={`flex-1 items-center rounded-2xl py-3 ${active ? 'bg-brand' : 'bg-line/50'}`}
+                  className={`flex-1 items-center rounded-2xl py-3 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
                 >
-                  <Text className={`text-[13px] font-bold ${active ? 'text-white' : 'text-muted'}`}>
+                  <Text className={`text-[13px] font-bold ${active ? 'text-on-amber' : 'text-muted'}`}>
                     {offset === 0 ? 'Heute' : offset === 1 ? 'Morgen' : 'Übermorgen'}
                   </Text>
-                  <Text className={`text-[11px] ${active ? 'text-white/80' : 'text-faint'}`}>
+                  <Text className={`text-[11px] ${active ? 'text-on-amber/80' : 'text-faint'}`}>
                     {formatLongDay(iso).split(',')[1]}
                   </Text>
                 </Pressable>
@@ -104,12 +106,12 @@ export default function SickNoteScreen() {
               <Pressable
                 key={value}
                 onPress={() => setDays(value)}
-                className={`flex-1 items-center rounded-2xl py-3 ${days === value ? 'bg-brand' : 'bg-line/50'}`}
+                className={`flex-1 items-center rounded-2xl py-3 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
               >
-                <Text className={`text-[15px] font-extrabold ${days === value ? 'text-white' : 'text-muted'}`}>
+                <Text className={`text-[15px] font-extrabold ${days === value ? 'text-on-amber' : 'text-muted'}`}>
                   {value}
                 </Text>
-                <Text className={`text-[10px] ${days === value ? 'text-white/80' : 'text-faint'}`}>
+                <Text className={`text-[10px] ${days === value ? 'text-on-amber/80' : 'text-faint'}`}>
                   {value === 1 ? 'Tag' : 'Tage'}
                 </Text>
               </Pressable>
@@ -130,9 +132,9 @@ export default function SickNoteScreen() {
             value={comment}
             onChangeText={setComment}
             placeholder="z. B. Erkältung mit Fieber"
-            placeholderTextColor="#9CA2B6"
+            placeholderTextColor={colors.faint}
             multiline
-            className="mt-2 min-h-[80px] rounded-2xl border border-line bg-bg p-3 text-[15px] text-ink"
+            className="mt-2 min-h-[80px] rounded-2xl border border-line bg-canvas p-3 text-[15px] text-ink"
           />
         </Card>
         </FadeInUp>
@@ -141,14 +143,14 @@ export default function SickNoteScreen() {
           <FadeInUp delay={90}>
           <Card className="mb-3">
             <Row className="gap-2">
-              <Info size={16} strokeWidth={2} color="#48A3FF" />
+              <Info size={16} strokeWidth={2} color={colors.accent.violet} />
               <Text className="text-[13px] font-bold text-ink">
                 Betroffen: {affected.length} Unterrichtsstunden
               </Text>
             </Row>
             <Row className="mt-2 flex-wrap gap-1.5">
               {Array.from(new Set(affected.map((lesson) => lesson.subject))).map((subject) => (
-                <Chip key={subject} label={subject} color="#48A3FF" />
+                <Chip key={subject} label={subject} color={colors.accent.violet} />
               ))}
             </Row>
             <Muted className="mt-2 text-[12px]">
@@ -169,7 +171,7 @@ export default function SickNoteScreen() {
             )
           }
         >
-          {mutation.isPending ? <Spinner color="#FFFFFF" /> : null}
+          {mutation.isPending ? <Spinner color={colors.on.coral} /> : null}
           <ButtonText>Krankmeldung absenden</ButtonText>
         </Button>
         <Muted className="mt-3 text-center text-[11px]">

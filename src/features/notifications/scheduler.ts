@@ -13,6 +13,7 @@ import { daysUntil, formatRelativeDay, minutesOf, toISO, addDays } from '@/lib/d
 import { KEYS, storage } from '@/lib/storage';
 import type { NotificationPrefs } from '@/state/settings';
 import { packingList, activeLessonsOn } from '@/features/insights/engine';
+import { palette } from '@/design/tokens';
 
 export interface PlannedNotification {
   id: string;
@@ -46,7 +47,7 @@ export function registerNotificationHandler() {
     void Notifications.setNotificationChannelAsync('timetable', {
       name: 'Stundenplan & Vertretung',
       importance: Notifications.AndroidImportance.DEFAULT,
-      lightColor: '#6C5CE7',
+      lightColor: palette.accent.amber,
     });
     void Notifications.setNotificationChannelAsync('tasks', {
       name: 'Aufgaben & Arbeiten',

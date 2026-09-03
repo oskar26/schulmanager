@@ -15,6 +15,11 @@ const outputs = [
   { svg: 'assets/logos/01-flow.svg', out: 'assets/favicon.png', width: 96 },
   { svg: 'assets/logos/01-flow.svg', out: 'assets/adaptive-icon.png', width: 1024, padding: 0.34 },
   { svg: 'assets/logos/01-flow.svg', out: 'assets/splash-icon.png', width: 1024, padding: 0.3 },
+  // Web/PWA verwendet eigene öffentliche Dateien — immer aus derselben Marke erzeugen.
+  { svg: 'assets/logos/01-flow.svg', out: 'public/favicon.png', width: 96 },
+  { svg: 'assets/logos/01-flow.svg', out: 'public/apple-touch-icon.png', width: 180 },
+  { svg: 'assets/logos/01-flow.svg', out: 'public/pwa-icon-192.png', width: 192 },
+  { svg: 'assets/logos/01-flow.svg', out: 'public/pwa-icon-512.png', width: 512 },
   { svg: 'assets/logos/01-flow.svg', out: 'assets/logos/preview-01-flow.png', width: 256 },
   { svg: 'assets/logos/02-bookmark.svg', out: 'assets/logos/preview-02-bookmark.png', width: 256 },
   { svg: 'assets/logos/03-bubble-grid.svg', out: 'assets/logos/preview-03-bubble-grid.png', width: 256 },

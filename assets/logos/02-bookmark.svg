@@ -3,16 +3,16 @@
   <desc id="d">Ein Lesezeichen mit Häkchen: erledigte Aufgaben, gemerkte Stunden.</desc>
   <defs>
     <linearGradient id="b-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#F3F1FF"/>
-      <stop offset="1" stop-color="#E2DDFF"/>
+      <stop offset="0" stop-color="#F6F4EE"/>
+      <stop offset="1" stop-color="#E8E5DC"/>
     </linearGradient>
     <linearGradient id="b-mark" x1="0.2" y1="0" x2="0.9" y2="1">
-      <stop offset="0" stop-color="#7B6BFF"/>
-      <stop offset="1" stop-color="#5A46D6"/>
+      <stop offset="0" stop-color="#635BFF"/>
+      <stop offset="1" stop-color="#4E45D4"/>
     </linearGradient>
     <linearGradient id="b-mark2" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2ECCA8"/>
-      <stop offset="1" stop-color="#25A98B"/>
+      <stop offset="0" stop-color="#A3E635"/>
+      <stop offset="1" stop-color="#7CBF40"/>
     </linearGradient>
   </defs>
 
@@ -30,5 +30,5 @@
   <path fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"
         d="m168 208 40 40 76-84"/>
 
-  <circle cx="384" cy="140" r="14" fill="#FAC748"/>
+  <circle cx="384" cy="140" r="14" fill="#FF8C38"/>
 </svg>
