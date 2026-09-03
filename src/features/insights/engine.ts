@@ -348,14 +348,14 @@ function ruleLongDay(snapshot: Snapshot, tomorrow: string): Insight[] {
 /* ------------------------------------------------------------------ Packliste */
 
 const PACKING_RULES: { match: RegExp; item: string }[] = [
-  { match: /sport/i, item: 'Sportzeug' },
-  { match: /schwimm/i, item: 'Badesachen' },
-  { match: /kunst|bildner/i, item: 'Malzeug' },
-  { match: /musik/i, item: 'Instrument/Noten' },
-  { match: /chemie|physik|biologie|nawi|natur/i, item: 'Laborheft' },
-  { match: /informatik/i, item: 'Laptop/Tablet' },
-  { match: /werken|technik/i, item: 'Arbeitskittel' },
-  { match: /koch|hauswirtschaft/i, item: 'Schürze' },
+  { match: /sport/i, item: '🏃 Sportzeug' },
+  { match: /schwimm/i, item: '🏊 Badesachen' },
+  { match: /kunst|bildner/i, item: '🎨 Malzeug' },
+  { match: /musik/i, item: '🎵 Instrument/Noten' },
+  { match: /chemie|physik|biologie|nawi|natur/i, item: '🥽 Laborheft' },
+  { match: /informatik/i, item: '💻 Laptop/Tablet' },
+  { match: /werken|technik/i, item: '🔨 Arbeitskittel' },
+  { match: /koch|hauswirtschaft/i, item: '🍳 Schürze' },
 ];
 
 export function packingList(snapshot: Snapshot, iso: string): string[] {
@@ -372,11 +372,11 @@ export function packingList(snapshot: Snapshot, iso: string): string[] {
 
   snapshot.homework
     .filter((item) => !item.done && item.due === iso)
-    .forEach((item) => items.add(`${item.subject}-Hausaufgabe`));
+    .forEach((item) => items.add(`📝 ${item.subject}-Hausaufgabe`));
 
   snapshot.exams
     .filter((exam) => exam.date === iso)
-    .forEach((exam) => items.add(`${exam.subject}: ${exam.type ?? 'Arbeit'}`));
+    .forEach((exam) => items.add(`📊 ${exam.subject}: ${exam.type ?? 'Arbeit'}`));
 
   return Array.from(items);
 }

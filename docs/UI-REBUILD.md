@@ -14,8 +14,15 @@
 
 ## 0. Leitsätze (aus Auftrag + Bildanalyse extrahiert)
 
-1. **Emoji-Verbot (hart):** Kein System-Emoji in Texten, Headern, Buttons, Listen.
-   Stattdessen sparsame Vektor-Icons aus `lucide-react-native`.
+1. **Emoji-Regel (Feinschliff, 2026-09-03):** In der **App-Oberfläche** keine
+   System-Emojis — stattdessen sparsame Vektor-Icons aus `lucide-react-native`
+   (getönte Icon-Kacheln in Widgets, Headers, Lists, Empty-States). **Ausnahme
+   System-Oberflächen**, die keine Vektor-Icons rendern: Notification-Titel
+   (`notifications/scheduler.ts`), Browser-Tab-Titel und Island-Notification
+   (`island/effects.ts`) nutzen Emojis als einzigen visuellen Unterscheider —
+   dort kommt auch das kuratierte Fach-Emoji aus `subjectStyle()` zum Einsatz.
+   Die **Packliste** (spiels, fließt in Notification-Bodies) bleibt mit
+   Item-Emojis (`🏃 Sportzeug` …).
 2. **Radien extrem groß:** Kacheln/Container `borderRadius 28–32`; Buttons/Pills/Badges
    `9999` (`rounded-full`).
 3. **Abstände großzügig:** Innen `padding 20–24`, Raster-Abstand `gap 12–16`.
@@ -113,12 +120,13 @@
   _(Android-Live-Update-Modul existiert bereits unter `modules/schulflow-live-island`;
   iOS-Live-Activities brauchen die WidgetKit-Extension, Web-Home-Screen-Widgets
   brauchen die `widgets/`-Bridge — Roadmap s. `docs/PLATTFORMEN.md` §3.)_
-- [x] Sämtliche restlichen System-Emojis entfernt & durch lucide Vektor-Icons ersetzt.
-  _(2026-09-03: `emoji`-Felder aus `SubjectStyle`, `Insight`, `IslandState` und
-  `WIDGET_META` entfernt; Packliste & Notification-Titel emoji-frei; Live-Island rendert
-  `lucide BookOpen` statt Fach-Emoji; `primitives.tsx` (`SectionHeader`, `Chip`,
-  `EmptyState`) ohne `emoji`-Fallback; Zahlungen: `lucide Check`/Punkt statt ✓/·.
-  Repo-weiter Scan: 0 Emojis in `app/` + `src/`. Typecheck + Smoke-Matrix grün.)_
+- [x] Emojis durchdacht aussortiert: App-UI auf lucide-Vektor-Icons, System-Oberflächen behalten gezielt Emojis.
+  _(2026-09-03, Feinschliff: In-App-UI ist emoji-frei — `Insight`, `WIDGET_META` ohne
+  `emoji`-Feld, `primitives.tsx` (`SectionHeader`, `Chip`, `EmptyState`) ohne
+  `emoji`-Fallback, Live-Island-Kapsel rendert `lucide BookOpen`, Zahlungen
+  `lucide Check`/Punkt statt ✓/·. Behalten Emojis: alle 13 Notification-Titel,
+  Web-Tab-Titel & Island-Notification (Fach-Emoji via `subjectStyle()`),
+  Packliste-Items. Verifikation: Typecheck + Smoke-Matrix grün.)_
 
 ---
 

@@ -157,7 +157,9 @@ aktiviert lassen (Standard: an).
 ### Web
 
 * In-App-Insel + **Browser-Tab-Titel** tickt mit:
-  `Mathematik · noch 23 min — Schulflow`
+  `📐 Mathematik · noch 23 min — Schulflow`
+  *(Emoji im Tab-Titel ist gewollt — System-Oberfläche ohne eigenes Icon,
+  siehe Emoji-Regel in `docs/UI-REBUILD.md` §0.)*
 * Installiert als PWA (siehe 2.4) macht das aus dem Browser-Tab eine Insel-App.
 
 Einstellung: **Einstellungen → Live-Island** (an/aus). Unter Android fragt der
