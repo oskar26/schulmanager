@@ -14,8 +14,15 @@
 
 ## 0. Leitsätze (aus Auftrag + Bildanalyse extrahiert)
 
-1. **Emoji-Verbot (hart):** Kein System-Emoji in Texten, Headern, Buttons, Listen.
-   Stattdessen sparsame Vektor-Icons aus `lucide-react-native`.
+1. **Emoji-Regel (Feinschliff, 2026-09-03):** In der **App-Oberfläche** keine
+   System-Emojis — stattdessen sparsame Vektor-Icons aus `lucide-react-native`
+   (getönte Icon-Kacheln in Widgets, Headers, Lists, Empty-States). **Ausnahme
+   System-Oberflächen**, die keine Vektor-Icons rendern: Notification-Titel
+   (`notifications/scheduler.ts`), Browser-Tab-Titel und Island-Notification
+   (`island/effects.ts`) nutzen Emojis als einzigen visuellen Unterscheider —
+   dort kommt auch das kuratierte Fach-Emoji aus `subjectStyle()` zum Einsatz.
+   Die **Packliste** (spiels, fließt in Notification-Bodies) bleibt mit
+   Item-Emojis (`🏃 Sportzeug` …).
 2. **Radien extrem groß:** Kacheln/Container `borderRadius 28–32`; Buttons/Pills/Badges
    `9999` (`rounded-full`).
 3. **Abstände großzügig:** Innen `padding 20–24`, Raster-Abstand `gap 12–16`.
@@ -101,16 +108,35 @@
 - [x] Home `app/(tabs)/index.tsx`: neuer Header, Fortschritts-Pill, `BentoGrid`-Raster.
 - [x] Widgets `src/features/dashboard/widgets.tsx`: Bento-Anatomie, lucide-Header-Icons, Status-Pills.
 - [x] Screens: `timetable`, `tasks`, `grades`, `inbox`, `settings` auf gestapelte Farb-Kacheln umgestellt.
+- [x] (2026-09-03) `AvatarStack` verankert: Stundenplan-Detailsheet zeigt Lehrkraft als
+  überlappende Avatare mit weißem Ring (bei Vertretung: Original- + Vertretungslehrkraft).
 
 ### Phase D — Dark Mode & Micro-Interactions (abgeschlossen)
 - [x] Theme-System konsolidieren (Light `#F6F5F2`+Pastell / Dark Slate-Navy `#0F172A`/`#1E293B`/`#334155`) — `settings.theme` (`system|light|dark`) auf ALLE Komponenten und Screens angewendet. `resolveTone` in `primitives.tsx` passt Pastelltöne automatisch an den Dark Mode an.
 - [x] Entrance: Karten/Widgets `FadeInDown` / `FadeInUp` mit `springify()` und `react-native-reanimated` (60/120fps).
 - [x] Touch: interaktive Kacheln, BentoCards, Buttons mit `PressableScale` (`withSpring scale:0.97`).
 - [x] Sanfte Tab-Übergänge: `FloatingTabBar` mit reanimated `useSharedValue` + `withSpring` Skalierung für aktiven Tab-Hintergrund und Badge-Indikator.
+- [x] (2026-09-03) Entrance-Animationen auf den bisher verbliebenen Modal-Screens:
+  `documents`, `electives`, `exemption`, `search`, `sick-note`, `thread` (`FadeInUp` mit Stagger).
 
 ### Phase E — Features darauf
-- [ ] Home-Screen-Widgets / Live Activities Integration.
-- [ ] Sämtliche restlichen System-Emojis entfernt & durch lucide Vektor-Icons ersetzt.
+- [x] Home-Screen-Widgets / Live Activities Integration (2026-09-03, JS + Modul-Quellen).
+  _(Datenschicht: `buildWidgetSnapshot()` schreibt nach jedem Sync JSON →
+  `widgets/bridge.ts` → AsyncStorage + natives Modul. Neu: `modules/schulflow-widgets`
+  (Android Kotlin: SharedPreferences + REFRESH-Broadcast, inkl. Gradle-Wiring);
+  `modules/schulflow-live-island` vervollständigt um die Android-Kotlin-Implementierung
+  (dauerhafte Notification, `CATEGORY_PROGRESS`, `FLAG_ONGOING_EVENT`, Promotion per
+  Reflexion) und die iOS-Swift-Seite (ActivityKit `show`/`hide` + Live-Activity-
+  Referenz-Extension). Layout-Spec (iOS WidgetKit 3 Größen + Lockscreen-Complication,
+  Android Glance, JSON-Schema, Update-Policy): `widgets/spec.md`. Finaler Build:
+  Dev-Client + `expo-apple-targets` — kein Expo Go. README-Section ergänzt.)_
+- [x] Emojis durchdacht aussortiert: App-UI auf lucide-Vektor-Icons, System-Oberflächen behalten gezielt Emojis.
+  _(2026-09-03, Feinschliff: In-App-UI ist emoji-frei — `Insight`, `WIDGET_META` ohne
+  `emoji`-Feld, `primitives.tsx` (`SectionHeader`, `Chip`, `EmptyState`) ohne
+  `emoji`-Fallback, Live-Island-Kapsel rendert `lucide BookOpen`, Zahlungen
+  `lucide Check`/Punkt statt ✓/·. Behalten Emojis: alle 13 Notification-Titel,
+  Web-Tab-Titel & Island-Notification (Fach-Emoji via `subjectStyle()`),
+  Packliste-Items. Verifikation: Typecheck + Smoke-Matrix grün.)_
 
 ---
 

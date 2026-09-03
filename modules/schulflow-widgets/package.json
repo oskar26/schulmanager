@@ -1,0 +1,8 @@
+{
+  "name": "schulflow-widgets",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lokales Expo-Modul: gemeinsamer Datenspeicher für Home-Screen-Widgets (Android SharedPreferences, Glance-Broadcast).",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

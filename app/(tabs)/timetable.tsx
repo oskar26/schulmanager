@@ -9,7 +9,7 @@ import {
   WEEKDAYS_SHORT, addDays, formatLongDay, minutesOf, nowMinutes, startOfWeek, toISO,
 } from '@/lib/date';
 import { useLayout } from '@/lib/breakpoints';
-import { AdaptiveContent, Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
+import { AdaptiveContent, AvatarStack, Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { useSettings } from '@/state/settings';
 
@@ -391,7 +391,20 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
                 <Text className="text-[17px] font-bold text-ink">
                   {lesson.hour}. Stunde · {lesson.start}–{lesson.end}
                 </Text>
-                <Muted>{[lesson.teacher, lesson.room].filter(Boolean).join(' · ')}</Muted>
+                {lesson.teacher ? (
+                  <Row className="mt-1.5 gap-2">
+                    <AvatarStack
+                      items={[{ name: lesson.teacher, color: style.color }]}
+                      size={22}
+                    />
+                    <Muted className="flex-1" numberOfLines={1}>
+                      {lesson.teacher}
+                      {lesson.room ? ` · ${lesson.room}` : ''}
+                    </Muted>
+                  </Row>
+                ) : lesson.room ? (
+                  <Muted>{lesson.room}</Muted>
+                ) : null}
               </View>
             </Row>
           </Card>
@@ -399,6 +412,17 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
           {lesson.state !== 'regular' ? (
             <Card>
               <Text className="text-[13px] font-bold text-ink">Änderung</Text>
+              {lesson.state === 'substitution' && (lesson.originalTeacher || lesson.teacher) ? (
+                <Row className="mt-2 gap-2">
+                  <AvatarStack
+                    items={[
+                      lesson.originalTeacher ? { name: lesson.originalTeacher, color: '#9CA2B6' } : null,
+                      lesson.teacher ? { name: lesson.teacher, color: style.color } : null,
+                    ].filter(Boolean) as { name: string; color: string }[]}
+                    size={24}
+                  />
+                </Row>
+              ) : null}
               <Muted className="mt-1">
                 {lesson.state === 'cancelled'
                   ? `${lesson.originalSubject ?? lesson.subject} entfällt.`

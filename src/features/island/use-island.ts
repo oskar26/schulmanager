@@ -18,6 +18,7 @@ export interface IslandState {
   kind: 'in-lesson' | 'break' | 'before-school';
   /** Fach, das die Insel trägt. */
   lesson: Lesson;
+  /** Nur für System-Oberflächen (Web-Tab, Notification) — in-App rendert lucide. */
   emoji: string;
   color: string;
   /** z. B. „Mathematik" */
@@ -76,7 +77,7 @@ export function computeIslandState(snapshot: Snapshot | null | undefined): Islan
         color: style.color,
         title: cancelled ? `${lesson.originalSubject ?? lesson.subject} (entfällt)` : lesson.subject,
         statusLabel: cancelled
-          ? 'entfällt — freie Stunde 🎉'
+          ? 'entfällt — freie Stunde'
           : `noch ${formatDuration(remaining)}${lesson.room ? ` · ${lesson.room}` : ''}`,
         progress: Math.min(1, Math.max(0, done / span)),
         targetAtMs: dateAt(end),

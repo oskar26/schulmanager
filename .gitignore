@@ -2,8 +2,11 @@ node_modules/
 .expo/
 dist/
 web-build/
-android/
-ios/
+# Prebuild-Artefakte (generiert von `npx expo prebuild`) am Repo-Root —
+# nur Wurzeldirektorien; die nativen Modul-Quellen in modules/*/android|ios
+# gehören dagegen ins Repo:
+/android/
+/ios/
 *.log
 .env
 .DS_Store

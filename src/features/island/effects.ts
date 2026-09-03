@@ -2,15 +2,18 @@
  * Live-Island — plattformabhängige Nebeneffekte.
  *
  * · Web      → Browser-Tab-Titel zeigt den Countdown (`📐 Mathe · noch 23 min — Schulflow`)
+ *
+ * Emojis hier sind bewusst: Tab-Titel und Notification sind System-Oberflächen
+ * ohne eigenes Icon — das Fach-Emoji macht sie auf einen Blick erkennbar.
  * · Android  → dauerhafte Fortschritts-Notification, erst über das lokale
  *              native Modul (Dev-Build: echte ongoing/Live-Update-/HyperOS-
  *              Fokus-Notification), sonst als Expo-Go-Fallback über
  *              `expo-notifications` (stille Low-Importance-Notification,
  *              die minütlich aktualisiert wird).
  * · iOS      → echte Live Activities brauchen eine WidgetKit-Extension
- *              (nativer Target, App-Store-Build). Solange die nicht existiert,
- *              bleibt iOS bei der In-App-Insel — geplant im nächsten Schritt
- *              (siehe docs/PLATTFORMEN.md).
+ *              (nativer Target, App-Store-Build). Die Swift-Module-Quellen
+ *              liegen unter `modules/schulflow-live-island/ios/`; der Target-Build
+ *              steht in `docs/PLATTFORMEN.md` §3.
  */
 import { useEffect } from 'react';
 import { Platform } from 'react-native';

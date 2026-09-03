@@ -1,8 +1,13 @@
 /**
- * Fach-Farben & Emojis.
- * Deterministisch aus dem Fachnamen abgeleitet (gleiches Fach ⇒ immer gleiche Farbe),
- * mit kuratierten Treffern für die häufigsten deutschen Schulfächer.
+ * Fach-Farben & -Emojis.
+ * Deterministisch aus dem Fachnamen abgeleitet (gleiches Fach ⇒ immer gleiche
+ * Farbe/Emoji), mit kuratierten Treffern für die häufigsten deutschen Schulfächer.
  * Nutzer:innen können pro Fach überschreiben (settings store).
+ *
+ * Policy (Phase E): Das Emoji wird nur auf System-Oberflächen genutzt, die
+ * keine Vektor-Icons rendern können — Browser-Tab-Titel und Notifications
+ * (Live-Island-Effects). Die In-App-Oberfläche bleibt emoji-frei und trägt
+ * die Fach-Identität über Farbe + lucide-Icons.
  */
 
 export type SubjectStyle = { color: string; emoji: string };
@@ -11,7 +16,7 @@ const CURATED: Record<string, SubjectStyle> = {
   mathematik: { color: '#48A3FF', emoji: '📐' },
   mathe: { color: '#48A3FF', emoji: '📐' },
   deutsch: { color: '#FF7677', emoji: '📖' },
-  englisch: { color: '#2ECCA8', emoji: '🇬🇧' },
+  englisch: { color: '#2ECCA8', emoji: '🇬' },
   franzosisch: { color: '#BD7AF6', emoji: '🥐' },
   latein: { color: '#C9A227', emoji: '🏛️' },
   spanisch: { color: '#FAC748', emoji: '🌶️' },

@@ -8,6 +8,7 @@ import { useSendMessage, useThreadMessages } from '@/data/queries';
 import { formatTimeAgo } from '@/lib/date';
 import { hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, EmptyState, IconButton, Muted, Row, Screen, Skeleton, Title } from '@/ui/primitives';
+import { FadeInUp } from '@/ui/motion';
 import { Avatar, Spinner } from '@/ui/gluestack/feedback';
 
 export default function ThreadScreen() {
@@ -62,10 +63,12 @@ export default function ThreadScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
         <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 12 }}>
           {params.recipients ? (
+            <FadeInUp>
             <Card className="mb-3">
               <Muted className="text-[11px]">An</Muted>
               <Text className="mt-0.5 text-[13px] leading-5 text-muted">{params.recipients}</Text>
             </Card>
+            </FadeInUp>
           ) : null}
 
           {isLoading ? (

@@ -13,7 +13,6 @@ export type InsightTone = 'positive' | 'neutral' | 'warning' | 'critical' | 'fun
 
 export interface Insight {
   id: string;
-  emoji: string;
   title: string;
   body?: string;
   tone: InsightTone;
@@ -54,7 +53,6 @@ function ruleFirstHourFree(snapshot: Snapshot, tomorrow: string): Insight[] {
   return [
     {
       id: 'first-hour-free',
-      emoji: '😴',
       title: `Morgen ${formatDuration(minutes)} länger schlafen`,
       body: `${first.originalSubject ?? first.subject} in der ${first.hour}. Stunde entfällt — Schulbeginn erst um ${firstActive.start} Uhr.`,
       tone: 'positive',
@@ -74,7 +72,6 @@ function ruleCancellations(snapshot: Snapshot, from: string, to: string): Insigh
   return [
     {
       id: 'cancellations',
-      emoji: '🎉',
       title: cancelled.length === 1 ? '1 Stunde fällt aus' : `${cancelled.length} Stunden fallen aus`,
       body: grouped
         .map((lesson) => `${formatRelativeDay(lesson.date)}: ${lesson.originalSubject ?? lesson.subject} (${lesson.hour}.)`)
@@ -94,7 +91,6 @@ function ruleSubstitutions(snapshot: Snapshot, from: string, to: string): Insigh
   return [
     {
       id: 'substitutions',
-      emoji: '🔁',
       title: `${subs.length} Vertretung${subs.length === 1 ? '' : 'en'} diese Woche`,
       body: subs
         .slice(0, 3)
@@ -119,7 +115,6 @@ function ruleExamCluster(snapshot: Snapshot): Insight[] {
     const days = daysUntil(next.date);
     out.push({
       id: 'next-exam',
-      emoji: days <= 1 ? '🔥' : '📊',
       title:
         days === 0
           ? `Heute: ${next.subject} (${next.type ?? 'Arbeit'})`
@@ -142,7 +137,6 @@ function ruleExamCluster(snapshot: Snapshot): Insight[] {
     if (window.length >= 3) {
       out.push({
         id: 'exam-cluster',
-        emoji: '⚠️',
         title: `${window.length} Arbeiten in einer Woche`,
         body: `${window.map((exam) => exam.subject).join(', ')} — jetzt mit dem Lernplan starten zahlt sich aus.`,
         tone: 'warning',
@@ -166,7 +160,6 @@ function ruleHomework(snapshot: Snapshot, today: string, tomorrow: string): Insi
   if (dueTomorrow.length > 0) {
     out.push({
       id: 'homework-tomorrow',
-      emoji: '📝',
       title: `${dueTomorrow.length} Hausaufgabe${dueTomorrow.length === 1 ? '' : 'n'} bis morgen`,
       body: dueTomorrow.map((item) => item.subject).join(' · '),
       tone: dueTomorrow.length > 2 ? 'warning' : 'neutral',
@@ -178,7 +171,6 @@ function ruleHomework(snapshot: Snapshot, today: string, tomorrow: string): Insi
   if (overdue.length > 0) {
     out.push({
       id: 'homework-overdue',
-      emoji: '⏰',
       title: `${overdue.length} Aufgabe${overdue.length === 1 ? '' : 'n'} überfällig`,
       body: overdue.map((item) => `${item.subject} (${formatRelativeDay(item.due)})`).join(' · '),
       tone: 'critical',
@@ -190,7 +182,6 @@ function ruleHomework(snapshot: Snapshot, today: string, tomorrow: string): Insi
   if (open.length === 0 && snapshot.homework.length > 0) {
     out.push({
       id: 'homework-clear',
-      emoji: '🥳',
       title: 'Alle Hausaufgaben erledigt',
       body: 'Nichts offen. Feierabend ist erlaubt.',
       tone: 'positive',
@@ -211,7 +202,6 @@ function ruleLetters(snapshot: Snapshot): Insight[] {
   return [
     {
       id: 'letters-pending',
-      emoji: '✉️',
       title: `${pending.length} Elternbrief${pending.length === 1 ? '' : 'e'} unbestätigt`,
       body: ageDays >= 2 ? `„${oldest.subject}" wartet seit ${ageDays} Tagen.` : oldest.subject,
       tone: ageDays >= 3 ? 'warning' : 'neutral',
@@ -227,7 +217,6 @@ function ruleMessages(snapshot: Snapshot): Insight[] {
   return [
     {
       id: 'messages-unread',
-      emoji: '💬',
       title: `${unread} neue Nachricht${unread === 1 ? '' : 'en'}`,
       body: snapshot.threads.find((thread) => thread.unreadCount > 0)?.subject,
       tone: 'neutral',
@@ -250,7 +239,6 @@ function ruleGrades(snapshot: Snapshot): Insight[] {
   if (weakest && (weakest.average ?? 0) >= 3.6) {
     out.push({
       id: 'grade-risk',
-      emoji: '🎯',
       title: `${weakest.subject} braucht Aufmerksamkeit`,
       body: `Schnitt ${weakest.average?.toFixed(2)} — eine gute Note in der nächsten Arbeit hebt ihn spürbar.`,
       tone: 'warning',
@@ -263,7 +251,6 @@ function ruleGrades(snapshot: Snapshot): Insight[] {
   if (best && (best.average ?? 9) <= 1.6) {
     out.push({
       id: 'grade-strength',
-      emoji: '⭐',
       title: `${best.subject} läuft richtig gut`,
       body: `Schnitt ${best.average?.toFixed(2)}. Weiter so.`,
       tone: 'positive',
@@ -273,7 +260,6 @@ function ruleGrades(snapshot: Snapshot): Insight[] {
 
   out.push({
     id: 'grade-overall',
-    emoji: '📈',
     title: `Gesamtschnitt ${overall.toFixed(2)}`,
     body: `Über ${withAverage.length} Fächer mit Noten.`,
     tone: 'neutral',
@@ -290,7 +276,6 @@ function ruleAttendance(snapshot: Snapshot): Insight[] {
   return [
     {
       id: 'attendance-unexcused',
-      emoji: '🩹',
       title: `${unexcused.length} unentschuldigte Fehlzeit${unexcused.length === 1 ? '' : 'en'}`,
       body: 'Eine Entschuldigung nachreichen verhindert Ärger im Zeugnis.',
       tone: 'warning',
@@ -306,7 +291,6 @@ function ruleExemptions(snapshot: Snapshot): Insight[] {
   return [
     {
       id: 'exemption-pending',
-      emoji: '🕓',
       title: `${open.length} Beurlaubung wartet auf Antwort`,
       body: open.map((entry) => entry.comment ?? '').filter(Boolean).join(' · '),
       tone: 'neutral',
@@ -325,7 +309,6 @@ function ruleEvents(snapshot: Snapshot): Insight[] {
 
   return soon.map((event, index) => ({
     id: `event-${event.id}`,
-    emoji: event.isHoliday ? '🏖️' : '📅',
     title: `${formatRelativeDay(event.start.slice(0, 10))}: ${event.title}`,
     body: event.location ?? event.categoryName,
     tone: event.isHoliday ? 'positive' : 'neutral',
@@ -340,7 +323,6 @@ function rulePackingList(snapshot: Snapshot, tomorrow: string): Insight[] {
   return [
     {
       id: 'packing',
-      emoji: '🎒',
       title: 'Für morgen einpacken',
       body: items.join(' · '),
       tone: 'fun',
@@ -355,7 +337,6 @@ function ruleLongDay(snapshot: Snapshot, tomorrow: string): Insight[] {
   return [
     {
       id: 'long-day',
-      emoji: '☕',
       title: `Morgen ${lessons.length} Stunden`,
       body: `Von ${lessons[0].start} bis ${lessons[lessons.length - 1].end} Uhr — Verpflegung mitnehmen.`,
       tone: 'neutral',
@@ -469,7 +450,7 @@ export function computeNow(snapshot: Snapshot): NowStatus {
 
   const next = lessons.find((lesson) => minutesOf(lesson.start) > minutes);
   if (!next) {
-    return { kind: 'after-school', minutes: 0, label: 'Schule ist aus 🎈' };
+    return { kind: 'after-school', minutes: 0, label: 'Schule ist aus' };
   }
 
   const first = lessons[0];
