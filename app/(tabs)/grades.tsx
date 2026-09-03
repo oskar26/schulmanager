@@ -15,6 +15,7 @@ import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Progress, Switch } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
+import { shadow } from '@/design/tokens';
 
 export default function GradesScreen() {
   const { colors } = useThemeColors();
@@ -68,41 +69,79 @@ export default function GradesScreen() {
           />
         ) : (
           <>
-            <Card className="mb-3" floating>
-              <Row className="gap-4">
-                <View className="items-center justify-center rounded-3xl bg-accent-lime px-5 py-4">
-                  <Text className="text-[34px] font-extrabold text-on-lime">
-                    {hidden ? '•••' : overall != null ? de(overall) : '–'}
-                  </Text>
-                  <Text className="text-[10px] font-bold uppercase tracking-wider text-on-lime">
+            {/* Phase 3: Erfolgs-Hero in Lime mit Schnitt, bestem Fach und größtem Hebel */}
+            <Card
+              className="mb-3 overflow-hidden"
+              padded={false}
+              style={{
+                backgroundColor: colors.accent.lime,
+                borderWidth: 0,
+                ...shadow.float,
+              }}
+            >
+              <View className="flex-row items-center gap-4 p-4">
+                <View
+                  className="h-12 w-12 items-center justify-center rounded-2xl"
+                  style={{ backgroundColor: 'rgba(31,42,0,0.10)' }}
+                >
+                  <TrendingUp size={22} strokeWidth={2.2} color={colors.on.lime} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-[10px] font-extrabold uppercase tracking-[1.6px] text-on-lime/65">
                     Gesamtschnitt
                   </Text>
+                  <Text className="text-[40px] font-extrabold leading-[42px] tracking-tight text-on-lime">
+                    {hidden ? '•••' : overall != null ? de(overall) : '–'}
+                  </Text>
                 </View>
-                <View className="flex-1 gap-2">
-                  {best ? (
-                    <View>
-                      <Muted className="text-[11px]">Stärkstes Fach</Muted>
-                      <Text className="text-[14px] font-bold text-ink">
-                        {best.subject}{' '}
-                        <Text style={{ color: gradeColor(best.average, best.gradingSystem) }}>
-                          {hidden ? '' : best.average != null ? de(best.average) : ''}
-                        </Text>
-                      </Text>
-                    </View>
-                  ) : null}
-                  {worst && worst !== best ? (
-                    <View>
-                      <Muted className="text-[11px]">Größter Hebel</Muted>
-                      <Text className="text-[14px] font-bold text-ink">
-                        {worst.subject}{' '}
-                        <Text style={{ color: gradeColor(worst.average, worst.gradingSystem) }}>
-                          {hidden ? '' : worst.average != null ? de(worst.average) : ''}
-                        </Text>
-                      </Text>
-                    </View>
-                  ) : null}
+                <View className="items-end">
+                  <View
+                    className="rounded-2xl px-3.5 py-2.5"
+                    style={{ backgroundColor: 'rgba(31,42,0,0.12)' }}
+                  >
+                    <Text className="text-[22px] font-extrabold leading-[24px] text-on-lime">
+                      {hidden ? '••' : String(subjects.reduce((sum, s) => sum + s.grades.length, 0))}
+                    </Text>
+                    <Text className="text-[9px] font-extrabold uppercase tracking-wider text-on-lime/60">
+                      Noten erfasst
+                    </Text>
+                  </View>
                 </View>
-              </Row>
+              </View>
+
+              <View className="h-[1px] bg-on-lime/15" />
+
+              <View className="flex-row">
+                {best ? (
+                  <View className="flex-1 gap-0.5 px-4 py-3">
+                    <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-on-lime/60">
+                      Stärkstes Fach
+                    </Text>
+                    <Text className="text-[15px] font-extrabold leading-5 text-on-lime" numberOfLines={1}>
+                      {best.subject}
+                    </Text>
+                    <Text className="text-[13px] font-bold text-on-lime/80">
+                      {hidden ? '' : best.average != null ? de(best.average) : ''}
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="flex-1 px-4 py-3" />
+                )}
+                <View className="w-[1px] bg-on-lime/15" />
+                {worst && worst !== best ? (
+                  <View className="flex-1 gap-0.5 px-4 py-3">
+                    <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-on-lime/60">
+                      Größter Hebel
+                    </Text>
+                    <Text className="text-[15px] font-extrabold leading-5 text-on-lime" numberOfLines={1}>
+                      {worst.subject}
+                    </Text>
+                    <Text className="text-[13px] font-bold text-on-lime/80">
+                      {hidden ? '' : worst.average != null ? de(worst.average) : ''}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
             </Card>
 
             {subjects.map((subject, index) => {

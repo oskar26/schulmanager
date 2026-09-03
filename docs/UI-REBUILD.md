@@ -4,7 +4,8 @@
 > Zielbild: **High-End Bento Grid mit Soft-Brutalism-Touch** (große Radien, modular
 > gestapelte, farbig geblockte Kacheln, klare Hierarchien, kaum Emojis, nur Vektor-Icons).
 >
-> Stand dieser Datei: Phase-2-Theme-Migration abgeschlossen am 2026-09-03; Details und Abnahme in `PROJECT_STATUS.md`.
+> Stand dieser Datei: Phase-3-Komponenten-Redesign abgeschlossen am 2026-09-03;
+> Details und Abnahme in `PROJECT_STATUS.md`.
 > Die Referenzbilder und der APK-Bug-Screenshot lagen dem Bearbeiter **nicht als
 > Pixel** vor (kein Vision-Zugriff im Sandbox-Turn) — das MD kodiert daher die
 > extrahierten Layout-/Styling-Spezifikationen verbatim, damit ein späterer Turn die
@@ -118,6 +119,29 @@
 - [x] Sanfte Tab-Übergänge: `FloatingTabBar` mit reanimated `useSharedValue` + `withSpring` Skalierung für aktiven Tab-Hintergrund und Badge-Indikator.
 - [x] (2026-09-03) Entrance-Animationen auf den bisher verbliebenen Modal-Screens:
   `documents`, `electives`, `exemption`, `search`, `sick-note`, `thread` (`FadeInUp` mit Stagger).
+
+### Phase F — Komponentenseiten-Redesign (2026-09-03)
+- [x] **Dashboard-Hero** (`app/(tabs)/index.tsx`): Welcome-Banner als Charcoal-Karte
+      (`#18191C`) mit gestapeltem Datum (M3), Fortschritts-Anzeige und drei
+      Heute-Statistik-Kacheln; Kopfzeile (Avatar + Name) und Aktionen sind in den
+      Hero gewandert, die Schul-Pill liegt zentriert darunter.
+- [x] **Stundenplan** (`app/(tabs)/timetable.tsx`): Phones rendern nur noch die
+      vertikale Tages-Timeline (Zeitspalte + farbige Spur + große Fach-Karten,
+      keine Minikacheln/Truncation), dazu horizontale Tages-Pills und
+      Änderungs-Chips im Tageskopf. „Vertretung“-Platzhalter-Fächer zeigen das
+      echte Fach (`lessonMainSubject`) + Status-Chip. Tablet behält Wochen-/Tag-
+      Umschalter, Desktop das große Zeitraster mit Jetzt-Marker.
+- [x] **Aufgaben** (`app/(tabs)/tasks.tsx`): Prioritäts-Karten mit farbiger
+      Akzentkante — Coral = überfällig/heute, Amber = bald, Violet = später,
+      Lime = erledigt. Direktes Abhaken per Action-Button auf der Karte,
+      Detail-Sheet mit „Als erledigt markieren“; Arbeiten-Karten dringlichkeits-
+      getönt mit Lernplan-Pfeil.
+- [x] **Postfach** (`app/(tabs)/inbox.tsx`): Briefe mit Amber-Karte bei offener
+      Bestätigung + Inline-„Bestätigen“-Button (meldet lokal `justConfirmed`),
+      Lime/„bestätigt“ nach Erledigung; Nachrichten-Threads mit Coral-„Neu“-Rahmen
+      und -Avatar.
+- [x] **Noten** (`app/(tabs)/grades.tsx`): Lime-Hero-Karte (Ø-Schnitt, Anzahl der
+      Noten, stärkstes Fach, größter Hebel), Datenschutz-Modus respektiert.
 
 ### Phase E — Features darauf
 - [x] Home-Screen-Widgets / Live Activities Integration (2026-09-03, JS + Modul-Quellen).
