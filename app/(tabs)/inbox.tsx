@@ -83,57 +83,17 @@ export default function InboxScreen() {
           data.letters.length === 0 ? (
             <EmptyState icon={MailOpen} iconColor={colors.accent.violet} title="Keine Elternbriefe" />
           ) : (
-            data.letters.map((item, index) => {
-              const needsAction = item.requiresConfirmation && !item.confirmed;
-              return (
-                <FadeInUp key={String(item.id)} delay={Math.min(index, 8) * 30}>
-                  <Pressable
-                    onPress={() => {
-                      hapticLight();
-                      setLetter(item);
-                    }}
-                    className="mb-2 active:opacity-80"
-                  >
-                    <Card
-                      className={needsAction ? 'border border-warning/40' : ''}
-                      style={{ backgroundColor: needsAction ? tint(colors.warning, 0.08) : undefined }}
-                    >
-                      <Row className="gap-3">
-                        <View
-                          className={`h-10 w-10 items-center justify-center rounded-2xl ${
-                            needsAction ? 'bg-warning/15' : 'bg-accent-violet/15'
-                          }`}
-                        >
-                          {needsAction ? (
-                            <AlertCircle size={19} strokeWidth={2.1} color={colors.warning} />
-                          ) : (
-                            <MailOpen size={19} strokeWidth={2.1} color={colors.accent.violet} />
-                          )}
-                        </View>
-                        <View className="flex-1">
-                          <Row className="justify-between">
-                            <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={2}>
-                              {item.subject}
-                            </Text>
-                            <Muted className="ml-2 self-start text-[11px]">{formatTimeAgo(item.createdAt)}</Muted>
-                          </Row>
-                          <Muted className="mt-0.5" numberOfLines={2}>
-                            {item.content
-                              ? excerpt(htmlToText(item.content), 90)
-                              : `${item.sender ?? 'Schule'} · zum Lesen antippen`}
-                          </Muted>
-                          <Row className="mt-2 gap-2">
-                            <Chip label={item.sender ?? 'Schule'} color={colors.faint} />
-                            {needsAction ? <Chip label="Bestätigung nötig" color={colors.warning} tone="solid" /> : null}
-                            {item.confirmed ? <Chip label="bestätigt" color={colors.success} /> : null}
-                          </Row>
-                        </View>
-                      </Row>
-                    </Card>
-                  </Pressable>
-                </FadeInUp>
-              );
-            })
+            data.letters.map((item, index) => (
+              <LetterRow
+                key={String(item.id)}
+                letter={item}
+                index={index}
+                onOpen={() => {
+                  hapticLight();
+                  setLetter(item);
+                }}
+              />
+            ))
           )
         ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
@@ -194,47 +154,183 @@ export default function InboxScreen() {
   );
 }
 
+/* ------------------------------------------------------------------ Brief-Zeile (Phase 3) */
+
+/**
+ * Farbcodierte Prioritäts-Karten fürs Postfach:
+ * Amber = Aktion nötig (Bestätigung offen) · Lime = erledigt/bestätigt ·
+ * Coral = neue Nachrichten (Ungelesen) · Violet = gelesen/neutral.
+ * Briefe mit offener Bestätigung haben eine Inline-Action „Bestätigen“.
+ */
+function LetterRow({
+  letter,
+  index,
+  onOpen,
+}: {
+  letter: Letter;
+  index: number;
+  onOpen: () => void;
+}) {
+  const { colors } = useThemeColors();
+  const confirm = useConfirmLetter();
+  const [justConfirmed, setJustConfirmed] = useState(false);
+
+  const needsAction = letter.requiresConfirmation && !letter.confirmed && !justConfirmed;
+  const isConfirmed = Boolean(letter.requiresConfirmation && (letter.confirmed || justConfirmed));
+  const tone = needsAction ? colors.warning : isConfirmed ? colors.success : colors.accent.violet;
+
+  const quickConfirm = () => {
+    confirm.mutate(
+      { letterId: String(letter.id), studentStatusId: letter.studentStatusId },
+      {
+        onSuccess: () => {
+          hapticSuccess();
+          setJustConfirmed(true);
+        },
+        onError: () => {
+          hapticError();
+          Alert.alert(
+            'Bestätigung nicht möglich',
+            'Der Server hat die Bestätigung abgelehnt. Prüfe, ob die Frist schon abgelaufen ist.',
+          );
+        },
+      },
+    );
+  };
+
+  return (
+    <FadeInUp delay={Math.min(index, 8) * 30}>
+      <Card
+        padded={false}
+        className="mb-2 overflow-hidden"
+        style={{
+          backgroundColor: needsAction || isConfirmed ? tint(tone, 0.06) : colors.surface,
+          borderWidth: 1,
+          borderColor: needsAction || isConfirmed ? tint(tone, 0.4) : colors.line,
+        }}
+      >
+        <View className="flex-row">
+          <View style={{ width: 4, backgroundColor: tone }} />
+          <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-4 active:opacity-70">
+            <Row className="gap-3">
+              <View
+                className="h-10 w-10 items-center justify-center rounded-2xl"
+                style={{ backgroundColor: tint(tone, 0.16) }}
+              >
+                {needsAction ? (
+                  <AlertCircle size={19} strokeWidth={2.1} color={tone} />
+                ) : isConfirmed ? (
+                  <CheckCheck size={19} strokeWidth={2.3} color={tone} />
+                ) : (
+                  <MailOpen size={19} strokeWidth={2.1} color={tone} />
+                )}
+              </View>
+              <View className="flex-1">
+                <Row className="justify-between gap-2">
+                  <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={2}>
+                    {letter.subject}
+                  </Text>
+                  <Muted className="self-start text-[11px]">{formatTimeAgo(letter.createdAt)}</Muted>
+                </Row>
+                <Muted className="mt-0.5" numberOfLines={2}>
+                  {letter.content
+                    ? excerpt(htmlToText(letter.content), 90)
+                    : `${letter.sender ?? 'Schule'} · zum Lesen antippen`}
+                </Muted>
+                <Row className="mt-2 flex-wrap gap-2">
+                  <Chip label={letter.sender ?? 'Schule'} color={colors.faint} />
+                  {needsAction ? (
+                    <Chip label="Bestätigung nötig" color={colors.warning} tone="solid" />
+                  ) : null}
+                  {isConfirmed ? <Chip label="bestätigt" color={colors.success} tone="solid" /> : null}
+                </Row>
+              </View>
+            </Row>
+          </Pressable>
+        </View>
+
+        {/* Action-Button: Brief direkt bestätigen, ohne ihn zu öffnen */}
+        {needsAction ? (
+          <View
+            className="flex-row items-center justify-between gap-3 border-t px-4 py-2"
+            style={{ borderColor: tint(tone, 0.3) }}
+          >
+            <Muted className="flex-1 text-[11px]">
+              Kenntnisnahme wird direkt an die Schule gesendet.
+            </Muted>
+            <Button size="sm" action="primary" disabled={confirm.isPending} onPress={quickConfirm}>
+              {confirm.isPending ? <Spinner color={colors.on.amber} size="small" /> : null}
+              <ButtonText>Bestätigen</ButtonText>
+            </Button>
+          </View>
+        ) : null}
+      </Card>
+    </FadeInUp>
+  );
+}
+
 /* ------------------------------------------------------------------ Thread-Zeile */
 
 function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: number; onOpen: () => void }) {
   const { colors } = useThemeColors();
   const markRead = useMarkThreadRead();
+  const unread = thread.unreadCount > 0;
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
-      <Pressable
-        onPress={() => {
-          if (thread.unreadCount > 0) markRead.mutate(String(thread.subscriptionId));
-          onOpen();
+      <Card
+        padded={false}
+        className="mb-2 overflow-hidden"
+        style={{
+          backgroundColor: unread ? tint(colors.accent.coral, 0.06) : colors.surface,
+          borderWidth: 1,
+          borderColor: unread ? tint(colors.accent.coral, 0.35) : colors.line,
         }}
-        className="mb-2 active:opacity-80"
       >
-        <Card>
-          <Row className="gap-3">
-            <Avatar name={thread.sender || 'Schule'} size={40} color={colors.accent.violet} />
-            <View className="flex-1">
-              <Row className="justify-between">
-                <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={1}>
-                  {thread.sender || 'Schule'}
+        <View className="flex-row">
+          <View
+            style={{ width: 4, backgroundColor: unread ? colors.accent.coral : 'transparent' }}
+          />
+          <Pressable
+            onPress={() => {
+              if (unread) markRead.mutate(String(thread.subscriptionId));
+              onOpen();
+            }}
+            className="flex-1 py-3 pl-3.5 pr-4 active:opacity-70"
+          >
+            <Row className="gap-3">
+              <Avatar name={thread.sender || 'Schule'} size={40} color={unread ? colors.accent.coral : colors.accent.violet} />
+              <View className="flex-1">
+                <Row className="justify-between">
+                  <Text
+                    className={`flex-1 text-[15px] text-ink ${unread ? 'font-extrabold' : 'font-bold'}`}
+                    numberOfLines={1}
+                  >
+                    {thread.sender || 'Schule'}
+                  </Text>
+                  <Muted className="text-[11px]">{formatTimeAgo(thread.lastMessageAt)}</Muted>
+                </Row>
+                <Text className={`text-[13px] text-muted ${unread ? 'font-semibold' : ''}`} numberOfLines={1}>
+                  {thread.subject}
                 </Text>
-                <Muted className="text-[11px]">{formatTimeAgo(thread.lastMessageAt)}</Muted>
-              </Row>
-              <Text className="text-[13px] font-semibold text-muted" numberOfLines={1}>
-                {thread.subject}
-              </Text>
-              {thread.preview ? (
-                <Muted className="mt-0.5 text-[12px]" numberOfLines={1}>
-                  {thread.preview}
-                </Muted>
-              ) : null}
-            </View>
-            {thread.unreadCount > 0 ? (
-              <View className="h-6 min-w-[24px] items-center justify-center rounded-full bg-accent-coral px-1.5">
-                <Text className="text-[11px] font-bold text-on-coral">{thread.unreadCount}</Text>
+                {thread.preview ? (
+                  <Muted className="mt-0.5 text-[12px]" numberOfLines={2}>
+                    {thread.preview}
+                  </Muted>
+                ) : null}
+                <Row className="mt-1.5 gap-2">
+                  {unread ? <Chip label="Neu" color={colors.accent.coral} tone="solid" /> : null}
+                  <Chip label="Nachricht" color={colors.accent.violet} />
+                </Row>
               </View>
-            ) : null}
-          </Row>
-        </Card>
-      </Pressable>
+              {unread ? (
+                <View className="h-6 min-w-[24px] items-center justify-center rounded-full bg-accent-coral px-1.5">
+                  <Text className="text-[11px] font-bold text-on-coral">{thread.unreadCount}</Text>
+                </View>
+              ) : null}
+            </Row>
+          </Pressable>
+        </View>
+      </Card>
     </FadeInUp>
   );
 }

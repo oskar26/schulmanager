@@ -14,6 +14,7 @@ import { FadeInUp } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
+import { shadow } from '@/design/tokens';
 
 type ViewMode = 'week' | 'day';
 
@@ -86,7 +87,10 @@ export default function TimetableScreen() {
           {stats.cancelled > 0 ? <Chip label={`${stats.cancelled} Entfall`} color={colors.danger} /> : null}
           {stats.substitutions > 0 ? <Chip label={`${stats.substitutions} Vertretung`} color={colors.success} /> : null}
           <View className="flex-1" />
-          {!layout.isDesktop ? (
+          {/* Phase 3: Auf Phones gibt es nur die vertikale Tages-Timeline — keine
+              Mini-Kacheln mehr, die Fächernamen abschneiden. Tablets dürfen weiter
+              zwischen Wochen- und Tagesraster wechseln. */}
+          {layout.isTablet ? (
             <Pressable
               onPress={() => setMode(mode === 'week' ? 'day' : 'week')}
               className="rounded-xl bg-line/60 px-3 py-1.5"
@@ -106,7 +110,7 @@ export default function TimetableScreen() {
       ) : layout.isDesktop ? (
         // Auf Desktop: echtes Stundenplan-Raster mit Zeitleiste und Jetzt-Marker.
         <TimeGrid days={days} byDay={byDay} onSelect={setDetail} />
-      ) : mode === 'week' ? (
+      ) : layout.isTablet && mode === 'week' ? (
         <WeekGrid days={days} byDay={byDay} compact={compact} onSelect={setDetail} />
       ) : (
         <DayList
@@ -245,8 +249,13 @@ function LessonCell({
   );
 }
 
-/* ------------------------------------------------------------------ Tagesansicht */
+/* ------------------------------------------------------------------ Tagesansicht (Phase 3) */
 
+/**
+ * Vertikale Tages-Timeline mit horizontalen Tages-Pills — das Phone-Erlebnis
+ * des Stundenplans. Fächer stehen voll lesbar in Karten (kein Mini-Kachel-
+ * Raster), Zeit läuft in einer eigenen Spalte neben einer farbigen Spur.
+ */
 function DayList({
   days,
   byDay,
@@ -267,9 +276,16 @@ function DayList({
   const isToday = active === toISO(new Date());
   const reserve = useTabNavReserve();
 
+  const changeCount = lessons.filter((l) => l.state !== 'regular' && l.state !== 'cancelled').length;
+  const cancelledCount = lessons.filter((l) => l.state === 'cancelled').length;
+  const runningCount = lessons.filter(
+    (l) => isToday && now >= minutesOf(l.start) && now < minutesOf(l.end),
+  ).length;
+
   return (
     <View className="flex-1">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="max-h-[70px] grow-0 px-4">
+      {/* Horizontale Tages-Pills */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="max-h-[76px] grow-0 px-4">
         <Row className="gap-2 py-2">
           {days.map((day) => {
             const date = new Date(day);
@@ -279,96 +295,231 @@ function DayList({
               <Pressable
                 key={day}
                 onPress={() => onSelectDay(day)}
-                className={`h-[52px] w-[52px] items-center justify-center rounded-2xl ${
-                  isActive ? 'bg-accent-amber' : 'bg-surface'
+                className={`h-[62px] w-[56px] items-center justify-center rounded-[18px] ${
+                  isActive ? 'bg-accent-amber' : 'border border-line bg-surface'
                 }`}
+                style={isActive ? shadow.card : undefined}
               >
-                <Text className={`text-[10px] font-bold ${isActive ? 'text-on-amber/80' : 'text-faint'}`}>
+                <Text
+                  className={`text-[10px] font-bold uppercase tracking-wide ${
+                    isActive ? 'text-on-amber/70' : 'text-faint'
+                  }`}
+                >
                   {WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}
                 </Text>
-                <Text className={`text-[16px] font-extrabold ${isActive ? 'text-on-amber' : 'text-ink'}`}>
+                <Text className={`text-[19px] font-extrabold leading-6 ${isActive ? 'text-on-amber' : 'text-ink'}`}>
                   {date.getDate()}
                 </Text>
-                <View className={`h-1 w-1 rounded-full ${count > 0 ? (isActive ? 'bg-on-amber' : 'bg-accent-amber') : ''}`} />
+                <View
+                  className="h-[5px] w-[5px] rounded-full"
+                  style={{
+                    backgroundColor: count > 0 ? (isActive ? colors.on.amber : colors.accent.amber) : 'transparent',
+                  }}
+                />
               </Pressable>
             );
           })}
         </Row>
       </ScrollView>
 
+      {/* Tageskopf: Datum + Änderungs-Statistik */}
+      <Row className="justify-between px-4 pb-2 pt-1">
+        <Text className="text-[19px] font-extrabold tracking-tight text-ink">{formatLongDay(active)}</Text>
+        <Row className="gap-1.5">
+          {runningCount > 0 ? <Chip label={`${runningCount} jetzt`} color={colors.accent.amber} tone="solid" /> : null}
+          {cancelledCount > 0 ? <Chip label={`${cancelledCount} Entfall`} color={colors.danger} /> : null}
+          {changeCount > 0 ? <Chip label={`${changeCount} Änderung`} color={colors.success} /> : null}
+        </Row>
+      </Row>
+
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
-        <Muted className="mb-2 mt-1">{formatLongDay(active)}</Muted>
         {lessons.length === 0 ? (
-          <EmptyState icon={Sun} iconColor={colors.accent.violet} title="Kein Unterricht" hint="Für diesen Tag ist nichts eingetragen." />
+          <EmptyState
+            icon={Sun}
+            iconColor={colors.accent.violet}
+            title="Kein Unterricht"
+            hint={
+              isToday
+                ? 'Heute ist nichts eingetragen. Genieß den Tag.'
+                : 'Für diesen Tag ist nichts eingetragen.'
+            }
+          />
         ) : (
-          lessons.map((lesson, index) => {
-            const style = subjectStyle(lesson.subject);
-            const cancelled = lesson.state === 'cancelled';
-            const running = isToday && now >= minutesOf(lesson.start) && now < minutesOf(lesson.end);
+          <View className="pt-1">
+            {lessons.map((lesson, index) => {
+              const displaySubject = lessonMainSubject(lesson);
+              const style = subjectStyle(displaySubject);
+              const cancelled = lesson.state === 'cancelled';
+              const substitution = lesson.state === 'substitution';
+              const roomChange = lesson.state === 'room-change';
+              const running = isToday && now >= minutesOf(lesson.start) && now < minutesOf(lesson.end);
+              const past = isToday && now >= minutesOf(lesson.end);
+              const accentColor = cancelled
+                ? colors.danger
+                : running
+                  ? colors.accent.amber
+                  : substitution
+                    ? colors.success
+                    : style.color;
+              const stateChip =
+                lesson.state === 'cancelled'
+                  ? { label: 'Entfall', color: colors.danger, tone: 'solid' as const }
+                  : lesson.state === 'substitution'
+                    ? { label: 'Vertretung', color: colors.success, tone: 'solid' as const }
+                    : lesson.state === 'room-change'
+                      ? { label: 'Raumwechsel', color: colors.warning, tone: 'solid' as const }
+                      : null;
 
-            return (
-              <FadeInUp key={lesson.id} delay={index * 30}>
-                <Pressable onPress={() => onSelect(lesson)} className="mb-2 active:opacity-80">
-                  <Card
-                    padded={false}
-                    className={running ? 'border-2 border-accent-amber' : ''}
-                    style={{ backgroundColor: tint(style.color, 0.10) }}
-                  >
-                    <Row className="gap-3 p-3">
-                      <View className="w-12 items-center">
-                        <Text className="text-[13px] font-bold text-ink">{lesson.start}</Text>
-                        <Text className="text-[11px] text-faint">{lesson.end}</Text>
+              return (
+                <FadeInUp key={lesson.id} delay={Math.min(index, 10) * 28}>
+                  <View className="mb-2.5 flex-row">
+                    {/* Zeitspalte */}
+                    <View className="w-[52px] items-end pr-2.5 pt-3.5">
+                      <Text className="text-[13px] font-bold text-ink" style={{ fontVariant: ['tabular-nums'] }}>
+                        {lesson.start}
+                      </Text>
+                      <Text className="text-[10px] font-semibold text-faint" style={{ fontVariant: ['tabular-nums'] }}>
+                        {lesson.end}
+                      </Text>
+                    </View>
+
+                    {/* Spur: Punkt + Linie */}
+                    <View className="w-4 items-center">
+                      <View
+                        className="mt-2 h-[10px] w-[10px] rounded-full border-2"
+                        style={{
+                          backgroundColor: cancelled ? colors.surface : running ? colors.accent.amber : colors.surface,
+                          borderColor: cancelled ? colors.danger : running ? colors.accent.amber : style.color,
+                        }}
+                      />
+                      {index < lessons.length - 1 ? (
                         <View
-                          className="mt-1 rounded-md px-1.5"
-                          style={{ backgroundColor: tint(style.color, 0.16) }}
-                        >
-                          <Text className="text-[10px] font-bold" style={{ color: style.color }}>
-                            {lesson.hour}.
-                          </Text>
-                        </View>
-                      </View>
+                          className="w-[2px] flex-1 rounded-full"
+                          style={{ backgroundColor: past ? colors.line : tint(style.color, 0.35) }}
+                        />
+                      ) : null}
+                    </View>
 
-                      <View className="w-1 self-stretch rounded-full" style={{ backgroundColor: cancelled ? colors.danger : style.color }} />
+                    {/* Karte mit voll lesbarem Fach */}
+                    <Pressable
+                      onPress={() => onSelect(lesson)}
+                      className="flex-1 active:opacity-80"
+                      style={{ opacity: past && !running && lesson.state === 'regular' ? 0.55 : 1 }}
+                    >
+                      <Card
+                        padded={false}
+                        className="overflow-hidden"
+                        style={{
+                          backgroundColor: cancelled
+                            ? tint(colors.danger, 0.07)
+                            : running
+                              ? tint(colors.accent.amber, 0.10)
+                              : tint(style.color, 0.08),
+                          borderWidth: running ? 1.5 : 1,
+                          borderColor: running
+                            ? colors.accent.amber
+                            : cancelled
+                              ? tint(colors.danger, 0.45)
+                              : colors.line,
+                        }}
+                      >
+                        <View className="flex-row">
+                          {/* Farbige Akzentkante */}
+                          <View
+                            style={{
+                              width: 4,
+                              backgroundColor: accentColor,
+                              borderTopLeftRadius: 18,
+                              borderBottomLeftRadius: 18,
+                            }}
+                          />
+                          <View className="flex-1 gap-1 p-3">
+                            <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
+                              <Text
+                                className="flex-1 text-[16px] font-extrabold leading-[19px] text-ink"
+                                numberOfLines={2}
+                                style={
+                                  cancelled
+                                    ? { textDecorationLine: 'line-through', color: colors.faint }
+                                    : undefined
+                                }
+                              >
+                                {displaySubject}
+                              </Text>
+                              <View
+                                className="mt-0.5 rounded-lg px-1.5 py-0.5"
+                                style={{ backgroundColor: cancelled ? tint(colors.danger, 0.14) : tint(style.color, 0.16) }}
+                              >
+                                <Text
+                                  className="text-[10px] font-extrabold"
+                                  style={{ color: cancelled ? colors.danger : style.color }}
+                                >
+                                  {lesson.hour}. Std
+                                </Text>
+                              </View>
+                            </Row>
 
-                      <View className="flex-1">
-                        <Text
-                          className="text-[16px] font-bold text-ink"
-                          style={cancelled ? { textDecorationLine: 'line-through', color: colors.faint } : undefined}
-                        >
-                          {cancelled ? lesson.originalSubject ?? lesson.subject : lesson.subject}
-                        </Text>
-                        <Muted className="mt-0.5">
-                          {[lesson.teacher, lesson.room].filter(Boolean).join(' · ') || '—'}
-                        </Muted>
-                        {lesson.state !== 'regular' ? (
-                          <Row className="mt-1.5 gap-2">
-                            <Chip
-                              label={
-                                cancelled ? 'Entfall' : lesson.state === 'substitution' ? 'Vertretung' : 'Raumwechsel'
-                              }
-                              color={cancelled ? colors.danger : colors.success}
-                              tone="solid"
-                            />
-                            {lesson.comment ? (
-                              <Muted className="flex-1 text-[11px]" numberOfLines={1}>
-                                {lesson.comment}
-                              </Muted>
+                            {stateChip ? (
+                              <View className="flex-row flex-wrap items-center gap-1.5 pt-0.5">
+                                <Chip label={stateChip.label} color={stateChip.color} tone={stateChip.tone} />
+                                {lesson.comment ? (
+                                  <Text className="flex-1 text-[11.5px] leading-4 text-muted" numberOfLines={2}>
+                                    {lesson.comment}
+                                  </Text>
+                                ) : null}
+                              </View>
                             ) : null}
-                          </Row>
-                        ) : null}
-                      </View>
 
-                      {running ? <Chip label="jetzt" color={colors.accent.amber} tone="solid" /> : null}
-                    </Row>
-                  </Card>
-                </Pressable>
-              </FadeInUp>
-            );
-          })
+                            <Row className="flex-wrap gap-x-2 gap-y-0.5">
+                              {lesson.teacher ? (
+                                <Text className="text-[12px] font-semibold text-muted">{lesson.teacher}</Text>
+                              ) : null}
+                              {lesson.room ? (
+                                <Text className="text-[12px] font-bold" style={{ color: style.color }}>
+                                  Raum {lesson.room}
+                                </Text>
+                              ) : null}
+                              {substitution && lesson.originalTeacher && lesson.originalTeacher !== lesson.teacher ? (
+                                <Text className="text-[12px] text-faint">statt {lesson.originalTeacher}</Text>
+                              ) : null}
+                              {roomChange && lesson.originalRoom ? (
+                                <Text className="text-[12px] font-bold" style={{ color: colors.warning }}>
+                                  {lesson.originalRoom} → {lesson.room}
+                                </Text>
+                              ) : null}
+                            </Row>
+
+                            {running ? (
+                              <View className="self-start pt-0.5">
+                                <Chip label="läuft gerade" color={colors.accent.amber} tone="solid" />
+                              </View>
+                            ) : null}
+                          </View>
+                        </View>
+                      </Card>
+                    </Pressable>
+                  </View>
+                </FadeInUp>
+              );
+            })}
+          </View>
         )}
       </ScrollView>
     </View>
   );
+}
+
+/**
+ * Anzeige-Fach einer Stunde: Bei Vertretungen mit Platzhalter-Fach
+ * (z. B. `subject = 'Vertretung'` + `originalSubject = 'Biologie'`) zeigt die
+ * Timeline das eigentliche Fach und markiert den Zustand über den Chip.
+ */
+function lessonMainSubject(lesson: Lesson): string {
+  if (lesson.state === 'cancelled') return lesson.originalSubject ?? lesson.subject;
+  if (lesson.state === 'substitution' && lesson.subject !== lesson.originalSubject) {
+    return lesson.originalSubject ?? lesson.subject;
+  }
+  return lesson.subject;
 }
 
 /* ------------------------------------------------------------------ Detail */

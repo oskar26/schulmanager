@@ -2,7 +2,7 @@
 
 > **Single Source of Truth** für den UI-Relaunch. Diese Datei wird zu Beginn jeder
 > Session gelesen und nach jeder erledigten Phase aktualisiert.
-> Letztes Update: 2026-09-03 · Status: **Phase 2 — abgeschlossen ✅**
+> Letztes Update: 2026-09-03 · Status: **Phase 3 — abgeschlossen ✅**
 
 ---
 
@@ -126,14 +126,28 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
       `npm run smoke:matrix` ✅ (17 Routen × Phone/Tablet/Desktop = 51 Kombinationen)
       sowie ein zusätzlicher Dark-Mode-Render-Smoke aller 17 Routen auf Phone-Breite ✅.
 
-### Phase 3 — Komponentenseiten-Redesign 🔄
-- [ ] **Dashboard/Home:** fettes Welcome-Banner (Charcoal- oder Amber-Fläche),
-      klare Progress-Anzeige, Hero-Karten im Referenz-Stil
-- [ ] **Stundenplan:** vertikale Tages-Timeline + horizontale Tages-Pills,
-      Fächer voll lesbar (keine Minikachel-Truncation)
-- [ ] **Aufgaben & Postfach:** farbcodierte Prioritäts-Karten
-      (Coral = dringend, Amber = bald, Lime = erledigt/ok) mit Action-Buttons
-- [ ] Noten-Seite an Lime/Erfolgs-Farben anpassen
+### Phase 3 — Komponentenseiten-Redesign ✅ *abgeschlossen (2026-09-03)*
+- [x] **Dashboard/Home:** fettes Welcome-Banner — Charcoal-Hero-Karte (`#18191C`)
+      mit gestapeltem Datum, Fortschritts-Anzeige („x von y Hausaufgaben erledigt“)
+      und Heute-Statistik-Kacheln (Stunden heute / Aufgaben offen / Tage bis Arbeit).
+      Kopfzeile oben links gerückt, Suche/Einstellungen als helle Glas-Buttons
+      direkt im Hero (Phone), Schul-Pill zentriert. Kein Truncation mehr.
+- [x] **Stundenplan:** auf Phones ersetzt die vertikale **Tages-Timeline** (Zeitspalte,
+      farbige Spur mit Tageslinie, große voll lesbare Fach-Karten mit 2-zeiligen
+      Namen) das alte Mini-Kachel-Raster inkl. der Tages-/Wochen-Ansicht-Pille —
+      „Keine Minikachel-Truncation“ erreicht. Horizontale **Tages-Pills** (56×62 px)
+      mit Datum + Stundendot; Tageskopf mit Datum + Änderungs-Chips; Status-Chips
+      (Entfall/Vertretung/Raumwechsel) + Jetzt-Marker. Tablet behält Wahlmöglichkeit
+      Wochen-/Tagesraster, Desktop behält das große Zeitraster.
+- [x] **Aufgaben & Postfach:** farbcodierte Prioritäts-Karten — Hausaufgaben:
+      Coral = überfällig/heute, Amber = bald (1–3 Tage), Violet = entspannt,
+      Lime-Fläche + grüner Haken = erledigt. Action-Buttons: direktes Abhaken an der
+      Karte, Detail-Sheet mit „Als erledigt markieren“; Arbeiten mit Dringlichkeits-
+      Tönung (Coral/Amber/Lime) + Pfeil in den Lernplan. Postfach: Briefe mit
+      Amber-Karte + Inline-„Bestätigen“-Button (Coral = neu/ungelesen, Lime =
+      bestätigt), Threads mit Coral-„Neu“-Rahmen.
+- [x] Noten-Seite an Lime/Erfolgs-Farben angepasst: großer **Lime-Hero** (Ø-Schnitt,
+      Noten-Anzahl, stärkstes Fach & größter Hebel in einer Karte).
 
 ### Phase 4 — UX-Polishing & Abnahme 🔄
 - [ ] Micro-Interactions: Press-States (Scale/Opacity), Hover (Web), sanfte
@@ -170,3 +184,4 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 | 2026-09-03 | Relaunch-Kickoff | Briefing erhalten, `PROJECT_STATUS.md` angelegt, Warten auf GO für Phase-1-Code |
 | 2026-09-03 | Phase 1 | ✅ Abgeschlossen: `src/ui/nav-reserve.ts` (globale Bottom-Nav-Reserve ≥100 px, M1) + Truncation-Fixes M3/M4/M5 in Dashboard, Stundenplan, Aufgaben, Postfach, Noten, Widgets, LiveIsland, Kalender, Suche, Thread. Typecheck + Smoke (Phone & Desktop) grün. |
 | 2026-09-03 | Phase 2 | ✅ Abgeschlossen: Creme/Charcoal + Amber/Violet/Lime/Coral in CSS, NativeWind und RN-Tokens synchronisiert; globale Card-/Badge-Kontraste, Dark-Mode-Bridge und alle Detail-Screens einschließlich Onboarding/Live-Island migriert. PWA-/Native-Farben und Marken-Assets aktualisiert. Typecheck, Web-Export und vollständige 51er Smoke-Matrix grün. |
+| 2026-09-03 | Phase 3 | ✅ Abgeschlossen: Dashboard-Welcome-Banner (Charcoal-Hero + Fortschritt + Heute-Statistik), Stundenplan als vertikale Tages-Timeline mit Tages-Pills (Phone; kein Mini-Kachel-Raster mehr), farbcodierte Prioritäts-Karten mit Action-Buttons in Aufgaben (Coral/Amber/Lime/Violet, direktes Abhaken, Detail-Sheet) und Postfach (Briefe mit Inline-Bestätigen, Neu-Akzente), Noten-Hero auf Lime. Typecheck + Smoke-Matrix (quick 18 Kombinationen + alle 5 Screens inkl. Tablets/Desktop + Nachrichten-Tab) grün. |
