@@ -51,8 +51,11 @@ export default function RootLayout() {
   const hydrate = useSettings((state) => state.hydrate);
   const hydrated = useSettings((state) => state.hydrated);
   const theme = useSettings((state) => state.settings.theme);
+  const onboarded = useSettings((state) => state.settings.onboarded);
+  const status = useSession((state) => state.status);
   const restore = useSession((state) => state.restore);
   const restoring = useRef(false);
+  const [restoreSettled, setRestoreSettled] = useState(false);
 
   useEffect(() => {
     void hydrate();
@@ -64,6 +67,7 @@ export default function RootLayout() {
       restoring.current = true;
       void restore().finally(() => {
         restoring.current = false;
+        setRestoreSettled(true);
       });
     }
   }, [hydrated, restore]);
@@ -79,6 +83,10 @@ export default function RootLayout() {
   // (Thema, Demo-Modus bekannt) — nie ein leerer/transparenter Bildschirm.
   const dark = resolved === 'dark';
 
+  // Erstmalig? Nur wenn kein Konto verbunden ist, führt der Onboarding-Flow.
+  const needsOnboarding = !onboarded && status !== 'connected';
+  const contentReady = hydrated && restoreSettled;
+
   return (
     <ScreenErrorBoundary label="App">
       <GestureHandlerRootView style={styles.root}>
@@ -89,11 +97,15 @@ export default function RootLayout() {
           >
             <SafeAreaProvider>
               <LockGate>
-                {hydrated ? (
+                {contentReady ? (
                   <View style={styles.root}>
                     <StatusBar style={dark ? 'light' : 'dark'} />
-                    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+                    <Stack
+                      initialRouteName={needsOnboarding ? 'onboarding' : '(tabs)'}
+                      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}
+                    >
                       <Stack.Screen name="(tabs)" />
+                      <Stack.Screen name="onboarding" />
                       <Stack.Screen name="settings" options={{ presentation: 'card' }} />
                       <Stack.Screen name="sick-note" options={{ presentation: 'modal' }} />
                       <Stack.Screen name="exemption" options={{ presentation: 'modal' }} />
