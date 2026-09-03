@@ -7,9 +7,11 @@ import {
   Text,
   View,
   type ViewProps,
+  type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react-native';
 
 import { shadow } from '@/design/tokens';
 import { tint } from '@/design/subjects';
@@ -158,16 +160,31 @@ export function SectionHeader({
   action,
   onAction,
   emoji,
+  icon,
+  iconColor = '#6C5CE7',
 }: {
   title: string;
   action?: string;
   onAction?: () => void;
   emoji?: string;
+  /** Emoji-freie Alternative: Lucide-Icon in getönter Kachel. */
+  icon?: LucideIcon;
+  iconColor?: string;
 }) {
+  const IconComponent = icon;
   return (
     <Row className="mb-3 mt-6 justify-between px-1">
       <Row className="gap-2">
-        {emoji ? <Text className="text-[16px]">{emoji}</Text> : null}
+        {IconComponent ? (
+          <View
+            className="h-8 w-8 items-center justify-center rounded-[10px]"
+            style={{ backgroundColor: tint(iconColor, 0.14) }}
+          >
+            <IconComponent size={16} strokeWidth={2.2} color={iconColor} />
+          </View>
+        ) : emoji ? (
+          <Text className="text-[16px]">{emoji}</Text>
+        ) : null}
         <Text className="text-[17px] font-bold tracking-tight text-ink">{title}</Text>
       </Row>
       {action ? (
@@ -233,16 +250,31 @@ export function Skeleton({ className = '' }: { className?: string }) {
 
 export function EmptyState({
   emoji = '🌱',
+  icon,
+  iconColor = '#6C5CE7',
   title,
   hint,
 }: {
   emoji?: string;
+  /** Emoji-freie Alternative: Lucide-Icon in einer getönten Kachel. */
+  icon?: LucideIcon;
+  iconColor?: string;
   title: string;
   hint?: string;
 }) {
+  const IconComponent = icon;
   return (
     <View className="items-center justify-center gap-2 px-8 py-12">
-      <Text className="text-[40px]">{emoji}</Text>
+      {IconComponent ? (
+        <View
+          className="h-14 w-14 items-center justify-center rounded-[20px]"
+          style={{ backgroundColor: tint(iconColor, 0.14) }}
+        >
+          <IconComponent size={26} strokeWidth={2} color={iconColor} />
+        </View>
+      ) : (
+        <Text className="text-[40px]">{emoji}</Text>
+      )}
       <Text className="text-center text-[16px] font-bold text-ink">{title}</Text>
       {hint ? <Text className="text-center text-[13px] leading-5 text-muted">{hint}</Text> : null}
     </View>
@@ -288,7 +320,7 @@ export function SegmentedControl<T extends string>({
 }
 
 export function ListRow({
-  icon,
+  icon: IconComponent,
   iconColor,
   title,
   subtitle,
@@ -296,7 +328,8 @@ export function ListRow({
   onPress,
   danger,
 }: {
-  icon?: keyof typeof Ionicons.glyphMap;
+  /** Lucide-Icon-Komponente in getönter Kachel (Emoji-frei). */
+  icon?: LucideIcon;
   iconColor?: string;
   title: string;
   subtitle?: string;
@@ -306,19 +339,19 @@ export function ListRow({
 }) {
   const content = (
     <Row className="gap-3 px-4 py-3.5">
-      {icon ? (
+      {IconComponent ? (
         <View
           className="h-9 w-9 items-center justify-center rounded-xl"
           style={{ backgroundColor: tint(iconColor ?? '#6C5CE7', 0.14) }}
         >
-          <Ionicons name={icon} size={18} color={iconColor ?? '#6C5CE7'} />
+          <IconComponent size={18} strokeWidth={2.1} color={iconColor ?? '#6C5CE7'} />
         </View>
       ) : null}
       <View className="flex-1">
         <Text className={`text-[15px] font-semibold ${danger ? 'text-danger' : 'text-ink'}`}>{title}</Text>
         {subtitle ? <Text className="mt-0.5 text-[12px] text-muted">{subtitle}</Text> : null}
       </View>
-      {right ?? (onPress ? <Ionicons name="chevron-forward" size={17} color="#9CA2B6" /> : null)}
+      {right ?? (onPress ? <ChevronRight size={17} strokeWidth={2.2} color="#9CA2B6" /> : null)}
     </Row>
   );
 
@@ -412,6 +445,207 @@ export function Sheet({
         </ScrollView>
       </View>
     </Modal>
+  );
+}
+
+/* ------------------------------------------------------------------ Bento (Phase C) */
+
+/**
+ * Status-Pill — farbige, runde Markierung (reduziert-opak) für Metadaten wie
+ * "Priorität 1", "Fällig morgen", Raum, Vertretung. Emoji-frei.
+ */
+export function Pill({
+  label,
+  color = '#6C5CE7',
+  tone = 'tint',
+  className = '',
+}: {
+  label: string;
+  color?: string;
+  tone?: 'tint' | 'solid' | 'outline';
+  className?: string;
+}) {
+  const style: ViewStyle =
+    tone === 'solid'
+      ? { backgroundColor: color }
+      : tone === 'outline'
+        ? { borderWidth: 1, borderColor: color, backgroundColor: 'transparent' }
+        : { backgroundColor: tint(color, 0.14) };
+
+  return (
+    <View style={style} className={`flex-row items-center rounded-full px-3 py-1.5 ${className}`}>
+      <Text
+        className="text-[11px] font-bold"
+        style={{ color: tone === 'solid' ? '#FFFFFF' : color }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/** Runde Action-Ecke (Soft-Brutalism): 44×44, Radius 22, Pfeil nach oben/rechts. */
+export function RoundActionButton({
+  onPress,
+  icon: IconComponent = ArrowUpRight,
+  color = '#121422',
+  background = 'rgba(255,255,255,0.9)',
+  size = 44,
+  accessibilityLabel,
+}: {
+  onPress?: () => void;
+  icon?: LucideIcon;
+  color?: string;
+  background?: string;
+  size?: number;
+  accessibilityLabel?: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      hitSlop={6}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: background,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#1B1F3B',
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
+        elevation: 4,
+      }}
+    >
+      <IconComponent size={Math.round(size * 0.42)} strokeWidth={2.2} color={color} />
+    </Pressable>
+  );
+}
+
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+/** Überlappende Avatare mit weißem Ring (marginRight: -8) — für Gruppen/Kurse. */
+export function AvatarStack({
+  items,
+  size = 30,
+  ring = '#FFFFFF',
+}: {
+  items: { name: string; color: string }[];
+  size?: number;
+  ring?: string;
+}) {
+  return (
+    <View className="flex-row">
+      {items.map((item, index) => (
+        <View
+          key={`${item.name}-${index}`}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: item.color,
+            borderWidth: 2,
+            borderColor: ring,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: index < items.length - 1 ? -8 : 0,
+            zIndex: items.length - index,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: Math.max(9, Math.round(size * 0.4)),
+              fontWeight: '800',
+              color: '#FFFFFF',
+            }}
+          >
+            {initialsOf(item.name)}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Bento-Kachel: großer Radius (28–32), großzügiges Padding, optionaler
+ * Farbblock, weicher Schatten. `tone` füllt die ganze Karte, `onPress` macht
+ * sie tappbar. Emoji-frei — Icons kommen aus lucide.
+ */
+export function BentoCard({
+  children,
+  className = '',
+  tone,
+  onPress,
+  radius = 28,
+  padded = true,
+  style,
+  ...rest
+}: ViewProps & {
+  children: React.ReactNode;
+  className?: string;
+  tone?: string;
+  onPress?: () => void;
+  radius?: number;
+  padded?: boolean;
+}) {
+  const boxStyle: ViewStyle = {
+    borderRadius: radius,
+    overflow: 'hidden',
+    ...shadow.card,
+    ...(tone ? { backgroundColor: tone } : {}),
+  };
+  const inner = (
+    <View
+      {...rest}
+      style={[boxStyle, style]}
+      className={`${padded ? 'p-5' : ''} ${className}`}
+    >
+      {children}
+    </View>
+  );
+
+  if (!onPress) return inner;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className="active:opacity-95"
+      style={{ borderRadius: radius }}
+    >
+      {inner}
+    </Pressable>
+  );
+}
+
+/** Einfacher Raster-Wrapper mit einheitlichem Abstand (flex-row + wrap). */
+export function BentoGrid({
+  children,
+  gap = 14,
+  className = '',
+  style,
+  ...rest
+}: ViewProps & { children: React.ReactNode; gap?: number; className?: string }) {
+  return (
+    <View
+      {...rest}
+      style={[{ flexDirection: 'row', flexWrap: 'wrap', gap }, style]}
+      className={className}
+    >
+      {children}
+    </View>
   );
 }
 

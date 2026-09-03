@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { BarChart3, BookOpen, ListChecks, Sun } from 'lucide-react-native';
 
 import type { Lesson } from '@/api/types';
 import { useSnapshot } from '@/data/queries';
@@ -289,7 +290,7 @@ function DayList({
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 110 }}>
         <Muted className="mb-2 mt-1">{formatLongDay(active)}</Muted>
         {lessons.length === 0 ? (
-          <EmptyState emoji="🌴" title="Kein Unterricht" hint="Für diesen Tag ist nichts eingetragen." />
+          <EmptyState icon={Sun} iconColor="#48A3FF" title="Kein Unterricht" hint="Für diesen Tag ist nichts eingetragen." />
         ) : (
           lessons.map((lesson, index) => {
             const style = subjectStyle(lesson.subject);
@@ -299,7 +300,11 @@ function DayList({
             return (
               <FadeInUp key={lesson.id} delay={index * 30}>
                 <Pressable onPress={() => onSelect(lesson)} className="mb-2 active:opacity-80">
-                  <Card padded={false} className={running ? 'border-2 border-brand' : ''}>
+                  <Card
+                    padded={false}
+                    className={running ? 'border-2 border-brand' : ''}
+                    style={{ backgroundColor: tint(style.color, 0.10) }}
+                  >
                     <Row className="gap-3 p-3">
                       <View className="w-12 items-center">
                         <Text className="text-[13px] font-bold text-ink">{lesson.start}</Text>
@@ -321,7 +326,7 @@ function DayList({
                           className="text-[16px] font-bold text-ink"
                           style={cancelled ? { textDecorationLine: 'line-through', color: '#9CA2B6' } : undefined}
                         >
-                          {style.emoji} {cancelled ? lesson.originalSubject ?? lesson.subject : lesson.subject}
+                          {cancelled ? lesson.originalSubject ?? lesson.subject : lesson.subject}
                         </Text>
                         <Muted className="mt-0.5">
                           {[lesson.teacher, lesson.room].filter(Boolean).join(' · ') || '—'}
@@ -376,7 +381,12 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
         <View className="gap-3">
           <Card style={{ backgroundColor: tint(style.color, 0.12) }}>
             <Row className="gap-3">
-              <Text className="text-[30px]">{style.emoji}</Text>
+              <View
+                className="h-12 w-12 items-center justify-center rounded-2xl"
+                style={{ backgroundColor: tint(style.color, 0.16) }}
+              >
+                <BookOpen size={22} strokeWidth={2.1} color={style.color} />
+              </View>
               <View className="flex-1">
                 <Text className="text-[17px] font-bold text-ink">
                   {lesson.hour}. Stunde · {lesson.start}–{lesson.end}
@@ -402,7 +412,10 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
 
           {relatedHomework && relatedHomework.length > 0 ? (
             <Card>
-              <Text className="text-[13px] font-bold text-ink">📝 Hausaufgaben in diesem Fach</Text>
+              <Row className="gap-2">
+                <ListChecks size={16} strokeWidth={2.1} color="#22B07A" />
+                <Text className="text-[13px] font-bold text-ink">Hausaufgaben in diesem Fach</Text>
+              </Row>
               {relatedHomework.slice(0, 3).map((item) => (
                 <Muted key={item.id} className="mt-1.5">
                   {item.text}
@@ -413,7 +426,10 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
 
           {relatedExams && relatedExams.length > 0 ? (
             <Card>
-              <Text className="text-[13px] font-bold text-ink">📊 Anstehende Arbeiten</Text>
+              <Row className="gap-2">
+                <BarChart3 size={16} strokeWidth={2.1} color="#E8981E" />
+                <Text className="text-[13px] font-bold text-ink">Anstehende Arbeiten</Text>
+              </Row>
               {relatedExams.map((exam) => (
                 <Muted key={exam.id} className="mt-1.5">
                   {exam.date} · {exam.type ?? 'Arbeit'}
@@ -545,7 +561,7 @@ function TimeGrid({
                         textDecorationLine: cancelled ? 'line-through' : 'none',
                       }}
                     >
-                      {style.emoji} {cancelled ? lesson.originalSubject ?? lesson.subject : lesson.subject}
+                      {cancelled ? lesson.originalSubject ?? lesson.subject : lesson.subject}
                     </Text>
                     {span > 42 ? (
                       <Text className="text-[10px] text-muted" style={{ fontVariant: ['tabular-nums'] }}>

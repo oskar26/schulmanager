@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View, useColorScheme } from 'react-native';
+import { RefreshControl, ScrollView, Text, View, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Search, Settings } from 'lucide-react-native';
 
@@ -8,42 +8,9 @@ import { WIDGET_COMPONENTS } from '@/features/dashboard/widgets';
 import { greeting, formatLongDay, formatTimeAgo, toISO } from '@/lib/date';
 import { useLayout } from '@/lib/breakpoints';
 import { Avatar } from '@/ui/gluestack/feedback';
-import { AdaptiveContent, Card, Muted, Row, Screen, Skeleton } from '@/ui/primitives';
+import { AdaptiveContent, BentoCard, BentoGrid, Muted, RoundActionButton, Row, Screen, Skeleton } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { useSettings } from '@/state/settings';
-
-function HeaderAction({
-  onPress,
-  dark,
-  children,
-}: {
-  onPress: () => void;
-  dark: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => ({
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        transform: [{ scale: pressed ? 0.96 : 1 }],
-        backgroundColor: dark ? '#1E293B' : '#FFFFFF',
-        shadowColor: '#18181B',
-        shadowOpacity: 0.07,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 3,
-      })}
-    >
-      {children}
-    </Pressable>
-  );
-}
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -60,6 +27,10 @@ export default function DashboardScreen() {
 
   const iconColor = dark ? '#94A3B8' : '#6E6C66';
   const chipBg = dark ? '#1E293B' : '#FFFFFF';
+  // Fortschritts-Pill: Anteil erledigter Hausaufgaben (Phase C, §2.5 Header).
+  const homework = data?.homework ?? [];
+  const hwDone = homework.filter((h) => h.done).length;
+  const progress = homework.length ? Math.round((hwDone / homework.length) * 100) : 0;
 
   return (
     <Screen>
@@ -70,17 +41,26 @@ export default function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor="#6C5CE7" />}
       >
         <AdaptiveContent dashboard>
-          {/* Kopf: Begrüßung + Datum, rechts Aktionen */}
+          {/* Kopf: Begrüßung + Datum + Fortschritt, rechts Aktionen */}
           <Row className="justify-between pt-2">
             <View className="flex-1 pr-3">
-              <Row className="gap-2">
-                <Avatar name={`${data?.student?.firstname ?? 'S'} ${data?.student?.lastname ?? 'F'}`} size={34} />
-                <Text className={`flex-1 font-semibold text-muted ${wide ? 'text-[15px]' : 'text-[13px]'}`} numberOfLines={1}>
-                  {greeting()}, {name}
-                </Text>
+              <Row className="gap-2.5">
+                <Avatar name={`${data?.student?.firstname ?? 'S'} ${data?.student?.lastname ?? 'F'}`} size={36} />
+                <View className="flex-1">
+                  <Text className={`font-semibold text-muted ${wide ? 'text-[15px]' : 'text-[13px]'}`} numberOfLines={1}>
+                    {greeting()}, {name}
+                  </Text>
+                  {/* Fortschritts-Pill (Bento-Hierarchie) */}
+                  <Row className="mt-1.5 gap-2">
+                    <View className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+                      <View className="h-full rounded-full bg-brand" style={{ width: `${progress}%` }} />
+                    </View>
+                    <Text className="text-[10px] font-bold text-muted">Fortschritt {progress}%</Text>
+                  </Row>
+                </View>
               </Row>
               <Text
-                className={`mt-1.5 font-extrabold tracking-tight text-ink ${
+                className={`mt-2 font-extrabold tracking-tight text-ink ${
                   layout.isDesktop ? 'text-[36px]' : 'text-[27px]'
                 }`}
                 numberOfLines={1}
@@ -91,12 +71,8 @@ export default function DashboardScreen() {
             {/* Auf großen Screens leben Suche & Einstellungen in der Sidebar. */}
             {!wide ? (
               <Row className="gap-2">
-                <HeaderAction dark={dark} onPress={() => router.push('/search')}>
-                  <Search size={20} strokeWidth={2.1} color={iconColor} />
-                </HeaderAction>
-                <HeaderAction dark={dark} onPress={() => router.push('/settings')}>
-                  <Settings size={20} strokeWidth={2.1} color={iconColor} />
-                </HeaderAction>
+                <RoundActionButton icon={Search} onPress={() => router.push('/search')} color={iconColor} background={chipBg} accessibilityLabel="Suche" />
+                <RoundActionButton icon={Settings} onPress={() => router.push('/settings')} color={iconColor} background={chipBg} accessibilityLabel="Einstellungen" />
               </Row>
             ) : null}
           </Row>
@@ -120,15 +96,15 @@ export default function DashboardScreen() {
           </View>
 
           {isLoading || !data ? (
-            <View className="gap-4">
-              <Skeleton className="h-40 rounded-[28px]" />
-              <Skeleton className="h-48 rounded-[28px]" />
-              <Skeleton className="h-56 rounded-[28px]" />
-            </View>
+            <BentoGrid className="gap-4">
+              <Skeleton className="h-40 w-full rounded-[28px]" />
+              <Skeleton className="h-48 w-full rounded-[28px]" />
+              <Skeleton className="h-56 w-full rounded-[28px]" />
+            </BentoGrid>
           ) : (
-            <View
+            <BentoGrid
               className="gap-4"
-              style={layout.columns > 1 ? { flexDirection: 'row', flexWrap: 'wrap' } : undefined}
+              style={layout.columns > 1 ? undefined : { flexDirection: 'column' as const, flexWrap: 'nowrap' as const }}
             >
               {enabled.map((widget, index) => {
                 const Component = WIDGET_COMPONENTS[widget.id as keyof typeof WIDGET_COMPONENTS];
@@ -140,7 +116,7 @@ export default function DashboardScreen() {
                     style={
                       layout.columns > 1
                         ? { flexGrow: 1, flexBasis: layout.columns === 3 ? 300 : 360, maxWidth: '100%' }
-                        : undefined
+                        : { width: '100%' }
                     }
                   >
                     <View className="h-full">
@@ -154,22 +130,27 @@ export default function DashboardScreen() {
                 style={
                   layout.columns > 1
                     ? { flexGrow: 1, flexBasis: layout.columns === 3 ? 300 : 360, maxWidth: '100%' }
-                    : undefined
+                    : { width: '100%' }
                 }
               >
-                <Card className="h-full items-center bg-periwinkle-soft" style={{ borderRadius: 28, padding: 22 }}>
+                <BentoCard tone="#EDE9FE" className="items-center py-6">
                   <Text className="text-center text-[15px] font-extrabold text-indigo-900">
                     Dashboard anpassen
                   </Text>
                   <Muted className="mt-1 text-center text-[13px] leading-5">
                     Bestimme, welche Karten hier erscheinen und in welcher Reihenfolge.
                   </Muted>
-                  <HeaderAction dark={dark} onPress={() => router.push('/settings')}>
-                    <Settings size={19} strokeWidth={2.1} color="#6C5CE7" />
-                  </HeaderAction>
-                </Card>
+                  <View className="mt-3">
+                    <RoundActionButton
+                      icon={Settings}
+                      onPress={() => router.push('/settings')}
+                      color="#6C5CE7"
+                      accessibilityLabel="Einstellungen"
+                    />
+                  </View>
+                </BentoCard>
               </View>
-            </View>
+            </BentoGrid>
           )}
         </AdaptiveContent>
       </ScrollView>

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { BookOpen, Calculator, Lock, TrendingDown, TrendingUp } from 'lucide-react-native';
 
 import type { SubjectGrades } from '@/api/types';
 import { useSnapshot } from '@/data/queries';
@@ -7,7 +8,7 @@ import { subjectStyle, tint } from '@/design/subjects';
 import { de, deDelta, gradeColor, requiredGrade, simulate } from '@/features/grades/calculator';
 import { formatRelativeDay } from '@/lib/date';
 import {
-  Card, Chip, Divider, EmptyState, Ionicons, Muted, Row, Screen, Sheet, Skeleton, Title,
+  Card, Chip, Divider, EmptyState, Muted, Row, Screen, Sheet, Skeleton, Title,
 } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { Progress, Switch } from '@/ui/gluestack/feedback';
@@ -56,7 +57,8 @@ export default function GradesScreen() {
           </View>
         ) : subjects.length === 0 ? (
           <EmptyState
-            emoji="🔒"
+            icon={Lock}
+            iconColor="#6C5CE7"
             title="Keine Noten sichtbar"
             hint="Ob Familien Noten sehen dürfen, entscheidet die Schule im Modul „Noten“."
           />
@@ -77,7 +79,7 @@ export default function GradesScreen() {
                     <View>
                       <Muted className="text-[11px]">Stärkstes Fach</Muted>
                       <Text className="text-[14px] font-bold text-ink">
-                        {subjectStyle(best.subject).emoji} {best.subject}{' '}
+                        {best.subject}{' '}
                         <Text style={{ color: gradeColor(best.average, best.gradingSystem) }}>
                           {hidden ? '' : best.average != null ? de(best.average) : ''}
                         </Text>
@@ -88,7 +90,7 @@ export default function GradesScreen() {
                     <View>
                       <Muted className="text-[11px]">Größter Hebel</Muted>
                       <Text className="text-[14px] font-bold text-ink">
-                        {subjectStyle(worst.subject).emoji} {worst.subject}{' '}
+                        {worst.subject}{' '}
                         <Text style={{ color: gradeColor(worst.average, worst.gradingSystem) }}>
                           {hidden ? '' : worst.average != null ? de(worst.average) : ''}
                         </Text>
@@ -113,13 +115,13 @@ export default function GradesScreen() {
               return (
                 <FadeInUp key={String(subject.subjectId)} delay={index * 30}>
                   <Pressable onPress={() => setSelected(subject)} className="mb-2 active:opacity-80">
-                    <Card>
+                    <Card style={{ backgroundColor: tint(style.color, 0.10) }}>
                       <Row className="gap-3">
                         <View
                           className="h-11 w-11 items-center justify-center rounded-2xl"
                           style={{ backgroundColor: tint(style.color, 0.16) }}
                         >
-                          <Text className="text-[18px]">{style.emoji}</Text>
+                          <BookOpen size={20} strokeWidth={2.1} color={style.color} />
                         </View>
                         <View className="flex-1">
                           <Row className="justify-between">
@@ -177,7 +179,7 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
   const options = subject.gradingSystem === 1 ? [15, 13, 11, 9, 7, 5] : [1, 2, 3, 4, 5, 6];
 
   return (
-    <Sheet open onClose={onClose} title={`${style.emoji} ${subject.subject}`}>
+    <Sheet open onClose={onClose} title={subject.subject}>
       <View className="gap-3">
         <Card style={{ backgroundColor: tint(color, 0.12) }}>
           <Row className="justify-between">
@@ -228,7 +230,12 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
         {/* Rechner */}
         <Card>
           <Row className="gap-2">
-            <Text className="text-[15px]">🧮</Text>
+            <View
+              className="h-8 w-8 items-center justify-center rounded-[10px]"
+              style={{ backgroundColor: tint('#6C5CE7', 0.14) }}
+            >
+              <Calculator size={16} strokeWidth={2.1} color="#6C5CE7" />
+            </View>
             <Text className="text-[15px] font-bold text-ink">Was brauche ich?</Text>
           </Row>
           <Muted className="mt-1 text-[12px]">
@@ -284,11 +291,11 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
           </Row>
           {preview != null ? (
             <Row className="mt-3 gap-2">
-              <Ionicons
-                name={preview < (subject.average ?? 9) ? 'trending-down' : 'trending-up'}
-                size={16}
-                color={preview < (subject.average ?? 9) ? '#22B07A' : '#E24848'}
-              />
+              {preview < (subject.average ?? 9) ? (
+                <TrendingDown size={16} strokeWidth={2.1} color="#22B07A" />
+              ) : (
+                <TrendingUp size={16} strokeWidth={2.1} color="#E24848" />
+              )}
               <Text className="text-[13px] font-semibold text-ink">
                 Neuer Schnitt: {de(preview)}{' '}
                 <Text className="text-muted">({deDelta(preview - (subject.average ?? 0))})</Text>

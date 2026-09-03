@@ -1,13 +1,31 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  AlertTriangle,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  CheckCheck,
+  Clock,
+  Sparkles,
+} from 'lucide-react-native';
 
 import { useHomeworkDone, useSnapshot } from '@/data/queries';
 import { subjectStyle, tint } from '@/design/subjects';
 import { buildStudyPlan } from '@/features/tasks/studyplan';
 import { daysUntil, formatRelativeDay } from '@/lib/date';
 import {
-  Card, Chip, Divider, EmptyState, Ionicons, Muted, Row, Screen, SectionHeader,
-  SegmentedControl, Skeleton, Title,
+  Card,
+  Chip,
+  Divider,
+  EmptyState,
+  Muted,
+  Row,
+  Screen,
+  SectionHeader,
+  SegmentedControl,
+  Skeleton,
+  Title,
 } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { Progress } from '@/ui/gluestack/feedback';
@@ -83,20 +101,26 @@ export default function TasksScreen() {
             ) : null}
 
             {grouped.length === 0 ? (
-              <EmptyState emoji="🥳" title="Keine offenen Aufgaben" hint="Alles abgehakt. Genieß den Nachmittag." />
+              <EmptyState
+                icon={CheckCheck}
+                iconColor="#22B07A"
+                title="Keine offenen Aufgaben"
+                hint="Alles abgehakt. Genieß den Nachmittag."
+              />
             ) : (
               grouped.map(([due, items], groupIndex) => (
                 <View key={due}>
                   <SectionHeader
                     title={formatRelativeDay(due)}
-                    emoji={daysUntil(due) < 0 ? '⏰' : daysUntil(due) === 0 ? '🔥' : '📅'}
+                    icon={daysUntil(due) < 0 ? AlertTriangle : daysUntil(due) === 0 ? Clock : CalendarDays}
+                    iconColor={daysUntil(due) < 0 ? '#E24848' : daysUntil(due) === 0 ? '#E8981E' : '#48A3FF'}
                   />
                   {items.map((item, index) => {
                     const style = subjectStyle(item.subject);
                     return (
                       <FadeInUp key={item.id} delay={(groupIndex * 3 + index) * 30}>
                         <Pressable onPress={() => toggle(item.id)} className="mb-2 active:opacity-80">
-                          <Card>
+                          <Card style={{ backgroundColor: tint(style.color, 0.10) }}>
                             <Row className="items-start gap-3">
                               <View
                                 className="mt-0.5 h-6 w-6 items-center justify-center rounded-lg border-2"
@@ -105,7 +129,7 @@ export default function TasksScreen() {
                               <View className="flex-1">
                                 <Row className="gap-2">
                                   <Text className="text-[14px] font-bold" style={{ color: style.color }}>
-                                    {style.emoji} {item.subject}
+                                    {item.subject}
                                   </Text>
                                   {item.teacher ? <Muted className="text-[11px]">{item.teacher}</Muted> : null}
                                 </Row>
@@ -123,13 +147,13 @@ export default function TasksScreen() {
 
             {done.length > 0 ? (
               <>
-                <SectionHeader title="Erledigt" emoji="✅" />
+                <SectionHeader title="Erledigt" icon={CheckCheck} iconColor="#22B07A" />
                 {done.map((item) => (
                   <Pressable key={item.id} onPress={() => toggle(item.id)} className="mb-2 opacity-50">
-                    <Card>
+                    <Card style={{ backgroundColor: tint('#22B07A', 0.08) }}>
                       <Row className="gap-3">
                         <View className="h-6 w-6 items-center justify-center rounded-lg bg-success">
-                          <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                          <CheckCheck size={14} strokeWidth={3} color="#FFFFFF" />
                         </View>
                         <Text
                           className="flex-1 text-[14px] text-muted"
@@ -147,7 +171,12 @@ export default function TasksScreen() {
           </>
         ) : tab === 'exams' ? (
           upcomingExams.length === 0 ? (
-            <EmptyState emoji="😌" title="Keine Arbeiten angekündigt" hint="Aktuell steht nichts an." />
+            <EmptyState
+              icon={BarChart3}
+              iconColor="#E8981E"
+              title="Keine Arbeiten angekündigt"
+              hint="Aktuell steht nichts an."
+            />
           ) : (
             upcomingExams.map((exam, index) => {
               const style = subjectStyle(exam.subject);
@@ -155,7 +184,7 @@ export default function TasksScreen() {
               const blocks = plan.filter((block) => block.examId === exam.id);
               return (
                 <FadeInUp key={exam.id} delay={index * 40}>
-                  <Card className="mb-2" padded={false}>
+                  <Card className="mb-2" padded={false} style={{ backgroundColor: tint(style.color, 0.10) }}>
                     <Row className="gap-3 p-4">
                       <View
                         className="h-14 w-14 items-center justify-center rounded-2xl"
@@ -169,9 +198,7 @@ export default function TasksScreen() {
                         </Text>
                       </View>
                       <View className="flex-1">
-                        <Text className="text-[16px] font-bold text-ink">
-                          {style.emoji} {exam.subject}
-                        </Text>
+                        <Text className="text-[16px] font-bold text-ink">{exam.subject}</Text>
                         <Muted>
                           {formatRelativeDay(exam.date)}
                           {exam.start ? ` · ${exam.start}–${exam.end ?? ''}` : ''}
@@ -191,11 +218,19 @@ export default function TasksScreen() {
             })
           )
         ) : planByDay.length === 0 ? (
-          <EmptyState emoji="🧘" title="Nichts zu lernen" hint="Sobald Arbeiten anstehen, plant Schulflow hier automatisch Lernblöcke." />
+          <EmptyState
+            icon={Sparkles}
+            iconColor="#6C5CE7"
+            title="Nichts zu lernen"
+            hint="Sobald Arbeiten anstehen, plant Schulflow hier automatisch Lernblöcke."
+          />
         ) : (
           <>
             <Card className="mb-3 bg-brand-soft">
-              <Text className="text-[13px] font-bold text-brand-ink">Automatisch geplant</Text>
+              <Row className="gap-2">
+                <Sparkles size={16} strokeWidth={2.1} color="#6C5CE7" />
+                <Text className="text-[13px] font-bold text-brand-ink">Automatisch geplant</Text>
+              </Row>
               <Muted className="mt-1 text-[12px]">
                 Schulflow verteilt Lernblöcke rückwärts ab dem Prüfungstag, entlastet Tage mit langem
                 Unterricht und legt den Vortag immer auf Wiederholung.
@@ -204,7 +239,7 @@ export default function TasksScreen() {
 
             {planByDay.map(([date, blocks]) => (
               <View key={date}>
-                <SectionHeader title={formatRelativeDay(date)} emoji="🗓️" />
+                <SectionHeader title={formatRelativeDay(date)} icon={CalendarDays} iconColor="#48A3FF" />
                 <Card padded={false}>
                   {blocks.map((block, index) => {
                     const style = subjectStyle(block.subject);
@@ -215,7 +250,7 @@ export default function TasksScreen() {
                             className="h-9 w-9 items-center justify-center rounded-xl"
                             style={{ backgroundColor: tint(style.color, 0.16) }}
                           >
-                            <Text>{style.emoji}</Text>
+                            <BookOpen size={17} strokeWidth={2.1} color={style.color} />
                           </View>
                           <View className="flex-1">
                             <Text className="text-[14px] font-semibold text-ink">{block.subject}</Text>
