@@ -2,13 +2,13 @@
  * Fehler-Grenzschicht.
  *
  * Wirft ein Screen einen Laufzeitfehler, zeigt diese Grenze einen ruhigen,
- * deutschen Fallback-Screen statt eines Absturzes — mit Neustarт-Möglichkeit.
+ * deutschen Fallback-Screen statt eines Absturzes — mit Neustart-Möglichkeit.
  * Expo Router liest `ErrorBoundary`-Exports aus Route-Dateien; diese Komponente
  * wird dort und als Wrap um Widgets benutzt.
  */
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AlertCircle, ShieldCheck } from 'lucide-react-native';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -53,8 +53,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
     return (
       <View className="flex-1 items-center justify-center bg-bg px-8">
-        <Text className="text-[52px]">😵‍💫</Text>
-        <Text className="mt-2 text-center text-[20px] font-bold tracking-tight text-ink">
+        <View className="h-16 w-16 items-center justify-center rounded-2xl bg-danger/12">
+          <AlertCircle size={32} strokeWidth={2} color="#E24848" />
+        </View>
+        <Text className="mt-4 text-center text-[20px] font-bold tracking-tight text-ink">
           Da ist Schulflow gestolpert
         </Text>
         <Text className="mt-1 text-center text-[13px] leading-5 text-muted">
@@ -72,8 +74,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         >
           <Text className="text-[15px] font-bold text-white">Neu versuchen</Text>
         </Pressable>
-        <Row gap={6} className="mt-3 items-center">
-          <Ionicons name="shield-checkmark-outline" size={13} color="#9CA2B6" />
+        <Row className="mt-3 items-center gap-1.5">
+          <ShieldCheck size={13} strokeWidth={2} color="#9CA2B6" />
           <Text className="text-[11px] text-faint">Der Fehler wurde nur lokal protokolliert.</Text>
         </Row>
       </View>
@@ -81,10 +83,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 }
 
-function Row({ children, ...rest }: { children: React.ReactNode } & Record<string, unknown>) {
-  return (
-    <View className="flex-row items-center" {...rest}>
-      {children}
-    </View>
-  );
+function Row({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <View className={`flex-row items-center ${className}`}>{children}</View>;
 }

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Info, Stethoscope, X } from 'lucide-react-native';
 
 import { useCreateSickNote, useSnapshot } from '@/data/queries';
 import { addDays, formatLongDay, toISO } from '@/lib/date';
 import { activeLessonsOn } from '@/features/insights/engine';
-import { Card, Chip, IconButton, Ionicons, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { Card, Chip, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
 
@@ -30,7 +31,9 @@ export default function SickNoteScreen() {
     return (
       <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
-          <Text className="text-[56px]">🤒</Text>
+          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-danger/12">
+            <Stethoscope color="#E24848" size={32} strokeWidth={2} />
+          </View>
           <Title>Krankmeldung übermittelt</Title>
           <Muted className="text-center">
             Die Schule wurde informiert{data?.student?.firstname ? ` — gute Besserung, ${data.student.firstname}!` : '.'}
@@ -47,7 +50,7 @@ export default function SickNoteScreen() {
     <Screen adaptive="narrow">
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
-          <IconButton icon="close" onPress={() => router.back()} color="#6A7086" size={36} />
+          <IconButton icon={X} onPress={() => router.back()} color="#6A7086" size={36} />
           <Title>Krankmeldung</Title>
         </Row>
       </Row>
@@ -55,7 +58,9 @@ export default function SickNoteScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
         <Card className="mb-3 bg-brand-soft">
           <Row className="gap-3">
-            <Text className="text-[26px]">🩺</Text>
+            <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/15">
+              <Stethoscope size={20} strokeWidth={2} color="#6C5CE7" />
+            </View>
             <View className="flex-1">
               <Text className="text-[14px] font-bold text-brand-ink">In zwei Schritten erledigt</Text>
               <Muted className="mt-0.5 text-[12px]">
@@ -128,7 +133,7 @@ export default function SickNoteScreen() {
         {affected.length > 0 ? (
           <Card className="mb-3">
             <Row className="gap-2">
-              <Ionicons name="information-circle-outline" size={16} color="#48A3FF" />
+              <Info size={16} strokeWidth={2} color="#48A3FF" />
               <Text className="text-[13px] font-bold text-ink">
                 Betroffen: {affected.length} Unterrichtsstunden
               </Text>

@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useRouter } from 'expo-router';
+import { GraduationCap } from 'lucide-react-native';
 
 import { palette } from '@/design/tokens';
 import type { LayoutInfo } from '@/lib/breakpoints';
@@ -266,7 +267,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 15 }}>🎒</Text>
+            <GraduationCap size={18} strokeWidth={2} color={dark ? '#8A7CFF' : palette.brand} />
           </View>
           <View style={{ flex: 1 }}>
             <Text

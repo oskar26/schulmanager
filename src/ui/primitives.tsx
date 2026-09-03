@@ -6,6 +6,7 @@ import {
   ScrollView,
   Text,
   View,
+  useColorScheme,
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
@@ -16,6 +17,8 @@ import { ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react-native
 import { shadow } from '@/design/tokens';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
+import { useSettings } from '@/state/settings';
+import { PressableScale } from '@/ui/motion';
 
 /* ------------------------------------------------------------------ Text */
 
@@ -370,20 +373,30 @@ export function IconButton({
   background = 'bg-surface',
   size = 40,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof Ionicons.glyphMap | LucideIcon;
   onPress?: () => void;
   color?: string;
   background?: string;
   size?: number;
 }) {
+  const isLucide = typeof icon === 'function' || typeof icon === 'object';
+  const LucideComp = isLucide ? (icon as LucideIcon) : null;
+  const ionName = !isLucide ? (icon as keyof typeof Ionicons.glyphMap) : null;
+
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      accessibilityRole="button"
       style={{ width: size, height: size }}
-      className={`items-center justify-center rounded-2xl active:opacity-70 ${background}`}
+      scale={0.92}
+      className={`items-center justify-center rounded-2xl ${background}`}
     >
-      <Ionicons name={icon} size={size * 0.48} color={color} />
-    </Pressable>
+      {LucideComp ? (
+        <LucideComp size={Math.round(size * 0.52)} strokeWidth={2.2} color={color} />
+      ) : ionName ? (
+        <Ionicons name={ionName} size={Math.round(size * 0.48)} color={color} />
+      ) : null}
+    </PressableScale>
   );
 }
 
@@ -448,7 +461,24 @@ export function Sheet({
   );
 }
 
-/* ------------------------------------------------------------------ Bento (Phase C) */
+/* ------------------------------------------------------------------ Bento (Phase C/D) */
+
+const DARK_PASTEL_MAP: Record<string, string> = {
+  '#EDE9FE': '#2B2B52',
+  '#FEF3C7': '#383015',
+  '#D1FAE5': '#163C29',
+  '#FEE2E2': '#3F1D1D',
+  '#EDEAFE': '#272452',
+  '#18181B': '#1E293B',
+  '#111827': '#1E293B',
+};
+
+export function resolveTone(tone?: string, isDark?: boolean): string | undefined {
+  if (!tone) return undefined;
+  if (!isDark) return tone;
+  const match = DARK_PASTEL_MAP[tone.toUpperCase()] ?? DARK_PASTEL_MAP[tone];
+  return match ?? tone;
+}
 
 /**
  * Status-Pill — farbige, runde Markierung (reduziert-opak) für Metadaten wie
@@ -502,11 +532,12 @@ export function RoundActionButton({
   accessibilityLabel?: string;
 }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       hitSlop={6}
+      scale={0.93}
       style={{
         width: size,
         height: size,
@@ -522,7 +553,7 @@ export function RoundActionButton({
       }}
     >
       <IconComponent size={Math.round(size * 0.42)} strokeWidth={2.2} color={color} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -600,11 +631,16 @@ export function BentoCard({
   radius?: number;
   padded?: boolean;
 }) {
+  const system = useColorScheme();
+  const theme = useSettings((s) => s.settings.theme);
+  const isDark = (theme === 'system' ? system : theme) === 'dark';
+  const resolvedTone = resolveTone(tone, isDark);
+
   const boxStyle: ViewStyle = {
     borderRadius: radius,
     overflow: 'hidden',
     ...shadow.card,
-    ...(tone ? { backgroundColor: tone } : {}),
+    ...(resolvedTone ? { backgroundColor: resolvedTone } : {}),
   };
   const inner = (
     <View
@@ -619,14 +655,14 @@ export function BentoCard({
   if (!onPress) return inner;
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
-      className="active:opacity-95"
+      scale={0.97}
       style={{ borderRadius: radius }}
     >
       {inner}
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -1,15 +1,21 @@
-import React from 'react';
-import { Pressable, Text, View, useColorScheme } from 'react-native';
+import React, { useEffect } from 'react';
+import { Text, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import type { LucideIcon } from 'lucide-react-native';
 import { Home, CalendarDays, ListChecks, BarChart3, Inbox } from 'lucide-react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { useSnapshot, useModuleActive } from '@/data/queries';
 import { useSettings } from '@/state/settings';
 import { useLayout } from '@/lib/breakpoints';
 import { AdaptiveTabBar } from '@/ui/shell';
+import { PressableScale } from '@/ui/motion';
 
 /**
  * Icons pro Tab — nur Lucide-Vektoren. Bewusst sparsam: ein Icon, keine Labels
@@ -124,58 +130,111 @@ function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarPr
         }}
       >
         {items.map((item) => {
-          const Icon = item.icon;
           const active = item.activeKey;
+          const routeKey = state.routes.find((r) => r.name === item.name)?.key ?? item.name;
+          const label = String(descriptors[routeKey]?.options.title ?? item.name);
+
           return (
-            <Pressable
+            <AnimatedTabItem
               key={item.name}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={descriptors[state.routes.find((r) => r.name === item.name)?.key ?? '']?.options.title ?? item.name}
-              onPress={() => goTab(item.name, state.routes.find((r) => r.name === item.name)?.key ?? item.name)}
-              style={{ alignItems: 'center', justifyContent: 'center', width: 56, height: 48 }}
-            >
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: active ? (dark ? '#334155' : '#1E293B') : 'transparent',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon
-                  size={22}
-                  strokeWidth={active ? 2.5 : 2}
-                  color={active ? '#FFFFFF' : '#64748B'}
-                />
-              </View>
-              {/* Rote Badge-Pill oben rechts */}
-              {item.badge > 0 ? (
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    right: 2,
-                    minWidth: 18,
-                    height: 18,
-                    paddingHorizontal: 5,
-                    borderRadius: 9,
-                    backgroundColor: '#EF4444',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>
-                    {item.badge > 99 ? '99+' : item.badge}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
+              item={item}
+              active={active}
+              dark={dark}
+              label={label}
+              onPress={() => goTab(item.name, routeKey)}
+            />
           );
         })}
       </View>
     </View>
+  );
+}
+
+function AnimatedTabItem({
+  item,
+  active,
+  dark,
+  label,
+  onPress,
+}: {
+  item: TabSpec;
+  active: boolean;
+  dark: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  const Icon = item.icon;
+  const activeVal = useSharedValue(active ? 1 : 0);
+
+  useEffect(() => {
+    activeVal.value = withSpring(active ? 1 : 0, { damping: 16, stiffness: 240 });
+  }, [active, activeVal]);
+
+  const bgStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: activeVal.value }],
+    opacity: activeVal.value,
+  }));
+
+  return (
+    <PressableScale
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+      onPress={onPress}
+      scale={0.92}
+      style={{ alignItems: 'center', justifyContent: 'center', width: 56, height: 48 }}
+    >
+      <View
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+        }}
+      >
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: 22,
+              backgroundColor: dark ? '#334155' : '#1E293B',
+            },
+            bgStyle,
+          ]}
+        />
+        <Icon
+          size={22}
+          strokeWidth={active ? 2.5 : 2}
+          color={active ? '#FFFFFF' : dark ? '#8A90AA' : '#64748B'}
+        />
+      </View>
+
+      {item.badge > 0 ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: 2,
+            right: 2,
+            minWidth: 18,
+            height: 18,
+            paddingHorizontal: 5,
+            borderRadius: 9,
+            backgroundColor: '#EF4444',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>
+            {item.badge > 99 ? '99+' : item.badge}
+          </Text>
+        </View>
+      ) : null}
+    </PressableScale>
   );
 }

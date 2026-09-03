@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronRight, Search, SearchX, X } from 'lucide-react-native';
 
 import { de } from '@/features/grades/calculator';
 import { useSnapshot } from '@/data/queries';
 import { subjectStyle, tint } from '@/design/subjects';
 import { formatRelativeDay } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
-import { Card, EmptyState, IconButton, Ionicons, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { Card, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 
 interface Hit {
   id: string;
@@ -144,9 +145,9 @@ export default function SearchScreen() {
   return (
     <Screen adaptive="narrow">
       <Row className="gap-2 px-4 pb-3 pt-2">
-        <IconButton icon="close" onPress={() => router.back()} color="#6A7086" size={36} />
+        <IconButton icon={X} onPress={() => router.back()} color="#6A7086" size={36} />
         <View className="flex-1 flex-row items-center rounded-2xl border border-line bg-surface px-3">
-          <Ionicons name="search" size={17} color="#9CA2B6" />
+          <Search size={17} strokeWidth={2} color="#9CA2B6" />
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -173,10 +174,10 @@ export default function SearchScreen() {
                 </Pressable>
               ))}
             </Row>
-            <EmptyState emoji="🔍" title="Alles auf einmal durchsuchen" hint="Stundenplan, Aufgaben, Noten, Briefe, Nachrichten, Termine und Aushänge." />
+            <EmptyState icon={Search} iconColor="#6C5CE7" title="Alles auf einmal durchsuchen" hint="Stundenplan, Aufgaben, Noten, Briefe, Nachrichten, Termine und Aushänge." />
           </>
         ) : hits.length === 0 ? (
-          <EmptyState emoji="🤷" title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
+          <EmptyState icon={SearchX} iconColor="#E24848" title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
         ) : (
           hits.map((hit) => (
             <Pressable
@@ -202,7 +203,7 @@ export default function SearchScreen() {
                       {hit.kind} · {hit.subtitle}
                     </Muted>
                   </View>
-                  <Ionicons name="chevron-forward" size={15} color="#9CA2B6" />
+                  <ChevronRight size={15} strokeWidth={2} color="#9CA2B6" />
                 </Row>
               </Card>
             </Pressable>

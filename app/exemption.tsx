@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { CheckCircle2, Clock, Send, X, XCircle } from 'lucide-react-native';
 
 import { useRequestExemption, useSnapshot } from '@/data/queries';
 import { addDays, formatDay, formatLongDay, toISO } from '@/lib/date';
-import { Card, Chip, Divider, IconButton, Ionicons, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { Card, Chip, Divider, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
 
@@ -25,7 +26,9 @@ export default function ExemptionScreen() {
     return (
       <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
-          <Text className="text-[56px]">📨</Text>
+          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-brand-soft">
+            <Send color="#6C5CE7" size={32} strokeWidth={2} />
+          </View>
           <Title>Antrag gestellt</Title>
           <Muted className="text-center">
             Die Schule entscheidet über die Beurlaubung. Du bekommst eine Benachrichtigung, sobald eine
@@ -42,7 +45,7 @@ export default function ExemptionScreen() {
   return (
     <Screen adaptive="narrow">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="close" onPress={() => router.back()} color="#6A7086" size={36} />
+        <IconButton icon={X} onPress={() => router.back()} color="#6A7086" size={36} />
         <Title className="ml-2">Beurlaubung</Title>
       </Row>
 
@@ -106,17 +109,13 @@ export default function ExemptionScreen() {
             {existing.map((entry, index) => (
               <View key={String(entry.id)}>
                 <Row className="gap-3 px-4 py-3">
-                  <Ionicons
-                    name={
-                      entry.granted === null
-                        ? 'time-outline'
-                        : entry.granted
-                          ? 'checkmark-circle-outline'
-                          : 'close-circle-outline'
-                    }
-                    size={18}
-                    color={entry.granted === null ? '#E8981E' : entry.granted ? '#22B07A' : '#E24848'}
-                  />
+                  {entry.granted === null ? (
+                    <Clock size={18} strokeWidth={2} color="#E8981E" />
+                  ) : entry.granted ? (
+                    <CheckCircle2 size={18} strokeWidth={2} color="#22B07A" />
+                  ) : (
+                    <XCircle size={18} strokeWidth={2} color="#E24848" />
+                  )}
                   <View className="flex-1">
                     <Text className="text-[14px] font-semibold text-ink">{entry.comment ?? 'Beurlaubung'}</Text>
                     <Muted className="text-[11px]">
