@@ -1,9 +1,16 @@
 /**
- * Motion-Layer — hier wird Tamagui eingesetzt: Tokens + Animations-Treiber.
- * Der Rest der App bleibt bei NativeWind-Klassen, animiert aber über diese Bausteine.
+ * Motion-Layer — react-native-reanimated + Tamagui:
+ * 60/120fps native Spring-Physik für Karte-Einfliegen, Touch-Scale und Pulse.
  */
 import React, { useEffect, useState } from 'react';
-import { Pressable, View, type PressableProps, type ViewStyle } from 'react-native';
+import { Pressable, type PressableProps, type ViewStyle } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  FadeInUp as ReanimatedFadeInUp,
+  FadeInDown as ReanimatedFadeInDown,
+} from 'react-native-reanimated';
 import { Stack } from 'tamagui';
 
 type MotionProps = {
@@ -14,51 +21,65 @@ type MotionProps = {
   className?: string;
 };
 
-/** Sanftes Einfliegen von unten — für Listen und Dashboard-Karten. */
-export function FadeInUp({ children, delay = 0, distance = 14, style, className }: MotionProps) {
-  const [shown, setShown] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShown(true), delay);
-    return () => clearTimeout(timer);
-  }, [delay]);
-
+/** Sanftes Einfliegen von unten mit Spring-Physik — für Listen und Dashboard-Karten. */
+export function FadeInUp({ children, delay = 0, style, className }: MotionProps) {
   return (
-    <View style={style} className={className}>
-      <Stack animation="lazy" opacity={shown ? 1 : 0} y={shown ? 0 : distance}>
-        {children}
-      </Stack>
-    </View>
+    <Animated.View
+      entering={ReanimatedFadeInUp.springify().damping(18).stiffness(200).delay(delay)}
+      style={style}
+      className={className}
+    >
+      {children}
+    </Animated.View>
   );
 }
 
-/** Verspielter Druckpunkt: Karte „drückt sich ein". */
+/** Sanftes Einfliegen von oben mit Spring-Physik. */
+export function FadeInDown({ children, delay = 0, style, className }: MotionProps) {
+  return (
+    <Animated.View
+      entering={ReanimatedFadeInDown.springify().damping(18).stiffness(200).delay(delay)}
+      style={style}
+      className={className}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+/** Verspielter Druckpunkt: Karte „drückt sich ein" mit reanimated Spring. */
 export function PressableScale({
   children,
   scale = 0.97,
   className,
   style,
+  onPress,
+  onPressIn,
+  onPressOut,
   ...rest
 }: PressableProps & { children: React.ReactNode; scale?: number; className?: string }) {
-  const [pressed, setPressed] = useState(false);
+  const pressed = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressed.value }],
+  }));
 
   return (
     <Pressable
       {...rest}
+      onPress={onPress}
       onPressIn={(event) => {
-        setPressed(true);
-        rest.onPressIn?.(event);
+        pressed.value = withSpring(scale, { damping: 16, stiffness: 320 });
+        onPressIn?.(event);
       }}
       onPressOut={(event) => {
-        setPressed(false);
-        rest.onPressOut?.(event);
+        pressed.value = withSpring(1, { damping: 16, stiffness: 320 });
+        onPressOut?.(event);
       }}
       style={style}
       className={className}
     >
-      <Stack animation="bouncy" scale={pressed ? scale : 1}>
-        {children}
-      </Stack>
+      <Animated.View style={animatedStyle}>{children}</Animated.View>
     </Pressable>
   );
 }

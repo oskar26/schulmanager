@@ -1,10 +1,11 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronLeft, Info, Receipt, Tag } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { formatDay } from '@/lib/date';
-import { Card, Chip, Divider, EmptyState, IconButton, Ionicons, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
+import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 
 /** Deutsche Währungsformatierung aus den Dezimal-Strings der API. */
@@ -24,7 +25,7 @@ export default function PaymentsScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="chevron-back" onPress={() => router.back()} size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Zahlungen</Title>
           <Muted>Rechnungen der Schule — Beträge sind Angaben der Schule</Muted>
@@ -49,7 +50,8 @@ export default function PaymentsScreen() {
 
         {invoices.length === 0 ? (
           <EmptyState
-            emoji="🧾"
+            icon={Receipt}
+            iconColor="#22B07A"
             title="Keine Rechnungen"
             hint="Entweder ist alles bezahlt — oder das Modul „Zahlungen“ ist nicht gebucht."
           />
@@ -85,7 +87,7 @@ export default function PaymentsScreen() {
                   <View className="border-t border-line px-4 py-2.5">
                     {invoice.number != null ? (
                       <Row className="gap-1.5">
-                        <Ionicons name="pricetag-outline" size={13} color="#9CA2B6" />
+                        <Tag size={13} strokeWidth={2} color="#9CA2B6" />
                         <Muted className="flex-1 text-[11px]">
                           Verwendungszweck: {invoice.number}
                           {data?.student?.id != null ? ` / ${data.student.id}` : ''}
@@ -108,7 +110,7 @@ export default function PaymentsScreen() {
           ))
         )}
 
-        <SectionHeader title="Hinweis" emoji="ℹ️" />
+        <SectionHeader title="Hinweis" icon={Info} iconColor="#48A3FF" />
         <Card>
           <Muted className="text-[12px] leading-5">
             Schulflow liest die Rechnungen nur. Bezahlt wird wie bisher direkt an die Schule — Überweisung mit dem

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable } from 'react-native';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ArrowUp, ChevronLeft, ChevronRight, Download, FileText, Folder, FolderOpen } from 'lucide-react-native';
 
 import type { DocumentFolder, SchoolDocument } from '@/api/types';
 import { useSession } from '@/state/session';
@@ -9,8 +9,7 @@ import { downloadStoredFile } from '@/api/downloads';
 import { formatDay } from '@/lib/date';
 import { htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
-import { queryKeys } from '@/data/queries';
-import { Card, Divider, EmptyState, IconButton, Ionicons, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
+import { Card, Divider, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
 
 interface Crumb {
   id: string;
@@ -93,7 +92,7 @@ export default function DocumentsScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="chevron-back" onPress={() => router.back()} size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Dokumente</Title>
           <Muted numberOfLines={1}>
@@ -105,7 +104,7 @@ export default function DocumentsScreen() {
       {path.length > 0 ? (
         <Row className="gap-2 px-4 pb-2">
           <IconButton
-            icon="arrow-up-outline"
+            icon={ArrowUp}
             size={32}
             onPress={() => setPath((prev) => prev.slice(0, -1))}
           />
@@ -123,7 +122,8 @@ export default function DocumentsScreen() {
           </View>
         ) : folders.length === 0 && documents.length === 0 ? (
           <EmptyState
-            emoji="🗂️"
+            icon={FolderOpen}
+            iconColor="#FAC748"
             title="Kein Inhalt"
             hint="Dieser Ordner ist leer — oder das Modul „Dokumente“ ist nicht gebucht."
           />
@@ -133,9 +133,9 @@ export default function DocumentsScreen() {
               <View key={`f-${String(folder.id)}`}>
                 <PressableList
                   onPress={() => openFolder(folder)}
-                  icon={<Ionicons name="folder" size={19} color="#FAC748" />}
+                  icon={<Folder size={19} strokeWidth={2} color="#FAC748" />}
                   title={folder.name || 'Ordner'}
-                  right={<Ionicons name="chevron-forward" size={16} color="#9CA2B6" />}
+                  right={<ChevronRight size={16} color="#9CA2B6" />}
                 />
                 {index < folders.length - 1 || documents.length > 0 ? <Divider className="ml-14" /> : null}
               </View>
@@ -148,13 +148,13 @@ export default function DocumentsScreen() {
                     downloading === String(document.id) ? (
                       <ActivityIndicator size="small" color="#6C5CE7" />
                     ) : (
-                      <Ionicons name={document.file ? 'document-outline' : 'reader-outline'} size={19} color="#6C5CE7" />
+                      <FileText size={19} strokeWidth={2} color="#6C5CE7" />
                     )
                   }
                   title={document.name || 'Dokument'}
                   subtitle={document.updatedAt ? formatDay(document.updatedAt.slice(0, 10)) : undefined}
                   right={
-                    document.file ? <Ionicons name="download-outline" size={16} color="#9CA2B6" /> : undefined
+                    document.file ? <Download size={16} strokeWidth={2} color="#9CA2B6" /> : undefined
                   }
                 />
                 {index < documents.length - 1 ? <Divider className="ml-14" /> : null}

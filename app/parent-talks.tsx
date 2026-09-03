@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { CalendarDays, ChevronLeft, User, Users } from 'lucide-react-native';
 
 import type { ParentTalkRound } from '@/api/types';
 import { useBookProposal, useSnapshot } from '@/data/queries';
 import { formatDay, formatTime } from '@/lib/date';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
-import { Card, Chip, EmptyState, IconButton, Ionicons, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
+import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
@@ -21,7 +22,7 @@ export default function ParentTalksScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="chevron-back" onPress={() => router.back()} size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Elternsprechtag</Title>
           <Muted>Gespräche mit den Lehrkräften buchen</Muted>
@@ -33,7 +34,8 @@ export default function ParentTalksScreen() {
           <Skeleton className="h-24" />
         ) : rounds.length === 0 ? (
           <EmptyState
-            emoji="🗓️"
+            icon={CalendarDays}
+            iconColor="#E8981E"
             title="Keine Sprechtage"
             hint="Aktuell ist keine Runde geplant — oder das Modul ist nicht gebucht."
           />
@@ -61,7 +63,7 @@ export default function ParentTalksScreen() {
                     <View className="mt-3 gap-1.5">
                       {booked.map((appointment) => (
                         <Row key={String(appointment.id)} className="gap-2 rounded-xl bg-success/10 px-3 py-2">
-                          <Ionicons name="person-outline" size={14} color="#1FA26F" />
+                          <User size={14} strokeWidth={2} color="#1FA26F" />
                           <Text className="flex-1 text-[13px] font-semibold text-ink">
                             {[appointment.teacher?.lastname, appointment.teacher?.firstname].filter(Boolean).join(', ') ||
                               'Lehrkraft'}
@@ -172,7 +174,7 @@ function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () 
           </Pressable>
         ))}
         {teachers.size === 0 ? (
-          <EmptyState emoji="🧑‍🏫" title="Keine Angebote" hint="In dieser Runde werden keine Termine angeboten." />
+          <EmptyState icon={Users} iconColor="#E8981E" title="Keine Angebote" hint="In dieser Runde werden keine Termine angeboten." />
         ) : null}
       </View>
 

@@ -1,15 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronDown, ChevronUp, Vote, X } from 'lucide-react-native';
 
 import type { Elective, Election } from '@/api/types';
 import { useSavePriorities, useSnapshot } from '@/data/queries';
 import { formatDay } from '@/lib/date';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
-import { Card, Chip, EmptyState, IconButton, Ionicons, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
-import { useSession } from '@/state/session';
 
 export default function ElectivesScreen() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function ElectivesScreen() {
   return (
     <Screen adaptive="narrow">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="close" onPress={() => router.back()} size={36} />
+        <IconButton icon={X} onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Wahlfächer</Title>
           <Muted>Wünsche sortieren und abgeben</Muted>
@@ -70,7 +70,8 @@ export default function ElectivesScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {elections.length === 0 ? (
           <EmptyState
-            emoji="🗳️"
+            icon={Vote}
+            iconColor="#BD7AF6"
             title="Keine Wahlen offen"
             hint="Wenn deine Schule Wahlfächer anbietet, erscheinen sie hier."
           />
@@ -120,13 +121,13 @@ export default function ElectivesScreen() {
                           </View>
                           <Text className="flex-1 text-[14px] font-semibold text-ink">{elective.name}</Text>
                           <IconButton
-                            icon="chevron-up-outline"
+                            icon={ChevronUp}
                             size={30}
                             background="transparent"
                             onPress={() => move(election, index, -1)}
                           />
                           <IconButton
-                            icon="chevron-down-outline"
+                            icon={ChevronDown}
                             size={30}
                             background="transparent"
                             onPress={() => move(election, index, 1)}

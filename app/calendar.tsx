@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { CalendarDays, ChevronLeft, ChevronRight, Link2 } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { useSession } from '@/state/session';
@@ -76,13 +77,13 @@ export default function CalendarScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="chevron-back" onPress={() => router.back()} color="#6A7086" size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => router.back()} color="#6A7086" size={36} />
         <View className="ml-2 flex-1">
           <Title>Kalender</Title>
           <Muted>Termine, Ferien und Arbeiten in einer Ansicht</Muted>
         </View>
         <IconButton
-          icon="link-outline"
+          icon={Link2}
           size={36}
           color="#6C5CE7"
           onPress={async () => {
@@ -111,11 +112,11 @@ export default function CalendarScreen() {
       {mode === 'month' ? (
         <View className="px-4">
           <Row className="justify-between pb-2">
-            <IconButton icon="chevron-back" size={32} color="#6A7086" onPress={() => setMonthOffset((v) => v - 1)} />
+            <IconButton icon={ChevronLeft} size={32} color="#6A7086" onPress={() => setMonthOffset((v) => v - 1)} />
             <Text className="text-[15px] font-bold text-ink">
               {MONTHS[monthDate.getMonth()]} {monthDate.getFullYear()}
             </Text>
-            <IconButton icon="chevron-forward" size={32} color="#6A7086" onPress={() => setMonthOffset((v) => v + 1)} />
+            <IconButton icon={ChevronRight} size={32} color="#6A7086" onPress={() => setMonthOffset((v) => v + 1)} />
           </Row>
           <Row>
             {WEEKDAYS_SHORT.map((day) => (
@@ -167,7 +168,7 @@ export default function CalendarScreen() {
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {merged.length === 0 ? (
-          <EmptyState emoji="📅" title="Keine Termine" />
+          <EmptyState icon={CalendarDays} iconColor="#BD7AF6" title="Keine Termine" />
         ) : (
           merged.map((entry, index) => (
             <FadeInUp key={entry.id} delay={index * 25}>

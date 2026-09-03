@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { MessageSquare, Send, X } from 'lucide-react-native';
 
 import type { ChatMessage } from '@/api/types';
 import { useSendMessage, useThreadMessages } from '@/data/queries';
@@ -8,7 +9,6 @@ import { formatTimeAgo } from '@/lib/date';
 import { hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, EmptyState, IconButton, Muted, Row, Screen, Skeleton, Title } from '@/ui/primitives';
 import { Avatar, Spinner } from '@/ui/gluestack/feedback';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function ThreadScreen() {
   const router = useRouter();
@@ -46,7 +46,7 @@ export default function ThreadScreen() {
       {/* Kopf */}
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
-          <IconButton icon="close" onPress={() => router.back()} size={36} />
+          <IconButton icon={X} onPress={() => router.back()} size={36} />
           <View className="flex-1">
             <Title numberOfLines={1}>{params.sender || params.subject || 'Nachricht'}</Title>
             {params.subject && params.sender ? (
@@ -76,7 +76,8 @@ export default function ThreadScreen() {
             </View>
           ) : !data || data.length === 0 ? (
             <EmptyState
-              emoji="💬"
+              icon={MessageSquare}
+              iconColor="#48A3FF"
               title="Keine Nachrichten im Verlauf"
               hint={params.preview ? params.preview : 'Hier erscheinen Antworten und alte Nachrichten.'}
             />
@@ -120,7 +121,7 @@ export default function ThreadScreen() {
               {send.isPending ? (
                 <Spinner size="small" />
               ) : (
-                <Ionicons name="chatbubble-ellipses-outline" size={16} color="#6C5CE7" />
+                <MessageSquare size={16} strokeWidth={2} color="#6C5CE7" />
               )}
             </View>
             <TextInput
@@ -139,7 +140,7 @@ export default function ThreadScreen() {
                 draft.trim().length === 0 ? 'bg-line/50' : 'bg-brand active:opacity-80'
               }`}
             >
-              <Ionicons name="send" size={18} color={draft.trim().length === 0 ? '#9CA2B6' : '#FFFFFF'} />
+              <Send size={18} strokeWidth={2} color={draft.trim().length === 0 ? '#9CA2B6' : '#FFFFFF'} />
             </Pressable>
           </Row>
         </View>

@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { AlertCircle, CheckCircle2, ChevronLeft, FileText, Lightbulb } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { formatLongDay } from '@/lib/date';
-import { Card, Chip, Divider, EmptyState, IconButton, Ionicons, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
+import { Card, Chip, Divider, EmptyState, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
 import { Progress } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
 
@@ -23,7 +24,7 @@ export default function AttendanceScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="chevron-back" onPress={() => router.back()} color="#6A7086" size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => router.back()} color="#6A7086" size={36} />
         <View className="ml-2 flex-1">
           <Title>Fehlzeiten</Title>
           <Muted>Schuljahr {new Date().getFullYear()}</Muted>
@@ -63,7 +64,7 @@ export default function AttendanceScreen() {
 
         <Card className="mt-3 bg-brand-soft">
           <Row className="gap-2">
-            <Ionicons name="bulb-outline" size={17} color="#3C2FA0" />
+            <Lightbulb size={18} strokeWidth={2.1} color="#6C5CE7" />
             <Text className="flex-1 text-[13px] leading-5 text-brand-ink">
               Wichtig: Eine Krankmeldung ohne Attest-Typ entschuldigt formal noch nichts — die Schule
               wartet dann auf das Papier. Schulflow rechnet genau wie der offizielle Client:
@@ -72,9 +73,9 @@ export default function AttendanceScreen() {
           </Row>
         </Card>
 
-        <SectionHeader title="Einzelne Fehlzeiten" emoji="🗂️" />
+        <SectionHeader title="Einzelne Fehlzeiten" icon={FileText} iconColor="#E8981E" />
         {absences.length === 0 ? (
-          <EmptyState emoji="🎉" title="Keine Fehlzeiten" hint="Lückenlos anwesend." />
+          <EmptyState icon={CheckCircle2} iconColor="#22B07A" title="Keine Fehlzeiten" hint="Lückenlos anwesend." />
         ) : (
           <Card padded={false}>
             {absences.map((entry, index) => (
@@ -85,11 +86,11 @@ export default function AttendanceScreen() {
                       entry.excused ? 'bg-success/12' : 'bg-danger/12'
                     }`}
                   >
-                    <Ionicons
-                      name={entry.excused ? 'checkmark' : 'alert'}
-                      size={17}
-                      color={entry.excused ? '#22B07A' : '#E24848'}
-                    />
+                    {entry.excused ? (
+                      <CheckCircle2 size={18} strokeWidth={2.1} color="#22B07A" />
+                    ) : (
+                      <AlertCircle size={18} strokeWidth={2.1} color="#E24848" />
+                    )}
                   </View>
                   <View className="flex-1">
                     <Text className="text-[14px] font-semibold text-ink">{formatLongDay(entry.date)}</Text>

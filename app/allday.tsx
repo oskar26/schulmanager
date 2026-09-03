@@ -1,10 +1,11 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Clock, Sun, X } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { WEEKDAYS } from '@/lib/date';
-import { Card, Chip, EmptyState, IconButton, Ionicons, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 
 /**
@@ -28,7 +29,7 @@ export default function AlldayScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon="close" onPress={() => router.back()} size={36} />
+        <IconButton icon={X} onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Ganztag & Betreuung</Title>
           <Muted>Wann dein Kind in der Betreuung ist</Muted>
@@ -38,7 +39,8 @@ export default function AlldayScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {offers.length === 0 ? (
           <EmptyState
-            emoji="🧩"
+            icon={Sun}
+            iconColor="#8A7CFF"
             title="Keine Betreuungszeiten"
             hint="Entweder nimmt dein Kind nicht am Ganztag teil — oder das Modul ist nicht gebucht."
           />
@@ -57,7 +59,7 @@ export default function AlldayScreen() {
                     />
                   </Row>
                   <Row className="mt-2 gap-1.5">
-                    <Ionicons name="time-outline" size={14} color="#6A7086" />
+                    <Clock size={14} strokeWidth={2} color="#6A7086" />
                     <Text className="flex-1 text-[13px] text-muted">
                       {dayOffers
                         .map((offer) =>
@@ -73,7 +75,6 @@ export default function AlldayScreen() {
             );
           })
         )}
-
       </ScrollView>
     </Screen>
   );
