@@ -1,6 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import {
+  AlertCircle,
+  CheckCheck,
+  Download,
+  Inbox,
+  MailOpen,
+  MapPin,
+  MessagesSquare,
+  Paperclip,
+} from 'lucide-react-native';
 
 import type { Letter, MessageThread, Tile } from '@/api/types';
 import { useSession } from '@/state/session';
@@ -10,7 +20,7 @@ import { downloadStoredFile } from '@/api/downloads';
 import { formatRelativeDay, formatTimeAgo } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
-import { Card, Chip, Divider, EmptyState, Ionicons, Muted, Row, Screen, SectionHeader, SegmentedControl, Sheet, Skeleton, Title } from '@/ui/primitives';
+import { Card, Chip, Divider, EmptyState, Muted, Row, Screen, SectionHeader, SegmentedControl, Sheet, Skeleton, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Avatar, Spinner } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
@@ -60,13 +70,14 @@ export default function InboxScreen() {
           </View>
         ) : tabs.length === 0 ? (
           <EmptyState
-            emoji="📭"
+            icon={Inbox}
+            iconColor="#6C5CE7"
             title="Postfach nicht gebucht"
             hint="Deine Schule hat weder Elternbriefe, Nachrichten noch Aushänge freigeschaltet."
           />
         ) : activeTab === 'letters' ? (
           data.letters.length === 0 ? (
-            <EmptyState emoji="📭" title="Keine Elternbriefe" />
+            <EmptyState icon={MailOpen} iconColor="#6C5CE7" title="Keine Elternbriefe" />
           ) : (
             data.letters.map((item, index) => {
               const needsAction = item.requiresConfirmation && !item.confirmed;
@@ -79,18 +90,21 @@ export default function InboxScreen() {
                     }}
                     className="mb-2 active:opacity-80"
                   >
-                    <Card className={needsAction ? 'border border-warning/40' : ''}>
+                    <Card
+                      className={needsAction ? 'border border-warning/40' : ''}
+                      style={{ backgroundColor: needsAction ? 'rgba(232,152,30,0.08)' : undefined }}
+                    >
                       <Row className="gap-3">
                         <View
                           className={`h-10 w-10 items-center justify-center rounded-2xl ${
                             needsAction ? 'bg-warning/15' : 'bg-brand-soft'
                           }`}
                         >
-                          <Ionicons
-                            name={needsAction ? 'alert-circle-outline' : 'mail-open-outline'}
-                            size={19}
-                            color={needsAction ? '#E8981E' : '#6C5CE7'}
-                          />
+                          {needsAction ? (
+                            <AlertCircle size={19} strokeWidth={2.1} color="#E8981E" />
+                          ) : (
+                            <MailOpen size={19} strokeWidth={2.1} color="#6C5CE7" />
+                          )}
                         </View>
                         <View className="flex-1">
                           <Row className="justify-between">
@@ -119,7 +133,7 @@ export default function InboxScreen() {
           )
         ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
-            <EmptyState emoji="💬" title="Keine Nachrichten" hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht." />
+            <EmptyState icon={MessagesSquare} iconColor="#48A3FF" title="Keine Nachrichten" hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht." />
           ) : (
             data.threads.map((item, index) => (
               <ThreadRow key={String(item.subscriptionId)} thread={item} index={index} onOpen={() => {
@@ -139,7 +153,7 @@ export default function InboxScreen() {
             ))
           )
         ) : data.tiles.length === 0 ? (
-          <EmptyState emoji="📌" title="Kein Aushang" />
+          <EmptyState icon={MapPin} iconColor="#E8981E" title="Kein Aushang" />
         ) : (
           data.tiles.map((item, index) => (
             <FadeInUp key={String(item.id)} delay={Math.min(index, 8) * 30}>
@@ -152,7 +166,7 @@ export default function InboxScreen() {
               >
                 <Card>
                   <Row className="gap-2">
-                    {item.pinned ? <Text>📍</Text> : null}
+                    {item.pinned ? <MapPin size={15} strokeWidth={2.1} color="#E8981E" /> : null}
                     <Text className="flex-1 text-[15px] font-bold text-ink">{item.title}</Text>
                   </Row>
                   <Muted className="mt-1" numberOfLines={3}>
@@ -339,12 +353,12 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                 <View key={String(file.id)}>
                   <Pressable onPress={() => void download(file)} className="active:bg-line/30">
                     <Row className="gap-3 px-4 py-3">
-                      <Ionicons name="document-attach-outline" size={18} color="#6C5CE7" />
+                      <Paperclip size={18} strokeWidth={2} color="#6C5CE7" />
                       <Text className="flex-1 text-[14px] text-ink">{file.name}</Text>
                       {downloading === String(file.id) ? (
                         <Spinner />
                       ) : (
-                        <Ionicons name="download-outline" size={18} color="#9CA2B6" />
+                        <Download size={18} strokeWidth={2} color="#9CA2B6" />
                       )}
                     </Row>
                   </Pressable>
@@ -386,7 +400,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
             </Button>
           ) : (
             <Row className="justify-center gap-2 rounded-2xl bg-success/10 py-3">
-              <Ionicons name="checkmark-circle" size={18} color="#22B07A" />
+              <CheckCheck size={18} strokeWidth={2.2} color="#22B07A" />
               <Text className="text-[14px] font-semibold text-success">
                 {letter.confirmed || localConfirmed ? 'Bestätigt' : 'Keine Bestätigung nötig'}
               </Text>

@@ -168,19 +168,21 @@ Neue Routen unter `app/onboarding/`:
       "Abmelden → Demo" / "Mit Konto verbinden").
 
 ### Phase C — Bento-Redesign Kern (Screens/Shell/Widgets)
-- [ ] `app/(tabs)/_layout.tsx`: schwebende Floating Bottom Nav (lucide, `#111827`,
+- [x] `app/(tabs)/_layout.tsx`: schwebende Floating Bottom Nav (lucide, `#111827`,
       `borderRadius 36`, aktiver Kreis, rote Badge-Pills). Keine Labels. Beibehaltung
       `AdaptiveTabBar` für Rail/Sidebar.
-- [ ] `src/ui/primitives.tsx` → lucide migrieren; neue Bausteine:
-      `BentoCard`(Farblock, Radius 28/32, großes Padding), `BentoGrid`,
-      `Pill`, `RoundActionButton`, `AvatarStack`.
-- [ ] Home `app/(tabs)/index.tsx`: neuer Header (Avatar, Greeting, Progress-Pill,
-      Einstellungs-Kapsel), asymmetrisches Bento-Raster. Widgets als farbige Blöcke.
-- [ ] Widgets `src/features/dashboard/widgets.tsx`: jede Karte in Bento-Anatomie
-      (Farblock, Ecken-Pfeil, Pills, keine Emojis).
-- [ ] `timetable`, `tasks`, `grades`, `inbox`: Listen als gestapelte Farb-Kacheln.
-- [ ] `settings.tsx`: Sektionen als strukturierte abgerundete Bento-Karten
-      (kein freischwebender Text), Theme-Umschalter, Konto-/Demo-Wechsel.
+- [x] `src/ui/primitives.tsx` → lucide-Bausteine & zentrale Icon-Stelle:
+      `BentoCard` (Farblock, Radius 28/32, großes Padding), `BentoGrid`,
+      `Pill`, `RoundActionButton`, `AvatarStack` + `src/ui/icon.tsx` (Icon-Helper).
+      `ListRow` läuft jetzt auf lucide; nur `IconButton` bleibt vorerst Ionicons (Phase E).
+- [x] Home `app/(tabs)/index.tsx`: neuer Header (Avatar, Greeting, **Fortschritts-Pill**,
+      runde Settings-/Such-Action-Buttons), `BentoGrid`-Raster, `BentoCard`-Fußzeile.
+- [x] Widgets `src/features/dashboard/widgets.tsx`: jede Karte in Bento-Anatomie
+      (lucide-Header-Icon, Ecken-Pfeil/Action, Status-`Pill`, **Emoji-frei**).
+- [x] `timetable`, `tasks`, `grades`, `inbox`: Listen als gestapelte Farb-Kacheln
+      (getönte Karten), lucide-Icons, **Emoji-frei**.
+- [x] `settings.tsx`: Sektionen als strukturierte abgerundete Bento-Karten
+      (lucide-Sektionsköpfe, kein freischwebender Text), Theme-Umschalter, Konto-/Demo-Wechsel.
 
 ### Phase D — Dark Mode & Micro-Interactions
 - [ ] Theme-System konsolidieren (Light `#F6F5F2`+Pastell / Dark Slate-Navy) —
@@ -202,21 +204,21 @@ Neue Routen unter `app/onboarding/`:
 
 ## 4. Konkrete Aufräum-/Scan-Listen (Checklisten)
 
-### 4.1 Emoji-Fundstellen (TSX, Scan dieses Turns)
+### 4.1 Emoji-Fundstellen (verbleibend → Phase E, aktueller Scan)
 ```
-app/(tabs)/grades.tsx 🔒🧮        app/(tabs)/inbox.tsx 💬📌📍📭
-app/(tabs)/index.tsx 👋           app/(tabs)/tasks.tsx ✅📅🔥🗓😌🥳🧘
-app/(tabs)/timetable.tsx 🌴📊📝   app/_layout.tsx 💫😵
-app/allday.tsx 🧩                app/attendance.tsx 🎉🗂
+app/allday.tsx 🧩                app/attendance.tsx 🗂🎉
 app/calendar.tsx 📅              app/documents.tsx 🗂
 app/electives.tsx 🗳              app/exemption.tsx 📨
-app/parent-talks.tsx 🏫🗓🧑       app/payments.tsx ✓🧾
-app/search.tsx 🔍🤷               app/settings.tsx 🎨🏝🏫🔐🔔🛡🧩
-app/sick-note.tsx 🤒🩺           app/thread.tsx 💬
-src/features/dashboard/widgets.tsx ✉✨🌤🎈🎒🎯📊📌📍📝🥳🩹
-src/ui/error-boundary.tsx 💫😵    src/ui/lock-gate.tsx 🔒
-src/ui/primitives.tsx 🌱         src/ui/shell.tsx 🎒
+app/parent-talks.tsx 🗓🧑🏫      app/payments.tsx 🧾
+app/search.tsx 🔍🤷               app/thread.tsx 💬
+app/sick-note.tsx 🤒🩺           src/features/insights/engine.ts 😴🎉🔥…
+src/features/notifications/scheduler.ts 🎉🔁…   src/state/settings.ts ⏭️🕒…
+src/design/subjects.ts 📐📖…      src/features/island/* 🎉📐
+src/ui/error-boundary.tsx 😵💫    src/ui/shell.tsx 🎒
+src/ui/primitives.tsx 🌱 (EmptyState-Fallback)
 ```
+> Phase-C-Screens (Dashboard, widgets, timetable, tasks, grades, inbox, settings)
+> sind **vollständig emoji-frei** und auf lucide umgestellt.
 
 ### 4.2 Ionicons→lucide (Icons-API-Umschlüsselung als Referenz)
 | Zweck | Ionicons (alt) | lucide (neu) |

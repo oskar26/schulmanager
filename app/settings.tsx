@@ -1,12 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import {
+  AlertTriangle,
+  Bell,
+  Building2,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Fingerprint,
+  FlaskConical,
+  Info,
+  LayoutGrid,
+  Lock,
+  Palette,
+  Phone,
+  Rocket,
+  School,
+  Shield,
+  Trash2,
+  UserRound,
+} from 'lucide-react-native';
 
 import { useModuleActive, useSnapshot } from '@/data/queries';
 import { WEB_USES_CORS_PROXY } from '@/api/client';
 import { requestPermission, syncNotifications } from '@/features/notifications/scheduler';
 import { getNativeIsland } from '@/features/island/bridge';
-import { Card, Chip, Divider, IconButton, Ionicons, ListRow, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
+import { Card, Chip, Divider, IconButton, ListRow, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner, Switch } from '@/ui/gluestack/feedback';
 import { useSession } from '@/state/session';
@@ -91,7 +111,7 @@ export default function SettingsScreen() {
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {/* ---------------------------------------------------------- Konto */}
-        <SectionHeader title="Konto" emoji="🔐" />
+        <SectionHeader title="Konto" icon={Lock} iconColor="#6C5CE7" />
         <Card padded={false}>
           <View className="p-4">
             <Muted className="text-[12px]">
@@ -131,7 +151,11 @@ export default function SettingsScreen() {
                 className="absolute right-3 top-3"
                 hitSlop={8}
               >
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA2B6" />
+                {showPassword ? (
+                  <EyeOff size={20} strokeWidth={2} color="#9CA2B6" />
+                ) : (
+                  <Eye size={20} strokeWidth={2} color="#9CA2B6" />
+                )}
               </Pressable>
             </View>
 
@@ -171,13 +195,13 @@ export default function SettingsScreen() {
 
             {error ? (
               <Row className="mt-3 gap-2 rounded-2xl bg-danger/10 p-3">
-                <Ionicons name="warning-outline" size={16} color="#E24848" />
+                <AlertTriangle size={16} strokeWidth={2.1} color="#E24848" />
                 <Text className="flex-1 text-[12px] text-danger">{error}</Text>
               </Row>
             ) : null}
             {notice ? (
               <Row className="mt-3 gap-2 rounded-2xl bg-success/10 p-3">
-                <Ionicons name="checkmark-circle-outline" size={16} color="#22B07A" />
+                <CheckCircle2 size={16} strokeWidth={2.1} color="#22B07A" />
                 <Text className="flex-1 text-[12px] text-success">{notice}</Text>
               </Row>
             ) : null}
@@ -203,7 +227,7 @@ export default function SettingsScreen() {
 
           <Divider />
           <ListRow
-            icon="flask-outline"
+            icon={FlaskConical}
             iconColor="#FAC748"
             title="Demo-Modus"
             subtitle="Erfundene Beispieldaten statt echter Schuldaten"
@@ -219,13 +243,13 @@ export default function SettingsScreen() {
         {/* ---------------------------------------------------------- Schule */}
         {data?.institution ? (
           <>
-            <SectionHeader title="Schule" emoji="🏫" />
+            <SectionHeader title="Schule" icon={School} iconColor="#48A3FF" />
             <Card padded={false}>
-              <ListRow icon="business-outline" title={data.institution.name ?? '—'} subtitle={[data.institution.street, data.institution.city].filter(Boolean).join(', ')} />
+              <ListRow icon={Building2} title={data.institution.name ?? '—'} subtitle={[data.institution.street, data.institution.city].filter(Boolean).join(', ')} />
               <Divider className="ml-16" />
-              <ListRow icon="call-outline" title="Sekretariat" subtitle={data.institution.phone ?? '—'} />
+              <ListRow icon={Phone} title="Sekretariat" subtitle={data.institution.phone ?? '—'} />
               <Divider className="ml-16" />
-              <ListRow icon="person-outline" title={`${data.student?.firstname ?? ''} ${data.student?.lastname ?? ''}`.trim() || 'Kind'} subtitle={data.student?.className ? `Klasse ${data.student.className}` : undefined} />
+              <ListRow icon={UserRound} title={`${data.student?.firstname ?? ''} ${data.student?.lastname ?? ''}`.trim() || 'Kind'} subtitle={data.student?.className ? `Klasse ${data.student.className}` : undefined} />
               <Divider className="ml-16" />
               <View className="p-4">
                 <Muted className="text-[11px]">Freigeschaltete Module</Muted>
@@ -240,7 +264,7 @@ export default function SettingsScreen() {
         ) : null}
 
         {/* ---------------------------------------------------------- Dashboard */}
-        <SectionHeader title="Dashboard-Widgets" emoji="🧩" />
+        <SectionHeader title="Dashboard-Widgets" icon={LayoutGrid} iconColor="#6C5CE7" />
         <Card padded={false}>
           {settings.widgets
             .filter((widget) => widget.id !== 'grades' || gradesOn)
@@ -249,7 +273,9 @@ export default function SettingsScreen() {
             return (
               <View key={widget.id}>
                 <Row className="gap-3 px-4 py-3">
-                  <Text className="text-[18px]">{meta.emoji}</Text>
+                  <View className="h-8 w-8 items-center justify-center rounded-[10px] bg-brand-soft">
+                    <LayoutGrid size={16} strokeWidth={2} color="#6C5CE7" />
+                  </View>
                   <View className="flex-1">
                     <Text className="text-[14px] font-semibold text-ink">{meta.title}</Text>
                     <Muted className="text-[11px]">{meta.description}</Muted>
@@ -279,7 +305,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Benachrichtigungen */}
-        <SectionHeader title="Benachrichtigungen" emoji="🔔" />
+        <SectionHeader title="Benachrichtigungen" icon={Bell} iconColor="#E8981E" />
         <Card padded={false}>
           {(
             [
@@ -332,7 +358,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Live-Island */}
-        <SectionHeader title="Live-Island" emoji="🏝️" />
+        <SectionHeader title="Live-Island" icon={Rocket} iconColor="#48A3FF" />
         <Card padded={false}>
           <ListRow
             title="Insel oben mittig"
@@ -356,7 +382,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Erscheinungsbild */}
-        <SectionHeader title="Erscheinungsbild" emoji="🎨" />
+        <SectionHeader title="Erscheinungsbild" icon={Palette} iconColor="#BD7AF6" />
         <Card padded={false}>
           <View className="p-4">
             <Muted className="mb-2 text-[12px]">Farbschema</Muted>
@@ -403,12 +429,12 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Datenschutz */}
-        <SectionHeader title="Datenschutz" emoji="🛡️" />
+        <SectionHeader title="Datenschutz" icon={Shield} iconColor="#22B07A" />
         <Card padded={false}>
           {gradesOn ? (
             <>
               <ListRow
-                icon="eye-off-outline"
+                icon={EyeOff}
                 iconColor="#48A3FF"
                 title="Noten verbergen"
                 subtitle="Zeigt •••, bis du sie einblendest"
@@ -418,7 +444,7 @@ export default function SettingsScreen() {
             </>
           ) : null}
           <ListRow
-            icon="finger-print-outline"
+            icon={Fingerprint}
             iconColor="#22B07A"
             title="Biometrie beim Start"
             subtitle="Face ID / Fingerabdruck vor dem Öffnen"
@@ -431,7 +457,7 @@ export default function SettingsScreen() {
           />
           <Divider className="ml-16" />
           <ListRow
-            icon="trash-outline"
+            icon={Trash2}
             iconColor="#E24848"
             danger
             title="Lokale Daten löschen"
@@ -453,7 +479,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Über */}
-        <SectionHeader title="Über Schulflow" emoji="ℹ️" />
+        <SectionHeader title="Über Schulflow" icon={Info} iconColor="#6C5CE7" />
         <Card>
           <Text className="text-[14px] font-bold text-ink">Schulflow 1.0</Text>
           <Muted className="mt-1 text-[12px]">
