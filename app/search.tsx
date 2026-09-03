@@ -9,6 +9,7 @@ import { subjectStyle, tint } from '@/design/subjects';
 import { formatRelativeDay } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { Card, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { FadeInUp } from '@/ui/motion';
 
 interface Hit {
   id: string;
@@ -179,12 +180,12 @@ export default function SearchScreen() {
         ) : hits.length === 0 ? (
           <EmptyState icon={SearchX} iconColor="#E24848" title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
         ) : (
-          hits.map((hit) => (
-            <Pressable
-              key={hit.id}
-              onPress={() => hit.href && router.push(hit.href as never)}
-              className="mb-2 active:opacity-80"
-            >
+          hits.map((hit, index) => (
+            <FadeInUp key={hit.id} delay={Math.min(index, 8) * 30}>
+              <Pressable
+                onPress={() => hit.href && router.push(hit.href as never)}
+                className="mb-2 active:opacity-80"
+              >
               <Card>
                 <Row className="gap-3">
                   <View
@@ -206,7 +207,8 @@ export default function SearchScreen() {
                   <ChevronRight size={15} strokeWidth={2} color="#9CA2B6" />
                 </Row>
               </Card>
-            </Pressable>
+              </Pressable>
+            </FadeInUp>
           ))
         )}
       </ScrollView>

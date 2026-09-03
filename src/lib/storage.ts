@@ -87,4 +87,5 @@ export const KEYS = {
   homeworkDone: 'schulflow.homework.done',
   notificationState: 'schulflow.notifications.state',
   widgetLayout: 'schulflow.widgets',
+  widgetSnapshot: 'schulflow.widgets.snapshot', // JSON für Home-Screen-Widgets (s. widgets/spec.md)
 } as const;

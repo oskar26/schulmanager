@@ -8,6 +8,7 @@ import { useSavePriorities, useSnapshot } from '@/data/queries';
 import { formatDay } from '@/lib/date';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { FadeInUp } from '@/ui/motion';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
 
@@ -76,12 +77,13 @@ export default function ElectivesScreen() {
             hint="Wenn deine Schule Wahlfächer anbietet, erscheinen sie hier."
           />
         ) : (
-          elections.map((election) => {
+          elections.map((election, index) => {
             const list = ranked[String(election.id)] ?? election.electives;
             const max = Math.min(election.prioritiesPerStudent ?? list.length, list.length);
             const closed = Boolean(election.finalized);
             return (
-              <Card key={String(election.id)} className="mb-3">
+              <FadeInUp key={String(election.id)} delay={Math.min(index, 6) * 40}>
+              <Card className="mb-3">
                 <Row className="justify-between">
                   <View className="flex-1">
                     <Text className="text-[16px] font-bold text-ink">{election.name}</Text>
@@ -149,6 +151,7 @@ export default function ElectivesScreen() {
                   </>
                 )}
               </Card>
+              </FadeInUp>
             );
           })
         )}

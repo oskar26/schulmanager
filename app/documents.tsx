@@ -10,6 +10,7 @@ import { formatDay } from '@/lib/date';
 import { htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, Divider, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
+import { FadeInUp } from '@/ui/motion';
 
 interface Crumb {
   id: string;
@@ -128,6 +129,7 @@ export default function DocumentsScreen() {
             hint="Dieser Ordner ist leer — oder das Modul „Dokumente“ ist nicht gebucht."
           />
         ) : (
+          <FadeInUp>
           <Card padded={false}>
             {folders.map((folder, index) => (
               <View key={`f-${String(folder.id)}`}>
@@ -161,6 +163,7 @@ export default function DocumentsScreen() {
               </View>
             ))}
           </Card>
+          </FadeInUp>
         )}
       </ScrollView>
 

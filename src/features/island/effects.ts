@@ -11,9 +11,9 @@
  *              `expo-notifications` (stille Low-Importance-Notification,
  *              die minütlich aktualisiert wird).
  * · iOS      → echte Live Activities brauchen eine WidgetKit-Extension
- *              (nativer Target, App-Store-Build). Solange die nicht existiert,
- *              bleibt iOS bei der In-App-Insel — geplant im nächsten Schritt
- *              (siehe docs/PLATTFORMEN.md).
+ *              (nativer Target, App-Store-Build). Die Swift-Module-Quellen
+ *              liegen unter `modules/schulflow-live-island/ios/`; der Target-Build
+ *              steht in `docs/PLATTFORMEN.md` §3.
  */
 import { useEffect } from 'react';
 import { Platform } from 'react-native';

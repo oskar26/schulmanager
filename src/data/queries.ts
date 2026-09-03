@@ -16,6 +16,8 @@ import { KEYS, storage } from '@/lib/storage';
 import { useSession } from '@/state/session';
 import { useSettings } from '@/state/settings';
 import { syncNotifications } from '@/features/notifications/scheduler';
+import { writeWidgetData } from '@/features/widgets/bridge';
+import { buildWidgetSnapshot } from '@/features/widgets/snapshot';
 
 export const queryKeys = {
   snapshot: (student: string | null, demo: boolean) => ['snapshot', student, demo] as const,
@@ -152,6 +154,15 @@ export function useSnapshot() {
   useEffect(() => {
     if (useDemo || !query.data) return;
     void syncNotifications(query.data, useSettings.getState().settings.notifications).catch(() => undefined);
+  }, [query.data, useDemo]);
+
+  // Home-Screen-Widgets: nach jedem Snapshot (auch im Demo-Modus — dann sehen
+  // die Widgets im Screenshot-Modus immer noch aktuell aus) den
+  // gemeinsamen Datenspeicher auffrischen. Fire-and-forget, darf nie
+  // den Sync blockieren (Bridge s. widgets/spec.md).
+  useEffect(() => {
+    if (!query.data) return;
+    void writeWidgetData(buildWidgetSnapshot(query.data, useDemo)).catch(() => undefined);
   }, [query.data, useDemo]);
 
   return { ...query, data, isDemo: useDemo };

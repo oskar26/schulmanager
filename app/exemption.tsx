@@ -6,6 +6,7 @@ import { CheckCircle2, Clock, Send, X, XCircle } from 'lucide-react-native';
 import { useRequestExemption, useSnapshot } from '@/data/queries';
 import { addDays, formatDay, formatLongDay, toISO } from '@/lib/date';
 import { Card, Chip, Divider, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { FadeInUp } from '@/ui/motion';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
 
@@ -50,6 +51,7 @@ export default function ExemptionScreen() {
       </Row>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
+        <FadeInUp>
         <Card className="mb-3">
           <Text className="text-[13px] font-bold text-ink">Zeitraum</Text>
           <Row className="mt-2 gap-2">
@@ -89,7 +91,9 @@ export default function ExemptionScreen() {
             {days > 1 ? ` bis ${formatLongDay(end)}` : ''}
           </Muted>
         </Card>
+        </FadeInUp>
 
+        <FadeInUp delay={30}>
         <Card className="mb-3">
           <Text className="text-[13px] font-bold text-ink">Begründung *</Text>
           <Muted className="text-[11px]">Die Schule verlangt hier eine Angabe.</Muted>
@@ -102,8 +106,10 @@ export default function ExemptionScreen() {
             className="mt-2 min-h-[90px] rounded-2xl border border-line bg-bg p-3 text-[15px] text-ink"
           />
         </Card>
+        </FadeInUp>
 
         {existing.length > 0 ? (
+          <FadeInUp delay={60}>
           <Card className="mb-3" padded={false}>
             <Text className="px-4 pt-3 text-[13px] font-bold text-ink">Bisherige Anträge</Text>
             {existing.map((entry, index) => (
@@ -134,6 +140,7 @@ export default function ExemptionScreen() {
             ))}
             <View className="h-2" />
           </Card>
+          </FadeInUp>
         ) : null}
 
         <Button

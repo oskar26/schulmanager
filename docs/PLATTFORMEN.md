@@ -147,12 +147,14 @@ aktiviert lassen (Standard: an).
 * **Echte Live Activities** (Lockscreen, Dynamic Island auf iPhone 14 Pro+) brauchen
   eine **WidgetKit-Extension** (eigenes Native-Target mit `ActivityKit`) — die lässt
   sich nicht in ein Expo-Modul packen, weil sie ein separates App-Extension-Binary mit
-  eigener Signatur ist. Der vorgesehene Weg (Roadmap):
-  1. `npx react-native-targets` / `expo-apple-targets` Widget-Extension „LiveIsland",
-  2. `Activity<LiveIslandAttributes>` mit Verweis auf `ls -la modules/` API,
-  3. `modules/schulflow-live-island` bekommt eine `ios`-Swift-Seite, die
-     `Activity.request/update/end` aufruft — die JS-API (`show/hide`) ist schon
-     darauf ausgelegt.
+  eigener Signatur ist. Stand (2026-09-03): Die Swift-Seite existiert im Repo
+  (`modules/schulflow-live-island/ios/` — ActivityKit-`show`/`hide` hinter der
+  vorhandenen JS-API + `LiveIslandAttributes`/View/Timeline-Provider als
+  Referenz-Extension). Es fehlt nur noch der Target-Build:
+  1. `npx expo-apple-targets` → Widget-Extension „LiveIsland" anlegen,
+  2. `LiveIslandAttributes.swift` (Attributes + View + Provider) in die Extension
+     übernehmen, App-Group setzen,
+  3. Dev-Build: `npx expo run:ios`.
 
 ### Web
 

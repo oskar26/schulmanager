@@ -168,6 +168,22 @@ fällig · Arbeits-Countdown (7/3/1 Tage) · neuer Elternbrief · Erinnerung an 
 neue Nachricht · neue Note · Morgen-Briefing · Abend-Check · Wochenrückblick · unentschuldigte
 Fehlzeit. Dazu **Ruhezeiten** (Standard 21:30–06:30) und eine frei wählbare Briefing-Uhrzeit.
 
+### Home-Screen-Widgets
+
+Die App schreibt nach jedem Sync ein kompaktes **Widget-JSON** (nächste Stunde mit
+Fach-Farbe/-Emoji, offene Hausaufgaben, nächste Arbeit, Notenschnitt, Postfach,
+Top-Insight, „Stand von …") in den gemeinsamen Datenspeicher:
+
+* **Quelle:** `src/features/widgets/snapshot.ts` (reiner Builder, `schemaVersion`-geschützt)
+* **Bridge:** `src/features/widgets/bridge.ts` → AsyncStorage (alle Builds) + natives
+  Modul `modules/schulflow-widgets` (nur Dev-Builds: Android SharedPreferences +
+  REFRESH-Broadcast für Glance, iOS App-Group `group.app.schulflow.client` für
+  WidgetKit)
+* **Layout-Spezifikation:** `widgets/spec.md` — iOS WidgetKit (Small/Medium/Large +
+  Lock-Screen-Complication), Android Glance (1×1, 2×1), Fallback-Regeln, Update-Policy
+* **Build:** Dev-Client erforderlich (`npx expo prebuild && npx expo run:…`),
+  iOS-Widgets zusätzlich per `expo-apple-targets` — kein Expo Go
+
 ---
 
 ## Screens

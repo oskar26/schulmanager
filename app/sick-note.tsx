@@ -7,6 +7,7 @@ import { useCreateSickNote, useSnapshot } from '@/data/queries';
 import { addDays, formatLongDay, toISO } from '@/lib/date';
 import { activeLessonsOn } from '@/features/insights/engine';
 import { Card, Chip, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { FadeInUp } from '@/ui/motion';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
 
@@ -56,6 +57,7 @@ export default function SickNoteScreen() {
       </Row>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
+        <FadeInUp>
         <Card className="mb-3 bg-brand-soft">
           <Row className="gap-3">
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/15">
@@ -70,7 +72,9 @@ export default function SickNoteScreen() {
             </View>
           </Row>
         </Card>
+        </FadeInUp>
 
+        <FadeInUp delay={30}>
         <Card className="mb-3">
           <Text className="text-[13px] font-bold text-ink">Ab wann?</Text>
           <Row className="mt-2 gap-2">
@@ -117,7 +121,9 @@ export default function SickNoteScreen() {
             {days > 1 ? ` bis ${formatLongDay(end)}` : ''}
           </Muted>
         </Card>
+        </FadeInUp>
 
+        <FadeInUp delay={60}>
         <Card className="mb-3">
           <Text className="text-[13px] font-bold text-ink">Grund (optional)</Text>
           <TextInput
@@ -129,8 +135,10 @@ export default function SickNoteScreen() {
             className="mt-2 min-h-[80px] rounded-2xl border border-line bg-bg p-3 text-[15px] text-ink"
           />
         </Card>
+        </FadeInUp>
 
         {affected.length > 0 ? (
+          <FadeInUp delay={90}>
           <Card className="mb-3">
             <Row className="gap-2">
               <Info size={16} strokeWidth={2} color="#48A3FF" />
@@ -147,6 +155,7 @@ export default function SickNoteScreen() {
               Denk an die Hausaufgaben dieser Fächer — Schulflow erinnert dich nach der Genesung.
             </Muted>
           </Card>
+          </FadeInUp>
         ) : null}
 
         <Button
