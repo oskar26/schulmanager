@@ -167,7 +167,7 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
               <BookOpen color="#FFFFFF" size={24} strokeWidth={2.2} />
             </View>
             <View className="flex-1">
-              <Text className="text-[20px] font-extrabold tracking-tight text-ink" numberOfLines={1}>
+              <Text className="text-[20px] font-extrabold leading-[22px] tracking-tight text-ink" numberOfLines={2}>
                 {lesson.subject}
               </Text>
               <Muted>
@@ -340,15 +340,15 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
                   borderColor: 'rgba(0,0,0,0.05)',
                 }}
               >
-                <Row className="justify-between">
+                <Row className="justify-between" style={{ alignItems: 'flex-start' }}>
                   <Text
-                    className="flex-1 text-[14px] font-semibold text-ink"
+                    className="flex-1 text-[14px] font-semibold leading-[17px] text-ink"
                     style={cancelled ? { textDecorationLine: 'line-through', color: '#9CA2B6' } : undefined}
-                    numberOfLines={1}
+                    numberOfLines={2}
                   >
                     {cancelled ? (lesson.originalSubject ?? lesson.subject) : lesson.subject}
                   </Text>
-                  {lesson.room ? <Muted className="text-[11px]">{lesson.room}</Muted> : null}
+                  {lesson.room ? <Muted className="ml-2 text-[11px]">{lesson.room}</Muted> : null}
                 </Row>
                 {lesson.state !== 'regular' ? (
                   <Text
@@ -471,7 +471,7 @@ export function ExamsWidget({ snapshot }: WidgetProps) {
                   {days === 1 ? 'Tag' : 'Tage'}
                 </Text>
               ) : null}
-              <Text className="mt-1.5 text-[13px] font-bold text-ink" numberOfLines={1}>
+              <Text className="mt-1.5 text-[13px] font-bold leading-[15px] text-ink" numberOfLines={2}>
                 {exam.subject}
               </Text>
               <Muted className="text-[11px]" numberOfLines={1}>
@@ -519,7 +519,7 @@ export function GradesWidget({ snapshot }: WidgetProps) {
               const style = subjectStyle(grade.subject);
               return (
                 <Row key={`${grade.subject}-${grade.id}`} className="justify-between">
-                  <Text className="flex-1 text-[13px] text-ink" numberOfLines={1}>
+                  <Text className="flex-1 text-[13px] leading-[16px] text-ink" numberOfLines={2}>
                     {grade.subject}
                   </Text>
                   <View
@@ -568,7 +568,7 @@ export function LettersWidget({ snapshot }: WidgetProps) {
               <Mail size={17} strokeWidth={2.1} color="#6C5CE7" />
             </View>
             <View className="flex-1">
-              <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>
+              <Text className="text-[14px] font-semibold leading-[17px] text-ink" numberOfLines={2}>
                 {letter.subject}
               </Text>
               <Muted className="text-[12px]" numberOfLines={1}>
@@ -638,9 +638,9 @@ export function BoardWidget({ snapshot }: WidgetProps) {
       {tiles.map((tile, index) => (
         <View key={String(tile.id)}>
           <View className="px-5 py-2.5">
-            <Row className="gap-2">
+            <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
               {tile.pinned ? <Sun size={12} color="#E8981E" /> : null}
-              <Text className="flex-1 text-[14px] font-semibold text-ink" numberOfLines={1}>
+              <Text className="flex-1 text-[14px] font-semibold leading-[17px] text-ink" numberOfLines={2}>
                 {tile.title}
               </Text>
             </Row>

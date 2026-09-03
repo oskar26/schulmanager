@@ -187,7 +187,7 @@ export default function CalendarScreen() {
                       </Text>
                     </View>
                     <View className="flex-1">
-                      <Text className="text-[15px] font-bold text-ink" numberOfLines={1}>
+                      <Text className="text-[15px] font-bold leading-[18px] text-ink" numberOfLines={2}>
                         {entry.title}
                       </Text>
                       <Muted className="text-[12px]">

@@ -10,6 +10,7 @@ import { useLayout } from '@/lib/breakpoints';
 import { Avatar } from '@/ui/gluestack/feedback';
 import { AdaptiveContent, BentoCard, BentoGrid, Muted, RoundActionButton, Row, Screen, Skeleton } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 
 export default function DashboardScreen() {
@@ -27,6 +28,10 @@ export default function DashboardScreen() {
 
   const iconColor = dark ? '#94A3B8' : '#6E6C66';
   const chipBg = dark ? '#1E293B' : '#FFFFFF';
+  const reserve = useTabNavReserve();
+  // Datum vertikal gestapelt (Phase 1 · M3): Wochentag groß/fett, Datum darunter —
+  // statt „Donnerstag, 3. …“ einzeilig abzuschneiden.
+  const [weekdayLabel, dateLabel] = formatLongDay(toISO(new Date())).split(', ');
   // Fortschritts-Pill: Anteil erledigter Hausaufgaben (Phase C, §2.5 Header).
   const homework = data?.homework ?? [];
   const hwDone = homework.filter((h) => h.done).length;
@@ -36,7 +41,7 @@ export default function DashboardScreen() {
     <Screen>
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: wide ? 0 : 18, paddingTop: 6, paddingBottom: 132 }}
+        contentContainerStyle={{ paddingHorizontal: wide ? 0 : 18, paddingTop: 6, paddingBottom: reserve }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor="#6C5CE7" />}
       >
@@ -59,14 +64,15 @@ export default function DashboardScreen() {
                   </Row>
                 </View>
               </Row>
+              {/* Datum gestapelt: Wochentag fett, darunter das Datum (kein Truncation). */}
               <Text
                 className={`mt-2 font-extrabold tracking-tight text-ink ${
                   layout.isDesktop ? 'text-[36px]' : 'text-[27px]'
                 }`}
-                numberOfLines={1}
               >
-                {formatLongDay(toISO(new Date()))}
+                {weekdayLabel}
               </Text>
+              <Text className="mt-0.5 text-[15px] font-semibold text-muted">{dateLabel}</Text>
             </View>
             {/* Auf großen Screens leben Suche & Einstellungen in der Sidebar. */}
             {!wide ? (

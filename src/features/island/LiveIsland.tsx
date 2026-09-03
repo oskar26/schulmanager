@@ -115,6 +115,8 @@ function IslandPill({
           {state.kind === 'in-lesson' && !state.cancelled ? <LivePulse color={state.color} size={6} /> : null}
           <Text
             numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
             style={{ color: ISLAND_TEXT, fontSize: 12.5, fontWeight: '800', letterSpacing: -0.1 }}
           >
             {state.title}
@@ -198,7 +200,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
           <BookOpen size={22} strokeWidth={2.2} color={ISLAND_TEXT} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text numberOfLines={1} style={{ color: ISLAND_TEXT, fontSize: 16, fontWeight: '800' }}>
+          <Text numberOfLines={2} style={{ color: ISLAND_TEXT, fontSize: 16, fontWeight: '800', lineHeight: 19 }}>
             {lesson.subject}
           </Text>
           <Text style={{ color: ISLAND_SUB, fontSize: 12, fontVariant: ['tabular-nums'] }}>

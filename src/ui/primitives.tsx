@@ -292,18 +292,25 @@ export function SegmentedControl<T extends string>({
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
-            className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 ${
+            className={`flex-1 flex-row items-center justify-center gap-1 rounded-xl px-1 py-2 ${
               active ? 'bg-surface' : ''
             }`}
             style={active ? shadow.card : undefined}
           >
+            {/* Phase 1 · M5: Label darf schrumpfen statt abzuschneiden („Hausaufga…“). */}
             <Text
-              className={`text-[13px] font-semibold ${active ? 'text-ink' : 'text-muted'}`}
+              className={`text-[12.5px] font-semibold ${active ? 'text-ink' : 'text-muted'}`}
               numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
             >
               {option.label}
             </Text>
-            {option.badge ? <Badge count={option.badge} /> : null}
+            {option.badge ? (
+              <View className="min-w-[18px] items-center justify-center rounded-full bg-coral px-1.5 py-0.5">
+                <Text className="text-[10px] font-bold text-white">{option.badge > 99 ? '99+' : option.badge}</Text>
+              </View>
+            ) : null}
           </Pressable>
         );
       })}
