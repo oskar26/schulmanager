@@ -50,7 +50,7 @@ export default function SettingsScreen() {
 
   const handleTestNotifications = async () => {
     if (!data) return;
-    const count = await syncNotifications(data, settings.notifications);
+    const count = await syncNotifications(data, settings.notifications, { force: true });
     setNotice(
       Platform.OS === 'web'
         ? 'Benachrichtigungen gibt es nur in der nativen App.'

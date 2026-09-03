@@ -5,7 +5,7 @@
  * Reihenfolge und Sichtbarkeit steuern die Einstellungen (`settings.widgets`),
  * dieselbe Liste versorgt später die Home-Screen-Widgets.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -119,7 +119,9 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
 
 export function InsightsWidget({ snapshot }: WidgetProps) {
   const router = useRouter();
-  const insights = computeInsights(snapshot).slice(0, 4);
+  // Bugfix: computeInsights lief einmal pro Render (teils doppelt) — jetzt memoized.
+  const all = useMemo(() => computeInsights(snapshot), [snapshot]);
+  const insights = all.slice(0, 4);
   if (insights.length === 0) return null;
 
   const toneColor: Record<string, string> = {
@@ -137,7 +139,7 @@ export function InsightsWidget({ snapshot }: WidgetProps) {
           <Text className="text-[15px]">✨</Text>
           <Text className="text-[15px] font-bold text-ink">Smart Insights</Text>
         </Row>
-        <Muted className="text-[11px]">{insights.length} von {computeInsights(snapshot).length}</Muted>
+        <Muted className="text-[11px]">{insights.length} von {all.length}</Muted>
       </Row>
 
       {insights.map((insight, index) => (
@@ -580,6 +582,15 @@ export function QuickActionsWidget({ snapshot }: WidgetProps) {
     { icon: 'search-outline' as const, label: 'Suche', color: '#22B07A', href: '/search' },
   ];
 
+  // Gebuchte Zusatzmodule (im Demo-Modus alle) als zweite Reihe.
+  const moduleActions = [
+    { id: 'invoicing', icon: 'card-outline' as const, label: 'Zahlungen', color: '#22B07A', href: '/payments' },
+    { id: 'documents', icon: 'folder-open-outline' as const, label: 'Dokumente', color: '#FAC748', href: '/documents' },
+    { id: 'parenttalks', icon: 'people-outline' as const, label: 'Sprechtag', color: '#E8981E', href: '/parent-talks' },
+    { id: 'electives', icon: 'git-branch-outline' as const, label: 'Wahl', color: '#BD7AF6', href: '/electives' },
+    { id: 'allday', icon: 'sunny-outline' as const, label: 'Ganztag', color: '#48A3FF', href: '/allday' },
+  ].filter((action) => snapshot.modules.length === 0 || snapshot.modules.includes(action.id));
+
   return (
     <View className="gap-3">
       <Row className="gap-3">
@@ -597,6 +608,24 @@ export function QuickActionsWidget({ snapshot }: WidgetProps) {
           </PressableScale>
         ))}
       </Row>
+
+      {moduleActions.length > 0 ? (
+        <Row className="gap-3">
+          {moduleActions.slice(0, 5).map((action) => (
+            <PressableScale key={action.label} onPress={() => router.push(action.href as never)} className="flex-1">
+              <Card className="items-center py-3.5" padded={false}>
+                <View
+                  className="h-10 w-10 items-center justify-center rounded-2xl"
+                  style={{ backgroundColor: tint(action.color, 0.14) }}
+                >
+                  <Ionicons name={action.icon} size={19} color={action.color} />
+                </View>
+                <Text className="mt-1.5 text-[11px] font-semibold text-ink">{action.label}</Text>
+              </Card>
+            </PressableScale>
+          ))}
+        </Row>
+      ) : null}
 
       {items.length > 0 ? (
         <Card>

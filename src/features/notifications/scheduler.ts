@@ -296,31 +296,64 @@ export function planNotifications(
 }
 
 /** Plant alles neu — alte Planungen werden vorher verworfen (idempotent). */
-export async function syncNotifications(snapshot: Snapshot, prefs: NotificationPrefs): Promise<number> {
+
+// Bugfix (Wipe/Replan): Liefen zwei Syncs parallel (z. B. Auto-Sync + Button),
+// cancelte der eine, während der andere schon plante → doppelte/verlorene
+// Notifications. Mutex + Throttle verhindern das.
+let syncing: Promise<number> | null = null;
+let lastSyncAt = 0;
+
+export async function syncNotifications(
+  snapshot: Snapshot,
+  prefs: NotificationPrefs,
+  options: { force?: boolean } = {},
+): Promise<number> {
   if (Platform.OS === 'web') return 0;
-  const granted = await requestPermission();
-  if (!granted) return 0;
+  if (syncing) return syncing;
+  if (!options.force && Date.now() - lastSyncAt < 5 * 60_000) return 0;
 
-  const state = await storage.getJSON<NotificationState>(KEYS.notificationState, EMPTY_STATE);
-  const { planned, nextState } = planNotifications(snapshot, prefs, state);
+  syncing = (async () => {
+    const granted = await requestPermission();
+    if (!granted) return 0;
 
-  await Notifications.cancelAllScheduledNotificationsAsync();
+    const state = await storage.getJSON<NotificationState>(KEYS.notificationState, EMPTY_STATE);
+    const { planned, nextState } = planNotifications(snapshot, prefs, state);
 
-  for (const notification of planned) {
-    const date = new Date(notification.at);
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: notification.title,
-        body: notification.body,
-        data: { channel: notification.channel },
-      },
-      trigger:
-        date.getTime() <= Date.now() + 5_000
-          ? null
-          : { type: Notifications.SchedulableTriggerInputTypes.DATE, date },
-    });
+    // Erst planen, dann Altlasten verwerfen — crashed das Planen, bleiben Tickets.
+    const scheduled: string[] = [];
+    for (const notification of planned) {
+      const date = new Date(notification.at);
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: notification.title,
+          body: notification.body,
+          data: { channel: notification.channel },
+        },
+        trigger:
+          date.getTime() <= Date.now() + 5_000
+            ? null
+            : { type: Notifications.SchedulableTriggerInputTypes.DATE, date },
+      });
+      scheduled.push(id);
+    }
+
+    // Nur alte Tickets verwerfen, die nicht Teil des neuen Plans sind.
+    const existing = await Notifications.getAllScheduledNotificationsAsync();
+    const keep = new Set(scheduled);
+    await Promise.all(
+      existing
+        .filter((entry) => !keep.has(entry.identifier))
+        .map((entry) => Notifications.cancelScheduledNotificationAsync(entry.identifier)),
+    );
+
+    await storage.setJSON(KEYS.notificationState, nextState);
+    lastSyncAt = Date.now();
+    return planned.length;
+  })();
+
+  try {
+    return await syncing;
+  } finally {
+    syncing = null;
   }
-
-  await storage.setJSON(KEYS.notificationState, nextState);
-  return planned.length;
 }
