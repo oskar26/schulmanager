@@ -1,0 +1,8 @@
+{
+  "name": "schulflow-live-island",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lokales Expo-Modul: Android Live-Update / HyperOS-Fokus-Notification für die Schulflow-Insel.",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

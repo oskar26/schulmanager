@@ -12,8 +12,25 @@
  * Fair Use: eigener User-Agent, Coalescing gleichzeitiger Aufrufe in einen Batch,
  * Mindestabstand zwischen Requests, exponentielles Backoff.
  */
+import { Platform } from 'react-native';
 
-export const BASE_URL = 'https://login.schulmanager-online.de';
+/**
+ * Basis-URL der API.
+ *
+ * · nativ      → direkt gegen login.schulmanager-online.de
+ * · Web        → same-origin Pfad `/sm-api`, den der Dev-Server (metro.config.js)
+ *                bzw. der Export-Server (scripts/web-proxy.mjs) an die API
+ *                durchreicht — die API sendet keine CORS-Header, und Browser
+ *                blockieren sonst jeden Aufruf.
+ * · Override   → `EXPO_PUBLIC_SM_API_BASE` (z. B. eigener Reverse-Proxy).
+ */
+export const BASE_URL =
+  process.env.EXPO_PUBLIC_SM_API_BASE ??
+  (Platform.OS === 'web' ? '/sm-api' : 'https://login.schulmanager-online.de');
+
+/** Ob die Web-App über den eingebauten Proxy läuft (nur informativ fürs UI). */
+export const WEB_USES_CORS_PROXY =
+  Platform.OS === 'web' && !process.env.EXPO_PUBLIC_SM_API_BASE;
 
 /** Pflichtfeld, dessen Wert der Server nicht prüft (leerer String ⇒ HTTP 400). */
 export const BUNDLE_VERSION = '3505280ee7';
@@ -151,8 +168,9 @@ export class SchulmanagerClient {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      'User-Agent': USER_AGENT,
     };
+    // Browser verbieten selbst gesetzte User-Agents — das macht der Proxy.
+    if (Platform.OS !== 'web') headers['User-Agent'] = USER_AGENT;
 
     if (opts.auth !== false) {
       const token = this.options.getToken();

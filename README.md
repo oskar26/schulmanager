@@ -104,12 +104,61 @@ Noten und Fehlzeiten zu handlungsrelevanten Karten:
   gewichtet nach Arbeitstyp, Tag davor = Wiederholung, überladene Schultage werden übersprungen
 * 🎯 **Notenrechner**: „Welche Note brauche ich für eine 2,0?“ + Simulation
 * 🔔 **12 smarte Benachrichtigungsregeln** mit Ruhezeiten (siehe unten)
-* 📱 **Home-Screen-Widgets** (Nächste Stunde / Heute / Aufgaben)
-* 🎨 **Anpassbar**: Widget-Reihenfolge, Fach-Farben, Theme hell/dunkel/System, verspielte
-  Animationen an/aus, kompakter Stundenplan, Wochenende ein/aus, Haptik
+* 🏝️ **Live-Island** — unsere Dynamic-Island-Antwort für den Schulalltag (siehe unten)
+* 💻 **Volle Web-App** — PWA-installierbar, Desktop-Sidebar, inkl. CORS-Proxy (siehe unten)
+* 🖥️ **Echte Tablet- & Desktop-Layouts** — nicht gestretcht, sondern umgebaut (siehe unten)
+* 🧩 **Modul-bewusst**: Was deine Schule nicht gebucht hat, verschwindet komplett —
+  Tabs (z. B. Noten), Schnellaktionen, Postfach-Sparten und Einstellungen richten
+  sich exakt nach eurem offiziellen Schulmanager-Menü
+* 🎨 **Anpassbar**: Widget-Reihenfolge, Theme hell/dunkel/System, kompakter Stundenplan,
+  Wochenende ein/aus, Haptik
 * 🔒 **Privatsphäre**: Noten verbergen (Screenshot-/Bus-Modus), Biometrie-Sperre,
   „alle lokalen Daten löschen“
 * 📴 **Offline**: react-query-Persistenz — die App zeigt beim Start sofort den letzten Stand
+
+---
+
+## 💻 Web, Tablet & Desktop — eine App, vier Formfaktoren
+
+Schulflow reagiert auf die **echte Fenstergröße** (dp) — auf iPad Stage Manager, Xiaomi
+Freeform, Split-Screen und Faltphones schaltet das Layout live um:
+
+| Formfaktor | Fensterbreite | Navigation | Inhalt |
+|---|---|---|---|
+| **Phone** | < 600 dp | Bottom-Tab-Bar | 1 Spalte |
+| **Tablet** | 600–1199 dp | Icon-Rail links | 2-Spalten-Widgets, Dialoge statt Sheets |
+| **Desktop** | ≥ 1200 dp | Sidebar mit Labels & Konto-Karte | 3-Spalten-Dashboard, Stundenplan als Zeitraster mit Jetzt-Linie |
+| **Wide** | ≥ 1600 dp | Sidebar | 3 Spalten auf ~1440 dp |
+
+Die Web-App ist eine **installierbare PWA** mit allem, was die native App kann
+(gleiche Screens, gleiche Datenquelle, adaptiertes Layout) — inklusive
+`start_url`-Manifest, Homescreen-Icons, Boot-Splash und Sophora-freiem Boot.
+
+> 📑 Details, Screenshots-Referenz und technische Tiefe: **[docs/PLATTFORMEN.md](docs/PLATTFORMEN.md)**.
+
+---
+
+## 🏝️ Live-Island — die Insel für die Schulstunde
+
+Oben mittig schwebt eine Kapsel wie Apples Dynamic Island: **laufende Stunde mit
+Restzeit und Fortschrittsbalken** oder **nächste Stunde mit Countdown** (ab 60 min
+vorher) — inklusive Vertretungs-/Ausfall-Hinweis. Antippen klappt die Detailkarte
+auf (Raum, Lehrkraft, Änderung, Sprung zum Stundenplan).
+
+Je Plattform tut die Insel mehr:
+
+| Plattform | Verhalten |
+|---|---|
+| **In-App (alle)** | Kapsel mit Live-Countdown, Fortschritt, Detailkarte |
+| **Android (Dev-Build)** | dauerhafte Fortschritts-**Notification** im Shade; auf Android 15/16 als **Live-Update**-Statuschip (inkl. lokalem Kotlin-Modul `modules/schulflow-live-island`) |
+| **Xiaomi HyperOS** | HyperOS stuft laufende Fortschritts-Notifications automatisch zur **Fokus-Notification** hoch — der inselartigen Darstellung um die Punch-Hole-Kamera („HyperIsland"), ohne Xiaomi-interne SDKs |
+| **Expo Go** | JS-Fallback: stille Notification via `expo-notifications`, aktualisiert im Insel-Takt |
+| **iOS** | In-App-Kapsel; Live Activities (Lockscreen/Dynamic Island) per WidgetKit-Extension auf der Roadmap |
+| **Web** | In-App-Kapsel + **Browser-Tab-Titel** mit Countdown (`📐 Mathe · noch 23 min — Schulflow`) |
+
+Schalter: **Einstellungen → Live-Island**. Unter Android fragt der Schalter beim
+Aktivieren die Benachrichtigungs-Erlaubnis an (Tipp für HyperOS: „Autostart" +
+„Akku: keine Einschränkungen" freischalten).
 
 ### Benachrichtigungen
 
@@ -147,10 +196,17 @@ app/
 
 ```bash
 npm install
-npm run web          # Browser
+npm run web          # Browser (Dev-Server proxyt /sm-api automatisch an die Schul-API)
 npm start            # Expo Dev Server (Expo Go / Dev Client)
 npm run android      # Android
 npm run ios          # iOS
+```
+
+Web-App **produktiv ausliefern**:
+
+```bash
+npm run export:web   # statischer Export nach dist/
+npm run serve:web    # node scripts/web-proxy.mjs — Statik + API-Proxy, fertige Web-App ab Port 8080
 ```
 
 Die App startet im **Demo-Modus**. Für echte Daten: **Einstellungen → Konto → E-Mail + Passwort → Verbinden**
@@ -159,9 +215,10 @@ Die App startet im **Demo-Modus**. Für echte Daten: **Einstellungen → Konto �
 Nützliche Skripte:
 
 ```bash
-npm run typecheck    # tsc --noEmit
-npm run smoke        # rendert die App headless (jsdom) und prüft jede Route auf Laufzeitfehler
-npm run icons        # rendert assets/icon.png & Logo-Previews aus den SVGs
+npm run typecheck      # tsc --noEmit
+npm run smoke          # rendert die App headless (jsdom) und prüft jede Route auf Laufzeitfehler
+npm run smoke:matrix   # alle Routes × Phone/Tablet/Desktop (Layout-Regressionstest)
+npm run icons          # rendert assets/icon.png & Logo-Previews aus den SVGs
 ```
 
 `npm run smoke [route]` lädt das echte Web-Bundle vom laufenden Dev-Server in jsdom, rendert es
@@ -169,7 +226,8 @@ und schlägt fehl, sobald ein Fehler in der Konsole landet oder nichts gerendert
 
 ```bash
 npm run web &
-node scripts/smoke.mjs /grades
+node scripts/smoke.mjs /grades --width=1600 --expect="Noten"
+node scripts/smoke.mjs / --width=1024 --expect="2 Spalten"   # Vorhandenes Tablet-Raster prüfen
 ```
 
 ---
@@ -178,15 +236,25 @@ node scripts/smoke.mjs /grades
 
 ```
 src/
-├── api/          client.ts (RPC-Gateway, Rate-Limit, Fehlerklassen) · auth.ts (PBKDF2-Login)
+├── api/          client.ts (RPC-Gateway, Rate-Limit, Web-CORS-Proxy-Basis) · auth.ts (PBKDF2-Login)
 │                 poqa.ts (ORM-Gateway) · endpoints.ts (typisierte Aufrufe) · types.ts
 ├── data/         demo.ts (kompletter Demo-Datensatz) · queries.ts (react-query-Hooks)
 ├── features/     insights/ · dashboard/widgets.tsx · tasks/studyplan.ts ·
-│                 grades/calculator.ts · notifications/scheduler.ts
+│                 grades/calculator.ts · notifications/scheduler.ts ·
+│                 island/ (Live-Island: State, Kapsel-UI, System-Effekte, native Brücke)
 ├── design/       tokens.ts (Single Source of Truth) · subjects.ts (Fach-Farben) · tamagui.config.ts
 ├── state/        settings.ts (zustand, persistiert) · session.ts (Login/JWT)
-├── ui/           primitives.tsx · motion.tsx · gluestack/ (Button, Progress, Switch, Avatar …)
-└── lib/          date.ts · html.ts · storage.ts (SecureStore/AsyncStorage-Bridge)
+├── ui/           primitives.tsx (inkl. AdaptiveContent, Dialog-Sheets) · shell.tsx (Sidebar/Rail)
+│                 motion.tsx · gluestack/ (Button, Progress, Switch, Avatar …)
+├── lib/          date.ts · html.ts · storage.ts · breakpoints.ts (Formfaktoren)
+modules/
+└── schulflow-live-island/  lokales Expo-Modul (Kotlin): Android-ongoing-/Live-Update-
+                            /HyperOS-Fokus-Notification für die Insel
+scripts/
+├── smoke.mjs / smoke-matrix.mjs   Web-Bundle in jsdom, Layout-aware (--width/--height/--expect)
+├── sm-api-proxy.cjs               geteilter CORS-Proxy (Metro-Dev + Export-Server)
+└── web-proxy.mjs                  Produktiv-Server: dist/ + /sm-api
+public/             index.html (PWA-Template) · manifest.webmanifest · Icons
 ```
 
 **Warum drei Styling-Systeme koexistieren:** NativeWind liefert die Utility-Klassen,
@@ -247,10 +315,17 @@ Dazu `mark-mono.svg` (einfarbig über `currentColor`, für Tab-Bar/Print) und `w
 
 ## Roadmap
 
-- [ ] UI für Elternsprechtag-Buchung, Ganztag, Wahlfächer, Zahlungen und Dokumente
-- [ ] Native Home-Screen-Widgets (WidgetKit / Glance) über die vorbereitete Bridge
-- [ ] iCal-Abo-Export (`calendar/get-ical-token`) direkt in den Systemkalender
-- [ ] Datei-Downloads inkl. clientseitiger AES-256-Entschlüsselung
+- [x] Web-App: eigenständig lauffähig (CORS-Proxy), installierbare PWA, Desktop-Sidebar
+- [x] Tablet- & Desktop-Layouts (Rail/Sidebar, Widget-Raster, Zeitraster-Stundenplan)
+- [x] Live-Island: In-App-Kapsel + Android-Benachrichtigung (HyperOS-Fokus / Android-Live-Update)
+- [ ] iOS Live Activities (Dynamic Island + Lockscreen) via WidgetKit-Extension
+- [ ] Service-Worker für den Web-Bundle-Cache (Daten hält schon der Query-Persist vor)
+- [ ] Master-Detail im Postfach ab Desktop-Breite (Liste links, Brief rechts)
+- [x] Zusatzmodule: Zahlungen, Elternsprechtag-Buchung, Wahlfächer, Ganztag, Dokumente —
+      erscheinen automatisch nur, wenn die Schule sie gebucht hat
+- [ ] Native Home-Screen-Widgets (WidgetKit / Android Glance) — noch nicht implementiert
+- [x] iCal-Link des Kalenders teilen (`calendar/get-ical-token`, Kalender → Teilen)
+- [x] Datei-Downloads inkl. clientseitiger AES-256-Entschlüsselung (Brief-Anhänge, Dokumente)
 - [ ] Mehrere Kinder in einem Elternkonto parallel im Dashboard
 
 ---

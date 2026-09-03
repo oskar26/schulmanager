@@ -23,7 +23,7 @@ export default function ExemptionScreen() {
 
   if (sent) {
     return (
-      <Screen>
+      <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
           <Text className="text-[56px]">📨</Text>
           <Title>Antrag gestellt</Title>
@@ -40,7 +40,7 @@ export default function ExemptionScreen() {
   }
 
   return (
-    <Screen>
+    <Screen adaptive="narrow">
       <Row className="px-4 pb-2 pt-2">
         <IconButton icon="close" onPress={() => router.back()} color="#6A7086" size={36} />
         <Title className="ml-2">Beurlaubung</Title>

@@ -21,7 +21,7 @@ export default function AttendanceScreen() {
   }, [absences]);
 
   return (
-    <Screen>
+    <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
         <IconButton icon="chevron-back" onPress={() => router.back()} color="#6A7086" size={36} />
         <View className="ml-2 flex-1">

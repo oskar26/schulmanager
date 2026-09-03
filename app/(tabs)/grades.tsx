@@ -35,7 +35,7 @@ export default function GradesScreen() {
   );
 
   return (
-    <Screen>
+    <Screen adaptive="content">
       <Row className="justify-between px-4 pb-2 pt-2">
         <View>
           <Title>Noten</Title>

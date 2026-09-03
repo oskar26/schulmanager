@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { useSnapshot } from '@/data/queries';
 import { WEEKDAYS } from '@/lib/date';
-import { Card, Chip, EmptyState, IconButton, Ionicons, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
+import { Card, Chip, EmptyState, IconButton, Ionicons, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 
 /**
@@ -26,7 +26,7 @@ export default function AlldayScreen() {
   }
 
   return (
-    <Screen>
+    <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
         <IconButton icon="close" onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
@@ -74,13 +74,6 @@ export default function AlldayScreen() {
           })
         )}
 
-        <SectionHeader title="Nachricht an die Betreuung" emoji="✉️" />
-        <Card>
-          <Muted className="text-[12px] leading-5">
-            Kurzmitteilungen an das Betreuungsteam ({(data?.alldayNotes ?? []).length} vorhanden) plane ich in einem
-            der nächsten Updates ein — die Schnittstelle dafür ist schon vorbereitet.
-          </Muted>
-        </Card>
       </ScrollView>
     </Screen>
   );

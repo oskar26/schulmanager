@@ -12,10 +12,22 @@ export const toISO = (date: Date): string => {
   return copy.toISOString().slice(0, 10);
 };
 
+/**
+ * Tolerant gegen volle ISO-Timestamps (`2026-09-03T08:00:00.000Z`) — die
+ * Schulmanager-API liefert je nach Endpunkt beides. Nur die ersten 10 Zeichen
+ * zählen. Ungültige Eingaben erzeugen ein „Invalid Date", das die Formatierer
+ * unten abfangen, statt die App abstürzen zu lassen.
+ */
 export const fromISO = (iso: string): Date => {
-  const [year, month, day] = iso.split('-').map(Number);
-  return new Date(year, (month ?? 1) - 1, day ?? 1);
+  const [year, month, day] = String(iso ?? '')
+    .slice(0, 10)
+    .split('-')
+    .map(Number);
+  return new Date(year ?? NaN, (month ?? 1) - 1, day ?? 1);
 };
+
+/** Ungültiges Datum? ⇒ lieber den Rohtext zeigen als die App crashen lassen. */
+const isValidDate = (date: Date): boolean => !Number.isNaN(date.getTime());
 
 export const today = (): string => toISO(new Date());
 
@@ -41,11 +53,13 @@ export const isoDay = (date: Date): number => ((date.getDay() + 6) % 7) + 1;
 
 export const formatDay = (iso: string): string => {
   const date = fromISO(iso);
+  if (!isValidDate(date)) return String(iso ?? '').slice(0, 10);
   return `${WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}, ${date.getDate()}. ${MONTHS[date.getMonth()].slice(0, 3)}`;
 };
 
 export const formatLongDay = (iso: string): string => {
   const date = fromISO(iso);
+  if (!isValidDate(date)) return String(iso ?? '').slice(0, 10);
   return `${WEEKDAYS[(date.getDay() + 6) % 7]}, ${date.getDate()}. ${MONTHS[date.getMonth()]}`;
 };
 
@@ -54,12 +68,14 @@ export const formatRelativeDay = (iso: string): string => {
   if (diff === 0) return 'Heute';
   if (diff === 1) return 'Morgen';
   if (diff === -1) return 'Gestern';
-  if (diff > 1 && diff < 7) return WEEKDAYS[(fromISO(iso).getDay() + 6) % 7];
+  const date = fromISO(iso);
+  if (diff > 1 && diff < 7 && isValidDate(date)) return WEEKDAYS[(date.getDay() + 6) % 7];
   return formatDay(iso);
 };
 
 export const daysUntil = (iso: string): number => {
   const target = fromISO(iso);
+  if (!isValidDate(target)) return Number.MAX_SAFE_INTEGER;
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   target.setHours(0, 0, 0, 0);

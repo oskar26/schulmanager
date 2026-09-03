@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { useSnapshot } from '@/data/queries';
-import { syncNotifications } from '@/features/notifications/scheduler';
+import { useModuleActive, useSnapshot } from '@/data/queries';
+import { WEB_USES_CORS_PROXY } from '@/api/client';
+import { requestPermission, syncNotifications } from '@/features/notifications/scheduler';
+import { getNativeIsland } from '@/features/island/bridge';
 import { Card, Chip, Divider, IconButton, Ionicons, ListRow, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner, Switch } from '@/ui/gluestack/feedback';
@@ -58,8 +60,28 @@ export default function SettingsScreen() {
     );
   };
 
+  const nativeIsland = Platform.OS !== 'web' ? getNativeIsland() : null;
+
+  // Modul-abhängige Zeilen: Was die Schule nicht gebucht hat, verschwindet
+  // auch aus den Einstellungen (Noten-Tab macht es identisch).
+  const gradesOn = useModuleActive('grades');
+  const messengerOn = useModuleActive('messenger');
+  const lettersOn = useModuleActive('letters');
+
+  const handleToggleIsland = async (value: boolean) => {
+    update({ liveIsland: value });
+    if (value && Platform.OS === 'android') {
+      const granted = await requestPermission();
+      if (!granted) {
+        setNotice(
+          'Benachrichtigungen sind blockiert. Die Insel läuft nur in der App, bis du sie in den Systemeinstellungen erlaubst.',
+        );
+      }
+    }
+  };
+
   return (
-    <Screen>
+    <Screen adaptive="content">
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
           <IconButton icon="chevron-back" onPress={() => router.back()} color="#6A7086" size={36} />
@@ -76,6 +98,9 @@ export default function SettingsScreen() {
               Schulflow meldet sich direkt bei Schulmanager Online an. E-Mail und Passwort werden
               verschlüsselt auf dem Gerät gespeichert ({Platform.OS === 'web' ? 'Browser-Speicher' : 'Keychain / Keystore'})
               und ausschließlich an login.schulmanager-online.de gesendet.
+              {WEB_USES_CORS_PROXY
+                ? ' Im Web laufen die Aufrufe über den eingebauten CORS-Proxy dieser Installation — er reicht sie unverändert an login.schulmanager-online.de weiter.'
+                : ''}
             </Muted>
 
             <Text className="mb-1.5 mt-4 text-[12px] font-bold text-muted">E-Mail-Adresse</Text>
@@ -217,7 +242,9 @@ export default function SettingsScreen() {
         {/* ---------------------------------------------------------- Dashboard */}
         <SectionHeader title="Dashboard-Widgets" emoji="🧩" />
         <Card padded={false}>
-          {settings.widgets.map((widget, index) => {
+          {settings.widgets
+            .filter((widget) => widget.id !== 'grades' || gradesOn)
+            .map((widget, index, visibleWidgets) => {
             const meta = WIDGET_META[widget.id];
             return (
               <View key={widget.id}>
@@ -245,7 +272,7 @@ export default function SettingsScreen() {
                     <Switch value={widget.enabled} onValueChange={() => toggleWidget(widget.id)} />
                   </Row>
                 </Row>
-                {index < settings.widgets.length - 1 ? <Divider className="ml-4" /> : null}
+                {index < visibleWidgets.length - 1 ? <Divider className="ml-4" /> : null}
               </View>
             );
           })}
@@ -256,20 +283,28 @@ export default function SettingsScreen() {
         <Card padded={false}>
           {(
             [
-              ['substitutions', 'Vertretung & Entfall', 'Sofort, sobald sich der Plan ändert'],
-              ['firstHourCancelled', 'Ausschlafen-Alarm', 'Wenn die erste Stunde entfällt'],
-              ['homeworkDue', 'Hausaufgaben fällig', 'Abends vorher um 18:00'],
-              ['examCountdown', 'Klassenarbeiten', '7, 3 und 1 Tag vorher'],
-              ['newLetter', 'Neue Elternbriefe', 'Sofort'],
-              ['letterReminder', 'Erinnerung Bestätigung', 'Nach 48 Stunden ohne Bestätigung'],
-              ['newMessage', 'Neue Nachrichten', 'Sofort'],
-              ['newGrade', 'Neue Noten', 'Sobald eine Note eingetragen wird'],
-              ['morningBriefing', 'Morgen-Briefing', 'Stunden, Aufgaben und Packliste'],
-              ['eveningCheck', 'Abend-Check', '20:00 „Alles für morgen bereit?"'],
-              ['weeklyReview', 'Wochenrückblick', 'Sonntags um 18:00'],
-              ['unexcusedAbsence', 'Unentschuldigte Fehlzeit', 'Sobald eine auftaucht'],
+              ['substitutions', 'Vertretung & Entfall', 'Sofort, sobald sich der Plan ändert', 'core'],
+              ['firstHourCancelled', 'Ausschlafen-Alarm', 'Wenn die erste Stunde entfällt', 'core'],
+              ['homeworkDue', 'Hausaufgaben fällig', 'Abends vorher um 18:00', 'core'],
+              ['examCountdown', 'Klassenarbeiten', '7, 3 und 1 Tag vorher', 'core'],
+              ['newLetter', 'Neue Elternbriefe', 'Sofort', 'letters'],
+              ['letterReminder', 'Erinnerung Bestätigung', 'Nach 48 Stunden ohne Bestätigung', 'letters'],
+              ['newMessage', 'Neue Nachrichten', 'Sofort', 'messenger'],
+              ['newGrade', 'Neue Noten', 'Sobald eine Note eingetragen wird', 'grades'],
+              ['morningBriefing', 'Morgen-Briefing', 'Stunden, Aufgaben und Packliste', 'core'],
+              ['eveningCheck', 'Abend-Check', '20:00 „Alles für morgen bereit?"', 'core'],
+              ['weeklyReview', 'Wochenrückblick', 'Sonntags um 18:00', 'core'],
+              ['unexcusedAbsence', 'Unentschuldigte Fehlzeit', 'Sobald eine auftaucht', 'core'],
             ] as const
-          ).map(([key, title, subtitle], index, array) => (
+          )
+            .filter(
+              ([, , , module]) =>
+                module === 'core' ||
+                (module === 'grades' && gradesOn) ||
+                (module === 'messenger' && messengerOn) ||
+                (module === 'letters' && lettersOn),
+            )
+            .map(([key, title, subtitle], index, array) => (
             <View key={key}>
               <ListRow
                 title={title}
@@ -293,6 +328,30 @@ export default function SettingsScreen() {
             <Button action="secondary" size="sm" className="mt-3" onPress={handleTestNotifications}>
               <ButtonText>Zeitplan jetzt neu berechnen</ButtonText>
             </Button>
+          </View>
+        </Card>
+
+        {/* ---------------------------------------------------------- Live-Island */}
+        <SectionHeader title="Live-Island" emoji="🏝️" />
+        <Card padded={false}>
+          <ListRow
+            title="Insel oben mittig"
+            subtitle="Laufende & nächste Stunde — mit Countdown und Fortschritt"
+            right={<Switch value={settings.liveIsland} onValueChange={(value) => void handleToggleIsland(value)} />}
+          />
+          <Divider className="ml-4" />
+          <View className="px-4 py-3">
+            <Muted className="text-[11px] leading-4">
+              {Platform.OS === 'android'
+                ? nativeIsland
+                  ? 'Auf diesem Gerät die volle Variante: dauerhafte System-Notification mit Fortschritt — auf Xiaomi HyperOS erscheint sie automatisch als Fokus-Notification um die Kamera („HyperIsland"), auf neuen Android-Versionen als Live-Update-Chip in der Statusleiste.'
+                  : 'Im Standard (Expo Go) zeigt eine stille Notification den Countdown. Mit einem Dev-Build wird sie zur echten Live-Update-Notification — auf Xiaomi HyperOS zur Fokus-Notification um die Kamera.'
+                : Platform.OS === 'ios'
+                  ? 'In der App schwebt die Insel oben mittig wie eine Dynamic Island. Echte Live Activities auf Lockscreen und in der Dynamic Island (iPhone 14 Pro+) kommen mit dem WidgetKit-Modul — der Fahrplan steht in docs/PLATTFORMEN.md.'
+                  : Platform.OS === 'web'
+                    ? 'Die Insel klebt oben mittig in der App — und der Browser-Tab-Titel tickt im Takt des Countdowns mit. Tipp: „App installieren" macht aus der Web-Version eine richtige PWA.'
+                    : 'Die Insel zeigt die laufende bzw. nächste Stunde prominent oben in der App.'}
+            </Muted>
           </View>
         </Card>
 
@@ -323,12 +382,6 @@ export default function SettingsScreen() {
           </View>
           <Divider />
           <ListRow
-            title="Verspielte Animationen"
-            subtitle="Federnde Karten, Konfetti, Emojis"
-            right={<Switch value={settings.playful} onValueChange={(value) => update({ playful: value })} />}
-          />
-          <Divider className="ml-4" />
-          <ListRow
             title="Kompakter Stundenplan"
             subtitle="Mehr Stunden auf einen Blick"
             right={
@@ -352,14 +405,18 @@ export default function SettingsScreen() {
         {/* ---------------------------------------------------------- Datenschutz */}
         <SectionHeader title="Datenschutz" emoji="🛡️" />
         <Card padded={false}>
-          <ListRow
-            icon="eye-off-outline"
-            iconColor="#48A3FF"
-            title="Noten verbergen"
-            subtitle="Zeigt •••, bis du sie einblendest"
-            right={<Switch value={settings.hideGrades} onValueChange={(value) => update({ hideGrades: value })} />}
-          />
-          <Divider className="ml-16" />
+          {gradesOn ? (
+            <>
+              <ListRow
+                icon="eye-off-outline"
+                iconColor="#48A3FF"
+                title="Noten verbergen"
+                subtitle="Zeigt •••, bis du sie einblendest"
+                right={<Switch value={settings.hideGrades} onValueChange={(value) => update({ hideGrades: value })} />}
+              />
+              <Divider className="ml-16" />
+            </>
+          ) : null}
           <ListRow
             icon="finger-print-outline"
             iconColor="#22B07A"

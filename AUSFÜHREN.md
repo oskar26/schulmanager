@@ -63,10 +63,27 @@ Der Dev-Server startet und zeigt:
 
 Öffne <http://localhost:8081> im Browser. Fertig. 🎉
 
+**Seit dem Web-Update gilt:**
+
+* Die App proxyt alle API-Aufrufe unter `/sm-api/*` durch den Dev-Server an
+  `login.schulmanager-online.de` — damit funktioniert auch der **echte Login** aus dem
+  Browser (die Schul-API sendet nämlich keine CORS-Header).
+* **Fenster in die Breite ziehen** zeigt die Desktop-Shell (Sidebar links,
+  3-Spalten-Dashboard, Stundenplan als Zeitraster); schmal ziehen = Phone-Layout.
+  Ab ~1024 px Breite gibt's die Tablet-Variante mit Icon-Rail.
+* **Installieren als PWA:** Chrome/Edge zeigen „App installieren“ an; auf iOS über
+  Teilen → „Zum Home-Bildschirm“. Manifest und Icons liegen unter `public/`.
+* **Produktiv ausliefern:**
+
+  ```bash
+  npm run export:web
+  npm run serve:web   # http://localhost:8080 (Statik + API-Proxy in einem Prozess)
+  ```
+
 Tipps:
 
 * Mit **F12 → Gerätesimulation (Strg/Cmd + Shift + M)** und einem Profil wie „iPhone 14 Pro“
-  siehst du das echte Mobil-Layout.
+  siehst du das echte Mobil-Layout; „iPad Air“ bzw. freie Größen zeigen Rail/Sidebar.
 * Änderungen an Dateien werden **live neu geladen** (Fast Refresh).
 * Beenden mit `Strg + C` im Terminal.
 
@@ -237,15 +254,24 @@ npm run typecheck     # TypeScript: muss ohne Ausgabe durchlaufen
 ```
 
 Der Smoke-Test rendert die App **headless** (Node + jsdom) mit dem echten Web-Bundle und
-schlägt fehl, sobald ein Laufzeitfehler auftritt oder ein Screen leer bleibt:
+schlägt fehl, sobald ein Laufzeitfehler auftritt oder ein Screen leer bleibt. Er kann
+Fenstergrößen simulieren und erwartete Layout-Texte prüfen:
 
 ```bash
-npm run web &         # Dev-Server muss laufen
-npm run smoke         # Startseite
-node scripts/smoke.mjs /grades     # einzelne Route
+npm run web &                                  # Dev-Server muss laufen
+npm run smoke                                  # Startseite
+node scripts/smoke.mjs /grades                 # einzelne Route
+node scripts/smoke.mjs / --width=1600 --expect="inoffizieller Client"   # Desktop-Sidebar da?
+node scripts/smoke.mjs / --width=1024 --expect="2 Spalten"              # Tablet-Raster da?
 ```
 
-Alle Routen auf einmal:
+Alle Routen × drei Formfaktoren (Phone/Tablet/Desktop):
+
+```bash
+npm run smoke:matrix        # oder: node scripts/smoke-matrix.mjs --quick
+```
+
+Alle Routen auf einmal (klassisch):
 
 ```bash
 for r in / /timetable /tasks /grades /inbox /settings /calendar /attendance /search /sick-note /exemption; do

@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { shadow } from '@/design/tokens';
 import { tint } from '@/design/subjects';
+import { useLayout } from '@/lib/breakpoints';
 
 /* ------------------------------------------------------------------ Text */
 
@@ -47,15 +48,77 @@ export function Screen({
   children,
   className = '',
   edges = ['top'],
+  adaptive,
 }: {
   children: React.ReactNode;
   className?: string;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  /**
+   * `adaptive` zentriert und begrenzt den Inhalt auf Tablets/Desktop:
+   * · 'content'   → Lesebreite (~1120 dp)
+   * · 'dashboard' → volle Kartenbreite (~1280–1440 dp)
+   * · 'narrow'    → Dialogbreite (~640 dp), z. B. Formulare und Suche
+   * Auf Phones ist die Prop ein No-Op.
+   */
+  adaptive?: 'content' | 'dashboard' | 'narrow';
 }) {
+  const layout = useLayout();
+  const wide = layout.navigation !== 'bottom';
+
   return (
     <SafeAreaView edges={edges} className={`flex-1 bg-bg ${className}`}>
-      {children}
+      {adaptive && wide ? (
+        <AdaptiveContent
+          dashboard={adaptive === 'dashboard'}
+          narrow={adaptive === 'narrow'}
+          style={{ flex: 1 }}
+        >
+          {children}
+        </AdaptiveContent>
+      ) : (
+        children
+      )}
     </SafeAreaView>
+  );
+}
+
+/**
+ * Breiten-Wrapper für Inhalte: Auf Tablets/Desktop bleibt der Inhalt lesbar
+ * zentriert, statt sich endlos in die Breite zu strecken. `narrow` eignet sich
+ * für Formulare und Dialoge (Krankmeldung, Suche …).
+ */
+export function AdaptiveContent({
+  children,
+  className = '',
+  narrow = false,
+  dashboard = false,
+  style,
+  ...rest
+}: ViewProps & {
+  children: React.ReactNode;
+  className?: string;
+  narrow?: boolean;
+  /** Layout-Maß des Dashboards (breiter als normale Lesespalten). */
+  dashboard?: boolean;
+}) {
+  const layout = useLayout();
+  const maxWidth = narrow ? 640 : dashboard ? layout.dashboardMaxWidth : layout.contentMaxWidth;
+  return (
+    <View
+      {...rest}
+      style={[
+        {
+          width: '100%',
+          maxWidth: layout.isPhone ? undefined : maxWidth,
+          alignSelf: 'center',
+          paddingHorizontal: layout.isPhone ? 0 : layout.gutter,
+        },
+        style,
+      ]}
+      className={className}
+    >
+      {children}
+    </View>
   );
 }
 
@@ -304,6 +367,33 @@ export function Sheet({
   title?: string;
   children: React.ReactNode;
 }) {
+  const layout = useLayout();
+
+  if (layout.isDesktop || layout.isTablet) {
+    // Großer Screen ⇒ zentrierter Dialog statt Bottom-Sheet.
+    return (
+      <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
+        <View className="flex-1 items-center justify-center bg-black/45 p-6">
+          <Pressable accessibilityLabel="Schließen" onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+          <View
+            className="max-h-[86%] w-full max-w-[560px] rounded-[28px] bg-surface pb-6"
+            style={shadow.float}
+          >
+            {title ? (
+              <Row className="justify-between px-5 pb-1 pt-4">
+                <Title>{title}</Title>
+                <IconButton icon="close" onPress={onClose} background="bg-line/50" size={34} color="#6A7086" />
+              </Row>
+            ) : null}
+            <ScrollView className="px-5" contentContainerClassName="pb-6">
+              {children}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 bg-black/40" />
