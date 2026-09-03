@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Web-Pflege (greift natürlich nur im Browser; nativ ignoriert):
+ * Auswahl brand-farbig, kein Android-Chrome-Tap-Flash, Countdowns mit
+ * tabellarischen Ziffern, und Buttons bekommen den Hand-Cursor.
+ */
+@layer base {
+  ::selection {
+    background: rgba(var(--sf-brand) / 0.24);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  [role='button'],
+  button,
+  [role='tab'],
+  [role='link'] {
+    cursor: pointer;
+  }
+
+  /* TextInputs erben die App-Typo statt Browser-Standard */
+  input,
+  textarea {
+    font-family: inherit;
+  }
+}
+
 @layer base {
   :root {
     --sf-bg: 248 249 253;

@@ -2,10 +2,26 @@
  * Smoke-Test: lädt das Web-Bundle in jsdom und prüft, ob die App ohne Laufzeitfehler rendert.
  * Ersetzt keinen echten Browser, findet aber Import-, Provider- und Render-Fehler zuverlässig.
  *
- *   node scripts/smoke.mjs
+ *   node scripts/smoke.mjs [route] [--width=1400] [--height=900] [--expect=Sidebar-Text]
+ *
+ * Beispiele:
+ *   node scripts/smoke.mjs /settings --width=390        # Phone
+ *   node scripts/smoke.mjs / --width=1024 --height=768  # Tablet (Rail)
+ *   node scripts/smoke.mjs / --width=1600 --expect=Schulflow  # Desktop (Sidebar)
  */
 import fs from 'node:fs';
 import { JSDOM, VirtualConsole } from 'jsdom';
+
+const args = process.argv.slice(2);
+const flag = (name, fallback) => {
+  const hit = args.find((arg) => arg.startsWith(`--${name}=`));
+  return hit ? hit.slice(name.length + 3) : fallback;
+};
+
+const route = args.find((arg) => !arg.startsWith('--')) ?? '/';
+const width = Number(flag('width', 390));
+const height = Number(flag('height', 844));
+const expectText = flag('expect', null);
 
 const BUNDLE_URL =
   'http://localhost:8081/node_modules/expo-router/entry.bundle?platform=web&dev=false&minify=false&hot=false&lazy=false&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable';
@@ -17,7 +33,7 @@ if (!response.ok) {
   process.exit(1);
 }
 fs.writeFileSync('/tmp/schulflow-bundle.js', code);
-console.log(`Bundle geladen: ${(code.length / 1e6).toFixed(1)} MB`);
+console.log(`Bundle geladen: ${(code.length / 1e6).toFixed(1)} MB · Fenster ${width}×${height}`);
 
 const errors = [];
 const virtualConsole = new VirtualConsole();
@@ -29,8 +45,6 @@ virtualConsole.on('error', (...args) => {
 virtualConsole.on('warn', () => {});
 virtualConsole.on('log', (...args) => console.log('[app]', ...args));
 
-const route = process.argv[2] ?? '/';
-
 const dom = new JSDOM(
   `<!doctype html><html><head></head><body><div id="root"></div></body></html>`,
   {
@@ -40,6 +54,25 @@ const dom = new JSDOM(
     virtualConsole,
   },
 );
+
+// Fenstergröße VOR dem Bundle-Lauf setzen — Breakpoints lesen sie direkt aus.
+// react-native-web bevorzugt visualViewport (jsdom: clientWidth immer 0!).
+Object.defineProperty(dom.window, 'innerWidth', { value: width, configurable: true, writable: true });
+Object.defineProperty(dom.window, 'innerHeight', { value: height, configurable: true, writable: true });
+dom.window.visualViewport = {
+  width,
+  height,
+  scale: 1,
+  offsetLeft: 0,
+  offsetTop: 0,
+  pageLeft: 0,
+  pageTop: 0,
+  addEventListener() {},
+  removeEventListener() {},
+  onresize: null,
+  onscroll: null,
+};
+dom.window.dispatchEvent(new dom.window.Event('resize'));
 
 dom.window.matchMedia = () => ({
   matches: false,
@@ -93,6 +126,12 @@ if (text.trim().length < 20) {
   process.exit(1);
 }
 
-console.log(`\n✅ Smoke-Test bestanden für ${route}.`);
+if (expectText && !text.includes(expectText)) {
+  console.error(`Erwarteter Text fehlt: „${expectText}“`);
+  dom.window.close();
+  process.exit(1);
+}
+
+console.log(`\n✅ Smoke-Test bestanden für ${route} @ ${width}×${height}${expectText ? ` (mit „${expectText}“)` : ''}.`);
 dom.window.close();
 process.exit(0);

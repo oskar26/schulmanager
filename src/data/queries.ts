@@ -157,6 +157,20 @@ export function useSnapshot() {
   return { ...query, data, isDemo: useDemo };
 }
 
+/**
+ * Ist ein Schulmanager-Modul an dieser Schule gebucht (steuert `main/get-active-modules`)?
+ * Die App richtet sich danach: nicht gebuchte Module verschwinden aus Tabs,
+ * Schnellaktionen, Postfach-Sparten und Einstellungen — genau wie im offiziellen Menü.
+ *
+ * Solange der erste Snapshot lädt (oder im Demo-Modus, der bewusst alles zeigt),
+ * `true` — sonst würde die Navigation beim App-Start kurz „umräumen".
+ */
+export function useModuleActive(name: string): boolean {
+  const { data, isDemo } = useSnapshot();
+  if (isDemo || !data) return true;
+  return data.modules.includes(name);
+}
+
 /* ------------------------------------------------------------------ Mutationen */
 
 export function useConfirmLetter() {

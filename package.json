@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "private": true,
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": "./modules"
+    }
+  },
   "scripts": {
     "start": "expo start",
     "web": "expo start --web",
@@ -10,7 +15,10 @@
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
     "smoke": "node scripts/smoke.mjs",
-    "icons": "node scripts/render-icons.mjs"
+    "smoke:matrix": "node scripts/smoke-matrix.mjs",
+    "icons": "node scripts/render-icons.mjs",
+    "export:web": "expo export --platform web",
+    "serve:web": "node scripts/web-proxy.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

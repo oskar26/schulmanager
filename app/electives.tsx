@@ -58,7 +58,7 @@ export default function ElectivesScreen() {
   };
 
   return (
-    <Screen>
+    <Screen adaptive="narrow">
       <Row className="px-4 pb-2 pt-2">
         <IconButton icon="close" onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">

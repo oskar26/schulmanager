@@ -28,7 +28,7 @@ export default function SickNoteScreen() {
 
   if (sent) {
     return (
-      <Screen>
+      <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
           <Text className="text-[56px]">🤒</Text>
           <Title>Krankmeldung übermittelt</Title>
@@ -44,7 +44,7 @@ export default function SickNoteScreen() {
   }
 
   return (
-    <Screen>
+    <Screen adaptive="narrow">
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
           <IconButton icon="close" onPress={() => router.back()} color="#6A7086" size={36} />

@@ -19,7 +19,7 @@ export default function ParentTalksScreen() {
   const [selected, setSelected] = useState<ParentTalkRound | null>(null);
 
   return (
-    <Screen>
+    <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
         <IconButton icon="chevron-back" onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
@@ -76,8 +76,7 @@ export default function ParentTalksScreen() {
 
                   {round.inscriptionStart && round.inscriptionEnd ? (
                     <Muted className="mt-2 text-[11px]">
-                      Buchung möglich: {formatDay(round.inscriptionStart.slice(0, 10))} –{' '}
-                      {formatDay(round.inscriptionEnd.slice(0, 10))}
+                      Buchung möglich: {formatDay(round.inscriptionStart)} – {formatDay(round.inscriptionEnd)}
                     </Muted>
                   ) : null}
 
@@ -210,8 +209,7 @@ function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () 
                 className="rounded-xl bg-brand px-3.5 py-2.5 active:opacity-80"
               >
                 <Text className="text-[13px] font-bold text-white">
-                  {slot.start ? formatDay(slot.start.slice(0, 10)) : 'Termin'} ·{' '}
-                  {slot.start ? formatTime(slot.start) : ''}
+                  {slot.start ? formatDay(slot.start) : 'Termin'} · {slot.start ? formatTime(slot.start) : ''}
                 </Text>
               </Pressable>
             ))}

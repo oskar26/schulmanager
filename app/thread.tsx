@@ -42,7 +42,7 @@ export default function ThreadScreen() {
   };
 
   return (
-    <Screen edges={['top', 'bottom']}>
+    <Screen adaptive="narrow" edges={['top', 'bottom']}>
       {/* Kopf */}
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">

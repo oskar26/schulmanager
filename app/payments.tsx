@@ -22,7 +22,7 @@ export default function PaymentsScreen() {
   const openSum = open.reduce((sum, invoice) => sum + Math.max(0, (invoice.sum ?? 0) - (invoice.paidSum ?? 0)), 0);
 
   return (
-    <Screen>
+    <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
         <IconButton icon="chevron-back" onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">

@@ -44,7 +44,6 @@ export interface Settings {
 
   /** Erscheinungsbild */
   theme: 'system' | 'light' | 'dark';
-  playful: boolean;
   hapticFeedback: boolean;
   compactTimetable: boolean;
   showWeekend: boolean;
@@ -56,11 +55,10 @@ export interface Settings {
   /** Dashboard */
   widgets: { id: WidgetId; enabled: boolean }[];
 
-  /** Sync */
-  refreshMinutes: number;
+  /** Live-Island oben mittig + (Android) dauerhafte Notification mit Countdown. */
+  liveIsland: boolean;
 
   notifications: NotificationPrefs;
-  subjectColorOverrides: Record<string, string>;
 }
 
 export const DEFAULT_WIDGETS: { id: WidgetId; enabled: boolean }[] = [
@@ -95,14 +93,13 @@ export const DEFAULT_SETTINGS: Settings = {
   demoMode: true,
   activeStudentId: null,
   theme: 'system',
-  playful: true,
   hapticFeedback: true,
   compactTimetable: false,
   showWeekend: false,
   hideGrades: false,
   requireBiometrics: false,
   widgets: DEFAULT_WIDGETS,
-  refreshMinutes: 30,
+  liveIsland: true,
   notifications: {
     substitutions: true,
     firstHourCancelled: true,
@@ -119,7 +116,6 @@ export const DEFAULT_SETTINGS: Settings = {
     quietHours: { from: '21:30', to: '06:30' },
     briefingTime: '07:00',
   },
-  subjectColorOverrides: {},
 };
 
 interface SettingsStore {

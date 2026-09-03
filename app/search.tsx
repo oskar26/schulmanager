@@ -142,7 +142,7 @@ export default function SearchScreen() {
   const suggestions = ['Mathe', 'Sport', 'Klassenarbeit', 'Elternabend', 'Hausaufgabe'];
 
   return (
-    <Screen>
+    <Screen adaptive="narrow">
       <Row className="gap-2 px-4 pb-3 pt-2">
         <IconButton icon="close" onPress={() => router.back()} color="#6A7086" size={36} />
         <View className="flex-1 flex-row items-center rounded-2xl border border-line bg-surface px-3">

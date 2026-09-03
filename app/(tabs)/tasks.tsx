@@ -45,7 +45,7 @@ export default function TasksScreen() {
   }, [plan]);
 
   return (
-    <Screen>
+    <Screen adaptive="content">
       <View className="px-4 pb-3 pt-2">
         <Title>Aufgaben</Title>
         <Muted className="mb-3">Hausaufgaben, Arbeiten und dein Lernplan</Muted>

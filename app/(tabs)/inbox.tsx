@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 
 import type { Letter, MessageThread, Tile } from '@/api/types';
 import { useSession } from '@/state/session';
-import { useConfirmLetter, useMarkThreadRead, useSnapshot } from '@/data/queries';
+import { useConfirmLetter, useMarkThreadRead, useModuleActive, useSnapshot } from '@/data/queries';
 import { subjectStyle } from '@/design/subjects';
 import { downloadStoredFile } from '@/api/downloads';
 import { formatRelativeDay, formatTimeAgo } from '@/lib/date';
@@ -28,18 +28,28 @@ export default function InboxScreen() {
   const pending = data?.letters.filter((item) => item.requiresConfirmation && !item.confirmed).length ?? 0;
   const unread = data?.threads.reduce((sum, item) => sum + item.unreadCount, 0) ?? 0;
 
+  // Sparten nur bei gebuchtem Modul — wie das offizielle Menü der Schule.
+  const lettersOn = useModuleActive('letters');
+  const messengerOn = useModuleActive('messenger');
+  const boardOn = (data?.tiles.length ?? 1) > 0;
+
   const tabs: { value: Tab; label: string; badge?: number }[] = [
-    { value: 'letters', label: 'Briefe', badge: pending },
-    { value: 'messages', label: 'Nachrichten', badge: unread },
-    { value: 'board', label: 'Brett' },
+    ...(lettersOn ? [{ value: 'letters' as const, label: 'Briefe', badge: pending }] : []),
+    ...(messengerOn ? [{ value: 'messages' as const, label: 'Nachrichten', badge: unread }] : []),
+    ...(boardOn ? [{ value: 'board' as const, label: 'Brett' }] : []),
   ];
 
+  // Aktive Sparte muss immer eine sichtbare sein (z. B. nach Modulwechsel).
+  const activeTab = tabs.some((option) => option.value === tab) ? tab : (tabs[0]?.value ?? tab);
+
   return (
-    <Screen>
+    <Screen adaptive="content">
       <View className="px-4 pb-3 pt-2">
         <Title>Postfach</Title>
         <Muted className="mb-3">Elternbriefe, Nachrichten und Aushänge</Muted>
-        <SegmentedControl<Tab> options={tabs} value={tab} onChange={setTab} />
+        {tabs.length > 1 ? (
+          <SegmentedControl<Tab> options={tabs} value={activeTab} onChange={setTab} />
+        ) : null}
       </View>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 110 }}>
@@ -48,7 +58,13 @@ export default function InboxScreen() {
             <Skeleton className="h-20" />
             <Skeleton className="h-20" />
           </View>
-        ) : tab === 'letters' ? (
+        ) : tabs.length === 0 ? (
+          <EmptyState
+            emoji="📭"
+            title="Postfach nicht gebucht"
+            hint="Deine Schule hat weder Elternbriefe, Nachrichten noch Aushänge freigeschaltet."
+          />
+        ) : activeTab === 'letters' ? (
           data.letters.length === 0 ? (
             <EmptyState emoji="📭" title="Keine Elternbriefe" />
           ) : (
@@ -101,7 +117,7 @@ export default function InboxScreen() {
               );
             })
           )
-        ) : tab === 'messages' ? (
+        ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
             <EmptyState emoji="💬" title="Keine Nachrichten" hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht." />
           ) : (

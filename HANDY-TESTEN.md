@@ -23,11 +23,23 @@ Der Web-Build liegt schon fertig im Branch `gh-pages`. Du musst nur einmal die S
 
    ### 🌐 https://oskar26.github.io/schulmanager/
 
-   Link als Startseite/Homescreen-Symbol hinzufügen → fühlt sich fast wie eine App an.
+   Chrome bietet oben **„App installieren"** an (PWA) — eigenes Fenster, eigenes Symbol,
+   fühlt sich wie eine App an. Auf dem Xiaomi-Browser/Safari: Menü → „Zum Startbildschirm".
 
-> Hinweis: Im Browser gibt es einige Handy-Features nicht (Benachrichtigungen,
-> Keychain-verschlüsselter Speicher). Die Web-Version ist perfekt zum schnellen
-> Ausprobieren — die **APK** ist die volle App.
+> **Neu:** Die Web-Version passt sich der Fenstergröße an — auf dem Phone die normale
+> App-Ansicht, auf dem **Tablet eine Icon-Rail links**, auf einem großen Fenster
+> (oder „Desktop-Site" am Tablet) die **vollständige Desktop-Shell mit Sidebar** und
+> Mehrspalten-Dashboard. Oben mittig schwebt die **Live-Island** mit Countdown zur
+> Stunde — im Browser tickt dazu der Tab-Titel mit.
+
+> ⚠️ **Ehrlich bleiben — Login im Web:** GitHub Pages ist ein reiner Datei-Host und
+> kann unsere CORS-Umgehung (`/sm-api`) nicht ausführen. Der **Demo-Modus läuft überall**;
+> für den **echten Login im Browser** braucht es den mitgelieferten All-in-One-Server:
+> lokal `npm run web`, oder produktiv `npm run export:web && npm run serve:web`
+> (oder einen kleinen Reverse-Proxy für `/sm-api/*`, siehe
+> [docs/PLATTFORMEN.md](docs/PLATTFORMEN.md#22-entwickeln)).
+> Auf dem Handy dagegen ist die **APK/Expo-Go-App** der volle Funktionsumfang —
+> inklusive Benachrichtigungen und Live-Island im System.
 
 ---
 

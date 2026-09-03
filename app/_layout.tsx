@@ -17,6 +17,9 @@ import tamaguiConfig from '@/design/tamagui.config';
 import { useSettings } from '@/state/settings';
 import { useSession } from '@/state/session';
 import { registerNotificationHandler } from '@/features/notifications/scheduler';
+import { LiveIsland } from '@/features/island/LiveIsland';
+import { useIslandState } from '@/features/island/use-island';
+import { useLiveIslandEffects } from '@/features/island/effects';
 import { ErrorBoundary as ScreenErrorBoundary } from '@/ui/error-boundary';
 import { LockGate } from '@/ui/lock-gate';
 
@@ -96,6 +99,8 @@ export default function RootLayout() {
                   <Stack.Screen name="electives" options={{ presentation: 'modal' }} />
                   <Stack.Screen name="allday" options={{ presentation: 'modal' }} />
                 </Stack>
+                {/* Live-Island schwebt über allen Screens (In-App-Dynamic-Island). */}
+                <IslandHost />
               </LockGate>
             </SafeAreaProvider>
           </PersistQueryClientProvider>
@@ -103,6 +108,13 @@ export default function RootLayout() {
       </GestureHandlerRootView>
     </ScreenErrorBoundary>
   );
+}
+
+/** Island + ihre System-Effekte (Tab-Titel, Android-Notification) an einem Ort. */
+function IslandHost() {
+  const state = useIslandState();
+  useLiveIslandEffects(state);
+  return <LiveIsland state={state} />;
 }
 
 /** Expo-Router-Fehlergrenze — fängt Routing-/Render-Fehler auf Root-Ebene. */
