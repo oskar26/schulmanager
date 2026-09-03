@@ -1,18 +1,15 @@
 import React, { useEffect } from 'react';
-import { Text, View, useColorScheme } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import type { LucideIcon } from 'lucide-react-native';
 import { Home, CalendarDays, ListChecks, BarChart3, Inbox } from 'lucide-react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
+import type { ThemePalette } from '@/design/tokens';
+import { useThemeColors } from '@/design/theme';
 import { useSnapshot, useModuleActive } from '@/data/queries';
-import { useSettings } from '@/state/settings';
 import { useLayout } from '@/lib/breakpoints';
 import { AdaptiveTabBar } from '@/ui/shell';
 import { PressableScale } from '@/ui/motion';
@@ -30,11 +27,8 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 export default function TabsLayout() {
-  const system = useColorScheme();
-  const theme = useSettings((state) => state.settings.theme);
-  const dark = (theme === 'system' ? system : theme) === 'dark';
+  const { colors } = useThemeColors();
   const layout = useLayout();
-
   const gradesOn = useModuleActive('grades');
   const wide = layout.navigation !== 'bottom';
 
@@ -42,20 +36,17 @@ export default function TabsLayout() {
     <Tabs
       initialRouteName="index"
       tabBar={(props: BottomTabBarProps) =>
-        wide ? <AdaptiveTabBar {...props} layout={layout} /> : <FloatingTabBar {...props} dark={dark} />
+        wide ? <AdaptiveTabBar {...props} layout={layout} /> : <FloatingTabBar {...props} colors={colors} />
       }
       screenOptions={{
-        sceneStyle: wide ? { marginLeft: layout.navigationWidth } : { backgroundColor: dark ? '#0F172A' : '#F6F5F2' },
+        sceneStyle: wide ? { marginLeft: layout.navigationWidth } : { backgroundColor: colors.canvas },
         headerShown: false,
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Start' }} />
       <Tabs.Screen name="timetable" options={{ title: 'Plan' }} />
       <Tabs.Screen name="tasks" options={{ title: 'Aufgaben' }} />
-      <Tabs.Screen
-        name="grades"
-        options={{ title: 'Noten', href: gradesOn ? undefined : null }}
-      />
+      <Tabs.Screen name="grades" options={{ title: 'Noten', href: gradesOn ? undefined : null }} />
       <Tabs.Screen name="inbox" options={{ title: 'Postfach' }} />
     </Tabs>
   );
@@ -70,7 +61,7 @@ interface TabSpec {
   activeKey: boolean;
 }
 
-function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarProps & { dark: boolean }) {
+function FloatingTabBar({ state, navigation, descriptors, colors }: BottomTabBarProps & { colors: ThemePalette }) {
   const insets = useSafeAreaInsets();
   const { data } = useSnapshot();
 
@@ -94,9 +85,7 @@ function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarPr
 
   const goTab = (name: string, key: string) => {
     const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
-    if (state.routes[state.index]?.key !== key && !event.defaultPrevented) {
-      navigation.navigate(name);
-    }
+    if (state.routes[state.index]?.key !== key && !event.defaultPrevented) navigation.navigate(name);
   };
 
   return (
@@ -110,18 +99,18 @@ function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarPr
         alignItems: 'center',
       }}
     >
-      {/* Schwebende dunkle Kapsel (Soft-Brutalism-Taskbar) */}
+      {/* Schwebende dunkle Kapsel: immer Charcoal, nie lila/pastellig. */}
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-around',
-          backgroundColor: '#111827',
+          backgroundColor: colors.charcoal,
           borderRadius: 36,
           paddingVertical: 10,
           paddingHorizontal: 8,
-          shadowColor: '#000',
-          shadowOpacity: 0.28,
+          shadowColor: colors.charcoal,
+          shadowOpacity: 0.3,
           shadowRadius: 24,
           shadowOffset: { width: 0, height: 14 },
           elevation: 18,
@@ -131,7 +120,7 @@ function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarPr
       >
         {items.map((item) => {
           const active = item.activeKey;
-          const routeKey = state.routes.find((r) => r.name === item.name)?.key ?? item.name;
+          const routeKey = state.routes.find((route) => route.name === item.name)?.key ?? item.name;
           const label = String(descriptors[routeKey]?.options.title ?? item.name);
 
           return (
@@ -139,7 +128,7 @@ function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarPr
               key={item.name}
               item={item}
               active={active}
-              dark={dark}
+              colors={colors}
               label={label}
               onPress={() => goTab(item.name, routeKey)}
             />
@@ -153,13 +142,13 @@ function FloatingTabBar({ state, navigation, descriptors, dark }: BottomTabBarPr
 function AnimatedTabItem({
   item,
   active,
-  dark,
+  colors,
   label,
   onPress,
 }: {
   item: TabSpec;
   active: boolean;
-  dark: boolean;
+  colors: ThemePalette;
   label: string;
   onPress: () => void;
 }) {
@@ -203,7 +192,7 @@ function AnimatedTabItem({
               right: 0,
               bottom: 0,
               borderRadius: 22,
-              backgroundColor: dark ? '#334155' : '#1E293B',
+              backgroundColor: colors.charcoalElevated,
             },
             bgStyle,
           ]}
@@ -211,7 +200,7 @@ function AnimatedTabItem({
         <Icon
           size={22}
           strokeWidth={active ? 2.5 : 2}
-          color={active ? '#FFFFFF' : dark ? '#8A90AA' : '#64748B'}
+          color={active ? colors.on.charcoal : colors.faint}
         />
       </View>
 
@@ -225,12 +214,12 @@ function AnimatedTabItem({
             height: 18,
             paddingHorizontal: 5,
             borderRadius: 9,
-            backgroundColor: '#EF4444',
+            backgroundColor: colors.accent.coral,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>
+          <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800' }}>
             {item.badge > 99 ? '99+' : item.badge}
           </Text>
         </View>

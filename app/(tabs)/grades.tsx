@@ -14,8 +14,10 @@ import { FadeInUp } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Progress, Switch } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
+import { useThemeColors } from '@/design/theme';
 
 export default function GradesScreen() {
+  const { colors } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const reserve = useTabNavReserve();
   const hidden = useSettings((state) => state.settings.hideGrades);
@@ -60,7 +62,7 @@ export default function GradesScreen() {
         ) : subjects.length === 0 ? (
           <EmptyState
             icon={Lock}
-            iconColor="#6C5CE7"
+            iconColor={colors.accent.violet}
             title="Keine Noten sichtbar"
             hint="Ob Familien Noten sehen dürfen, entscheidet die Schule im Modul „Noten“."
           />
@@ -68,11 +70,11 @@ export default function GradesScreen() {
           <>
             <Card className="mb-3" floating>
               <Row className="gap-4">
-                <View className="items-center justify-center rounded-3xl bg-brand-soft px-5 py-4">
-                  <Text className="text-[34px] font-extrabold text-brand-ink">
+                <View className="items-center justify-center rounded-3xl bg-accent-lime px-5 py-4">
+                  <Text className="text-[34px] font-extrabold text-on-lime">
                     {hidden ? '•••' : overall != null ? de(overall) : '–'}
                   </Text>
-                  <Text className="text-[10px] font-bold uppercase tracking-wider text-brand-ink">
+                  <Text className="text-[10px] font-bold uppercase tracking-wider text-on-lime">
                     Gesamtschnitt
                   </Text>
                 </View>
@@ -168,6 +170,7 @@ export default function GradesScreen() {
 /* ------------------------------------------------------------------ Detail + Rechner */
 
 function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onClose: () => void }) {
+  const { colors } = useThemeColors();
   const [target, setTarget] = useState(2);
   const [simulated, setSimulated] = useState<number | null>(null);
 
@@ -234,9 +237,9 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
           <Row className="gap-2">
             <View
               className="h-8 w-8 items-center justify-center rounded-[10px]"
-              style={{ backgroundColor: tint('#6C5CE7', 0.14) }}
+              style={{ backgroundColor: tint(colors.accent.violet, 0.14) }}
             >
-              <Calculator size={16} strokeWidth={2.1} color="#6C5CE7" />
+              <Calculator size={16} strokeWidth={2.1} color={colors.accent.violet} />
             </View>
             <Text className="text-[15px] font-bold text-ink">Was brauche ich?</Text>
           </Row>
@@ -249,9 +252,9 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
               <Pressable
                 key={value}
                 onPress={() => setTarget(value)}
-                className={`rounded-xl px-3 py-1.5 ${target === value ? 'bg-brand' : 'bg-line/60'}`}
+                className={`rounded-xl px-3 py-1.5 ${target === value ? 'bg-accent-violet' : 'bg-line/60'}`}
               >
-                <Text className={`text-[12px] font-bold ${target === value ? 'text-white' : 'text-muted'}`}>
+                <Text className={`text-[12px] font-bold ${target === value ? 'text-on-violet' : 'text-muted'}`}>
                   {subject.gradingSystem === 1 ? `${value} P` : de(value, 1)}
                 </Text>
               </Pressable>
@@ -282,10 +285,10 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
                 key={value}
                 onPress={() => setSimulated(simulated === value ? null : value)}
                 className={`h-9 w-9 items-center justify-center rounded-xl ${
-                  simulated === value ? 'bg-brand' : 'bg-line/60'
+                  simulated === value ? 'bg-accent-violet' : 'bg-line/60'
                 }`}
               >
-                <Text className={`text-[13px] font-bold ${simulated === value ? 'text-white' : 'text-muted'}`}>
+                <Text className={`text-[13px] font-bold ${simulated === value ? 'text-on-violet' : 'text-muted'}`}>
                   {value}
                 </Text>
               </Pressable>
@@ -294,9 +297,9 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
           {preview != null ? (
             <Row className="mt-3 gap-2">
               {preview < (subject.average ?? 9) ? (
-                <TrendingDown size={16} strokeWidth={2.1} color="#22B07A" />
+                <TrendingDown size={16} strokeWidth={2.1} color={colors.success} />
               ) : (
-                <TrendingUp size={16} strokeWidth={2.1} color="#E24848" />
+                <TrendingUp size={16} strokeWidth={2.1} color={colors.danger} />
               )}
               <Text className="text-[13px] font-semibold text-ink">
                 Neuer Schnitt: {de(preview)}{' '}
@@ -308,7 +311,7 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
 
         <Chip
           label="Berechnung ist eine Schätzung — die Schule kann andere Gewichtungen nutzen."
-          color="#9CA2B6"
+          color={colors.faint}
         />
       </View>
     </Sheet>

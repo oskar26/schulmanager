@@ -13,10 +13,12 @@ import { AdaptiveContent, AvatarStack, Card, Chip, EmptyState, IconButton, Muted
 import { FadeInUp } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
+import { useThemeColors } from '@/design/theme';
 
 type ViewMode = 'week' | 'day';
 
 export default function TimetableScreen() {
+  const { colors } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const showWeekend = useSettings((state) => state.settings.showWeekend);
   const compact = useSettings((state) => state.settings.compactTimetable);
@@ -68,21 +70,21 @@ export default function TimetableScreen() {
             </Muted>
           </View>
           <Row className="gap-2">
-            <IconButton icon="chevron-back" onPress={() => setWeekOffset((value) => value - 1)} color="#6A7086" size={36} />
+            <IconButton icon="chevron-back" onPress={() => setWeekOffset((value) => value - 1)} color={colors.muted} size={36} />
             <Pressable
               onPress={() => setWeekOffset(0)}
-              className="h-9 items-center justify-center rounded-xl bg-brand-soft px-3"
+              className="h-9 items-center justify-center rounded-xl bg-accent-amber/15 px-3"
             >
-              <Text className="text-[12px] font-bold text-brand-ink">Heute</Text>
+              <Text className="text-[12px] font-bold text-on-amber">Heute</Text>
             </Pressable>
-            <IconButton icon="chevron-forward" onPress={() => setWeekOffset((value) => value + 1)} color="#6A7086" size={36} />
+            <IconButton icon="chevron-forward" onPress={() => setWeekOffset((value) => value + 1)} color={colors.muted} size={36} />
           </Row>
         </Row>
 
         <Row className="mt-3 gap-2">
-          <Chip label={`${stats.total} Stunden`} color="#6C5CE7" />
-          {stats.cancelled > 0 ? <Chip label={`${stats.cancelled} Entfall`} color="#E24848" /> : null}
-          {stats.substitutions > 0 ? <Chip label={`${stats.substitutions} Vertretung`} color="#22B07A" /> : null}
+          <Chip label={`${stats.total} Stunden`} variant="charcoal" tone="solid" />
+          {stats.cancelled > 0 ? <Chip label={`${stats.cancelled} Entfall`} color={colors.danger} /> : null}
+          {stats.substitutions > 0 ? <Chip label={`${stats.substitutions} Vertretung`} color={colors.success} /> : null}
           <View className="flex-1" />
           {!layout.isDesktop ? (
             <Pressable
@@ -158,13 +160,13 @@ function WeekGrid({
           const isToday = day === today;
           return (
             <View key={day} className="flex-1 items-center">
-              <Text className={`text-[11px] font-bold ${isToday ? 'text-brand' : 'text-faint'}`}>
+              <Text className={`text-[11px] font-bold ${isToday ? 'text-accent-amber-deep' : 'text-faint'}`}>
                 {WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}
               </Text>
               <View
-                className={`mt-0.5 h-6 w-6 items-center justify-center rounded-full ${isToday ? 'bg-brand' : ''}`}
+                className={`mt-0.5 h-6 w-6 items-center justify-center rounded-full ${isToday ? 'bg-accent-amber' : ''}`}
               >
-                <Text className={`text-[12px] font-bold ${isToday ? 'text-white' : 'text-muted'}`}>
+                <Text className={`text-[12px] font-bold ${isToday ? 'text-on-amber' : 'text-muted'}`}>
                   {date.getDate()}
                 </Text>
               </View>
@@ -199,6 +201,7 @@ function LessonCell({
   compact: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useThemeColors();
   const style = subjectStyle(lesson.subject);
   const cancelled = lesson.state === 'cancelled';
   const substitution = lesson.state === 'substitution';
@@ -208,9 +211,9 @@ function LessonCell({
       onPress={onPress}
       style={{
         height: compact ? 44 : 58,
-        backgroundColor: cancelled ? 'rgba(226,72,72,0.10)' : tint(style.color, 0.16),
+        backgroundColor: cancelled ? tint(colors.danger, 0.10) : tint(style.color, 0.16),
         borderLeftWidth: 3,
-        borderLeftColor: cancelled ? '#E24848' : substitution ? '#22B07A' : style.color,
+        borderLeftColor: cancelled ? colors.danger : substitution ? colors.success : style.color,
       }}
       className="justify-center rounded-xl px-1.5 active:opacity-70"
     >
@@ -220,7 +223,7 @@ function LessonCell({
         adjustsFontSizeToFit={compact}
         minimumFontScale={0.8}
         style={{
-          color: cancelled ? '#E24848' : style.color,
+          color: cancelled ? colors.danger : style.color,
           textDecorationLine: cancelled ? 'line-through' : 'none',
         }}
       >
@@ -257,6 +260,7 @@ function DayList({
   onSelectDay: (day: string) => void;
   onSelect: (lesson: Lesson) => void;
 }) {
+  const { colors } = useThemeColors();
   const active = days.includes(selected) ? selected : days[0];
   const lessons = byDay.get(active) ?? [];
   const now = nowMinutes();
@@ -276,16 +280,16 @@ function DayList({
                 key={day}
                 onPress={() => onSelectDay(day)}
                 className={`h-[52px] w-[52px] items-center justify-center rounded-2xl ${
-                  isActive ? 'bg-brand' : 'bg-surface'
+                  isActive ? 'bg-accent-amber' : 'bg-surface'
                 }`}
               >
-                <Text className={`text-[10px] font-bold ${isActive ? 'text-white/80' : 'text-faint'}`}>
+                <Text className={`text-[10px] font-bold ${isActive ? 'text-on-amber/80' : 'text-faint'}`}>
                   {WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}
                 </Text>
-                <Text className={`text-[16px] font-extrabold ${isActive ? 'text-white' : 'text-ink'}`}>
+                <Text className={`text-[16px] font-extrabold ${isActive ? 'text-on-amber' : 'text-ink'}`}>
                   {date.getDate()}
                 </Text>
-                <View className={`h-1 w-1 rounded-full ${count > 0 ? (isActive ? 'bg-white' : 'bg-brand') : ''}`} />
+                <View className={`h-1 w-1 rounded-full ${count > 0 ? (isActive ? 'bg-on-amber' : 'bg-accent-amber') : ''}`} />
               </Pressable>
             );
           })}
@@ -295,7 +299,7 @@ function DayList({
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         <Muted className="mb-2 mt-1">{formatLongDay(active)}</Muted>
         {lessons.length === 0 ? (
-          <EmptyState icon={Sun} iconColor="#48A3FF" title="Kein Unterricht" hint="Für diesen Tag ist nichts eingetragen." />
+          <EmptyState icon={Sun} iconColor={colors.accent.violet} title="Kein Unterricht" hint="Für diesen Tag ist nichts eingetragen." />
         ) : (
           lessons.map((lesson, index) => {
             const style = subjectStyle(lesson.subject);
@@ -307,7 +311,7 @@ function DayList({
                 <Pressable onPress={() => onSelect(lesson)} className="mb-2 active:opacity-80">
                   <Card
                     padded={false}
-                    className={running ? 'border-2 border-brand' : ''}
+                    className={running ? 'border-2 border-accent-amber' : ''}
                     style={{ backgroundColor: tint(style.color, 0.10) }}
                   >
                     <Row className="gap-3 p-3">
@@ -324,12 +328,12 @@ function DayList({
                         </View>
                       </View>
 
-                      <View className="w-1 self-stretch rounded-full" style={{ backgroundColor: cancelled ? '#E24848' : style.color }} />
+                      <View className="w-1 self-stretch rounded-full" style={{ backgroundColor: cancelled ? colors.danger : style.color }} />
 
                       <View className="flex-1">
                         <Text
                           className="text-[16px] font-bold text-ink"
-                          style={cancelled ? { textDecorationLine: 'line-through', color: '#9CA2B6' } : undefined}
+                          style={cancelled ? { textDecorationLine: 'line-through', color: colors.faint } : undefined}
                         >
                           {cancelled ? lesson.originalSubject ?? lesson.subject : lesson.subject}
                         </Text>
@@ -342,7 +346,7 @@ function DayList({
                               label={
                                 cancelled ? 'Entfall' : lesson.state === 'substitution' ? 'Vertretung' : 'Raumwechsel'
                               }
-                              color={cancelled ? '#E24848' : '#22B07A'}
+                              color={cancelled ? colors.danger : colors.success}
                               tone="solid"
                             />
                             {lesson.comment ? (
@@ -354,7 +358,7 @@ function DayList({
                         ) : null}
                       </View>
 
-                      {running ? <Chip label="jetzt" color="#6C5CE7" tone="solid" /> : null}
+                      {running ? <Chip label="jetzt" color={colors.accent.amber} tone="solid" /> : null}
                     </Row>
                   </Card>
                 </Pressable>
@@ -370,6 +374,7 @@ function DayList({
 /* ------------------------------------------------------------------ Detail */
 
 function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () => void }) {
+  const { colors } = useThemeColors();
   const style = subjectStyle(lesson?.subject);
   const { data } = useSnapshot();
 
@@ -421,7 +426,7 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
                 <Row className="mt-2 gap-2">
                   <AvatarStack
                     items={[
-                      lesson.originalTeacher ? { name: lesson.originalTeacher, color: '#9CA2B6' } : null,
+                      lesson.originalTeacher ? { name: lesson.originalTeacher, color: colors.faint } : null,
                       lesson.teacher ? { name: lesson.teacher, color: style.color } : null,
                     ].filter(Boolean) as { name: string; color: string }[]}
                     size={24}
@@ -442,7 +447,7 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
           {relatedHomework && relatedHomework.length > 0 ? (
             <Card>
               <Row className="gap-2">
-                <ListChecks size={16} strokeWidth={2.1} color="#22B07A" />
+                <ListChecks size={16} strokeWidth={2.1} color={colors.success} />
                 <Text className="text-[13px] font-bold text-ink">Hausaufgaben in diesem Fach</Text>
               </Row>
               {relatedHomework.slice(0, 3).map((item) => (
@@ -456,7 +461,7 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
           {relatedExams && relatedExams.length > 0 ? (
             <Card>
               <Row className="gap-2">
-                <BarChart3 size={16} strokeWidth={2.1} color="#E8981E" />
+                <BarChart3 size={16} strokeWidth={2.1} color={colors.warning} />
                 <Text className="text-[13px] font-bold text-ink">Anstehende Arbeiten</Text>
               </Row>
               {relatedExams.map((exam) => (
@@ -486,6 +491,7 @@ function TimeGrid({
   byDay: Map<string, Lesson[]>;
   onSelect: (lesson: Lesson) => void;
 }) {
+  const { colors } = useThemeColors();
   const today = toISO(new Date());
   const now = nowMinutes();
   const reserve = useTabNavReserve();
@@ -508,13 +514,13 @@ function TimeGrid({
           const isToday = day === today;
           return (
             <View key={day} className="flex-1 items-center pb-2">
-              <Text className={`text-[11px] font-bold ${isToday ? 'text-brand' : 'text-faint'}`}>
+              <Text className={`text-[11px] font-bold ${isToday ? 'text-accent-amber-deep' : 'text-faint'}`}>
                 {WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}
               </Text>
               <View
-                className={`mt-0.5 h-7 w-7 items-center justify-center rounded-full ${isToday ? 'bg-brand' : ''}`}
+                className={`mt-0.5 h-7 w-7 items-center justify-center rounded-full ${isToday ? 'bg-accent-amber' : ''}`}
               >
-                <Text className={`text-[13px] font-bold ${isToday ? 'text-white' : 'text-muted'}`}>
+                <Text className={`text-[13px] font-bold ${isToday ? 'text-on-amber' : 'text-muted'}`}>
                   {date.getDate()}
                 </Text>
               </View>
@@ -545,7 +551,7 @@ function TimeGrid({
           return (
             <View
               key={day}
-              className={`flex-1 overflow-hidden rounded-2xl ${isToday ? 'bg-brand-soft/40' : ''}`}
+              className={`flex-1 overflow-hidden rounded-2xl ${isToday ? 'bg-accent-amber/10' : ''}`}
               style={{ position: 'relative', marginHorizontal: 2 }}
             >
               {hourMarks.map((m) => (
@@ -577,9 +583,9 @@ function TimeGrid({
                       borderRadius: 12,
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      backgroundColor: cancelled ? 'rgba(226,72,72,0.10)' : tint(style.color, 0.16),
+                      backgroundColor: cancelled ? tint(colors.danger, 0.10) : tint(style.color, 0.16),
                       borderLeftWidth: 3,
-                      borderLeftColor: cancelled ? '#E24848' : substitution ? '#22B07A' : style.color,
+                      borderLeftColor: cancelled ? colors.danger : substitution ? colors.success : style.color,
                       justifyContent: 'flex-start',
                     }}
                   >
@@ -587,7 +593,7 @@ function TimeGrid({
                       numberOfLines={1}
                       className="text-[11.5px] font-bold"
                       style={{
-                        color: cancelled ? '#E24848' : style.color,
+                        color: cancelled ? colors.danger : style.color,
                         textDecorationLine: cancelled ? 'line-through' : 'none',
                       }}
                     >
@@ -605,8 +611,8 @@ function TimeGrid({
                       </Text>
                     ) : null}
                     {running ? (
-                      <View className="mt-0.5 self-start rounded-md bg-brand px-1.5 py-0.5">
-                        <Text className="text-[9px] font-extrabold text-white">JETZT</Text>
+                      <View className="mt-0.5 self-start rounded-md bg-accent-amber px-1.5 py-0.5">
+                        <Text className="text-[9px] font-extrabold text-on-amber">JETZT</Text>
                       </View>
                     ) : null}
                   </Pressable>
@@ -622,7 +628,7 @@ function TimeGrid({
                     left: 0,
                     right: 0,
                     height: 2,
-                    backgroundColor: '#E24848',
+                    backgroundColor: colors.danger,
                     borderRadius: 1,
                     zIndex: 5,
                   }}
@@ -635,7 +641,7 @@ function TimeGrid({
                       width: 8,
                       height: 8,
                       borderRadius: 4,
-                      backgroundColor: '#E24848',
+                      backgroundColor: colors.danger,
                     }}
                   />
                 </View>

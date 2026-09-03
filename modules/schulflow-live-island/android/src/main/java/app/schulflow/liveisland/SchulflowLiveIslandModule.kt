@@ -57,7 +57,8 @@ class SchulflowLiveIslandModule : Module() {
             ).apply {
                 description = "Dauerhafte Fortschritts-Notification der Live-Island"
                 setShowBadge(false)
-                setLightColor(0xFF6C5CE7.toInt(), true)
+                // Phase-2-Primärakzent Amber (#FF8C38), passend zu JS/PWA-Notifications.
+                setLightColor(0xFFFF8C38.toInt(), true)
             }
             (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
                 .createNotificationChannel(channel)

@@ -45,16 +45,16 @@ für die nativen Targets. `schemaVersion` erlauben inkompatible Änderungen.
   "nextLesson": {
     "subject": "Mathematik",
     "emoji": "📐",           // System-Oberfläche — Emoji erlaubt (s. UI-REBUILD §0)
-    "color": "#48A3FF",      // Fach-Farbe aus src/design/subjects.ts
+    "color": "#635BFF",      // Fach-Farbe aus src/design/subjects.ts
     "start": "08:00", "end": "09:00",
     "room": "R. 208", "teacher": "Herr Brandt",
     "state": "regular",      // regular | substitution | cancelled | room-change
     "label": "noch 23 min"
   },
   "homework": { "open": 2, "total": 5,
-    "items": [ { "subject": "Deutsch", "color": "#FF7677", "due": "2026-09-04", "text": "…" } ] },
-  "nextExam": { "subject": "Physik", "color": "#5B7CFA", "date": "2026-09-06", "days": 3, "type": "Klausur" },
-  "grades": { "average": 2.14, "recent": [ { "subject": "Englisch", "value": "2", "color": "#2ECCA8" } ] },
+    "items": [ { "subject": "Deutsch", "color": "#E05353", "due": "2026-09-04", "text": "…" } ] },
+  "nextExam": { "subject": "Physik", "color": "#635BFF", "date": "2026-09-06", "days": 3, "type": "Klausur" },
+  "grades": { "average": 2.14, "recent": [ { "subject": "Englisch", "value": "2", "color": "#A3E635" } ] },
   "inbox": { "lettersPending": 1, "unreadMessages": 2 },
   "board": { "title": "Wandertag", "excerpt": "Start am Freitag 07:45 …" },
   "insight": { "title": "Morgen 45 min länger schlafen", "body": "…", "tone": "positive" },
@@ -66,7 +66,7 @@ für die nativen Targets. `schemaVersion` erlauben inkompatible Änderungen.
 * Feld fehlt / `null` → den Widget-Bereich *ausblenden*, nie „—“ zeichnen.
 * `generatedAt` älter als 24 h → Zeitstempel rot markieren („veraltet").
 * `nextLesson.state = "cancelled"` → durchgestrichen + „entfällt" (kein Grün-Rot-Chaos:
-  Farbe `#E24848` auf dem Label).
+  Farbe `#E05353` auf dem Label).
 * Dark Mode: Fach-Farben bleiben, Canvas-Wechsel über `ColorScheme`/`glance Theme`.
 
 ## 3. Design-Sprache (aus `docs/UI-REBUILD.md` §2)
@@ -145,7 +145,7 @@ class SchulflowSmall : GlanceAppWidget() {
 
 @Composable
 fun SchulflowSmallWidget(lesson: NextLesson) {
-  Row(Modifier.fillMaxSize().background(Color(0xFFF6F5F2)).clip(RoundedCornerShape(28.dp))) {
+  Row(Modifier.fillMaxSize().background(Color(0xFFF6F4EE)).clip(RoundedCornerShape(28.dp))) {
     // Fach-Emoji-Kachel (Farbblock tint 16 %), dann Titel(800) + Label-Pill
   }
 }

@@ -3,13 +3,14 @@
 @tailwind utilities;
 
 /*
- * Web-Pflege (greift natürlich nur im Browser; nativ ignoriert):
- * Auswahl brand-farbig, kein Android-Chrome-Tap-Flash, Countdowns mit
- * tabellarischen Ziffern, und Buttons bekommen den Hand-Cursor.
+ * Web-Pflege (greift nur im Browser; nativ ignoriert): Auswahl in Amber,
+ * kein Android-Chrome-Tap-Flash, tabellarische Ziffern und Hand-Cursor für
+ * interaktive Elemente.
  */
 @layer base {
   ::selection {
-    background: rgba(var(--sf-brand) / 0.24);
+    background: rgb(var(--sf-accent-amber) / 0.28);
+    color: rgb(var(--sf-on-amber));
   }
 
   * {
@@ -23,80 +24,80 @@
     cursor: pointer;
   }
 
-  /* TextInputs erben die App-Typo statt Browser-Standard */
   input,
   textarea {
     font-family: inherit;
   }
 }
 
+/*
+ * Schulflow Theme. Die Namen entsprechen 1:1 `src/design/tokens.ts`.
+ * Keine periwinkle-/soft-/brand-Pastelle mehr: starke Akzente leben auf
+ * Creme und Weiß, im Dark Mode auf neutralem Charcoal.
+ */
 @layer base {
   :root {
-    /* Bento / Soft-Brutalism — Light: warmes Off-White/Canvas + Pastell-Blöcke */
-    --sf-bg: 246 245 242;            /* #F6F5F2 Warm-Creme-Canvas */
-    --sf-surface: 255 255 255;
+    /* Neutral */
+    --sf-canvas: 246 244 238;              /* #F6F4EE */
+    --sf-surface: 255 255 255;             /* #FFFFFF */
     --sf-elevated: 255 255 255;
-    --sf-line: 231 229 226;
-    --sf-ink: 24 24 27;              /* #18181B Charcoal-Tinte */
-    --sf-muted: 100 100 110;
-    --sf-faint: 160 158 152;
+    --sf-charcoal: 24 25 28;               /* #18191C */
+    --sf-charcoal-elevated: 35 36 40;      /* #232428 */
+    --sf-ink: 24 25 28;
+    --sf-muted: 92 95 102;                 /* #5C5F66 */
+    --sf-faint: 154 157 166;               /* #9A9DA6 */
+    --sf-line: 232 229 220;                /* #E8E5DC */
 
-    --sf-periwinkle: 140 142 255;    /* #8C8EFF */
-    --sf-periwinkle-soft: 237 233 254; /* #EDE9FE */
-    --sf-amber: 255 200 59;          /* #FFC83B */
-    --sf-amber-soft: 254 243 199;    /* #FEF3C7 */
-    --sf-mint-soft: 209 250 229;     /* #D1FAE5 */
-    --sf-coral-soft: 254 226 226;    /* #FEE2E2 */
-    --sf-charcoal: 24 24 27;         /* #18181B */
-    --sf-charcoal-elevated: 31 31 35;
+    /* Farbblöcke */
+    --sf-accent-amber: 255 140 56;         /* #FF8C38 */
+    --sf-accent-amber-deep: 242 114 68;    /* #F27244 */
+    --sf-accent-violet: 99 91 255;         /* #635BFF */
+    --sf-accent-lime: 195 240 115;         /* #C3F073 */
+    --sf-accent-lime-deep: 163 230 53;     /* #A3E635 */
+    --sf-accent-coral: 224 83 83;          /* #E05353 */
 
-    --sf-brand: 108 92 231;
-    --sf-brand-soft: 237 234 254;
-    --sf-brand-ink: 60 47 160;
+    /* Lesbare Vordergründe auf Volltonflächen */
+    --sf-on-amber: 43 22 0;                /* #2B1600 */
+    --sf-on-lime: 31 42 0;                 /* #1F2A00 */
+    --sf-on-violet: 255 255 255;
+    --sf-on-coral: 255 255 255;
+    --sf-on-charcoal: 255 255 255;
 
-    --sf-mint: 16 185 129;           /* #10B981 */
-    --sf-lemon: 250 199 72;
-    --sf-coral: 224 86 76;           /* #E0564C */
-    --sf-sky: 72 163 255;
-    --sf-grape: 189 122 246;
-
-    --sf-success: 34 176 122;
-    --sf-warning: 232 152 30;
-    --sf-danger: 224 86 76;
+    /* Semantik */
+    --sf-success: 62 155 90;               /* #3E9B5A */
+    --sf-warning: 232 156 30;              /* #E89C1E */
+    --sf-danger: 224 83 83;                /* #E05353 */
   }
 
   .dark:root,
   .dark {
-    /* Bento / Soft-Brutalism — Dark: tiefes Slate-Navy, abgedunkelte Karten */
-    --sf-bg: 15 23 42;               /* #0F172A */
-    --sf-surface: 30 41 59;          /* #1E293B */
-    --sf-elevated: 51 65 85;         /* #334155 */
-    --sf-line: 51 65 85;
-    --sf-ink: 248 250 252;
-    --sf-muted: 148 163 184;
-    --sf-faint: 100 116 139;
+    /* Neutrale Dark-Ableitung */
+    --sf-canvas: 16 17 20;                 /* #101114 */
+    --sf-surface: 24 25 28;                /* #18191C */
+    --sf-elevated: 35 36 40;               /* #232428 */
+    --sf-charcoal: 24 25 28;
+    --sf-charcoal-elevated: 35 36 40;
+    --sf-ink: 247 247 245;                 /* #F7F7F5 */
+    --sf-muted: 181 183 188;               /* #B5B7BC */
+    --sf-faint: 124 127 135;               /* #7C7F87 */
+    --sf-line: 48 50 56;                   /* #303238 */
 
-    --sf-periwinkle: 165 167 255;
-    --sf-periwinkle-soft: 62 62 108;
-    --sf-amber: 255 200 59;
-    --sf-amber-soft: 68 56 20;
-    --sf-mint-soft: 19 70 48;
-    --sf-coral-soft: 76 33 31;
-    --sf-charcoal: 17 24 39;         /* #111827 */
-    --sf-charcoal-elevated: 30 41 59;
+    /* Identische Akzentfamilie, für dunkle Flächen behutsam angehoben */
+    --sf-accent-amber: 255 160 90;         /* #FFA05A */
+    --sf-accent-amber-deep: 255 133 85;    /* #FF8555 */
+    --sf-accent-violet: 140 134 255;       /* #8C86FF */
+    --sf-accent-lime: 212 247 140;         /* #D4F78C */
+    --sf-accent-lime-deep: 185 234 87;     /* #B9EA57 */
+    --sf-accent-coral: 241 108 108;        /* #F16C6C */
 
-    --sf-brand: 138 124 255;
-    --sf-brand-soft: 39 36 82;
-    --sf-brand-ink: 205 198 255;
+    --sf-on-amber: 43 22 0;
+    --sf-on-lime: 31 42 0;
+    --sf-on-violet: 255 255 255;
+    --sf-on-coral: 255 255 255;
+    --sf-on-charcoal: 255 255 255;
 
-    --sf-mint: 52 211 153;
-    --sf-lemon: 255 209 102;
-    --sf-coral: 248 113 113;
-    --sf-sky: 105 180 255;
-    --sf-grape: 202 146 250;
-
-    --sf-success: 62 202 146;
-    --sf-warning: 245 174 66;
-    --sf-danger: 248 113 113;
+    --sf-success: 107 200 135;             /* #6BC887 */
+    --sf-warning: 242 180 74;              /* #F2B44A */
+    --sf-danger: 241 108 108;              /* #F16C6C */
   }
 }

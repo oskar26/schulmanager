@@ -15,10 +15,12 @@ import {
   Card, Chip, EmptyState, IconButton, Muted, Row, Screen, SegmentedControl, Sheet, Title,
 } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useThemeColors } from '@/design/theme';
 
 type Mode = 'list' | 'month';
 
 export default function CalendarScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const [mode, setMode] = useState<Mode>('list');
@@ -41,7 +43,7 @@ export default function CalendarScreen() {
           date: event.start.slice(0, 10),
           title: event.title,
           time: event.allDay ? 'ganztägig' : new Date(event.start).toTimeString().slice(0, 5),
-          color: event.color ?? (event.isHoliday ? '#FAC748' : '#6C5CE7'),
+          color: event.color ?? (event.isHoliday ? colors.accent.amber : colors.accent.violet),
           kind: event.isHoliday ? 'Ferien' : (event.categoryName ?? 'Termin'),
           description: event.description ?? undefined,
           location: event.location ?? undefined,
@@ -51,7 +53,7 @@ export default function CalendarScreen() {
           date: exam.date,
           title: `${exam.subject}: ${exam.type ?? 'Arbeit'}`,
           time: exam.start ?? '',
-          color: '#E24848',
+          color: colors.danger,
           kind: 'Leistungsnachweis',
           description: exam.comment,
           location: undefined as string | undefined,
@@ -77,7 +79,7 @@ export default function CalendarScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={ChevronLeft} onPress={() => router.back()} color="#6A7086" size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Kalender</Title>
           <Muted>Termine, Ferien und Arbeiten in einer Ansicht</Muted>
@@ -85,7 +87,7 @@ export default function CalendarScreen() {
         <IconButton
           icon={Link2}
           size={36}
-          color="#6C5CE7"
+          color={colors.accent.violet}
           onPress={async () => {
             try {
               const { api } = useSession.getState();
@@ -112,11 +114,11 @@ export default function CalendarScreen() {
       {mode === 'month' ? (
         <View className="px-4">
           <Row className="justify-between pb-2">
-            <IconButton icon={ChevronLeft} size={32} color="#6A7086" onPress={() => setMonthOffset((v) => v - 1)} />
+            <IconButton icon={ChevronLeft} size={32} onPress={() => setMonthOffset((v) => v - 1)} />
             <Text className="text-[15px] font-bold text-ink">
               {MONTHS[monthDate.getMonth()]} {monthDate.getFullYear()}
             </Text>
-            <IconButton icon={ChevronRight} size={32} color="#6A7086" onPress={() => setMonthOffset((v) => v + 1)} />
+            <IconButton icon={ChevronRight} size={32} onPress={() => setMonthOffset((v) => v + 1)} />
           </Row>
           <Row>
             {WEEKDAYS_SHORT.map((day) => (
@@ -139,12 +141,12 @@ export default function CalendarScreen() {
                 >
                   <View
                     className={`h-full w-full items-center justify-center rounded-xl ${
-                      isToday ? 'bg-brand' : dayEvents.length > 0 ? 'bg-line/50' : ''
+                      isToday ? 'bg-accent-amber' : dayEvents.length > 0 ? 'bg-line/50' : ''
                     }`}
                   >
                     <Text
                       className={`text-[12px] font-semibold ${
-                        isToday ? 'text-white' : inMonth ? 'text-ink' : 'text-faint'
+                        isToday ? 'text-on-amber' : inMonth ? 'text-ink' : 'text-faint'
                       }`}
                     >
                       {new Date(iso).getDate()}
@@ -154,7 +156,7 @@ export default function CalendarScreen() {
                         <View
                           key={entry.id}
                           className="h-1 w-1 rounded-full"
-                          style={{ backgroundColor: isToday ? '#FFFFFF' : entry.color }}
+                          style={{ backgroundColor: isToday ? colors.on.amber : entry.color }}
                         />
                       ))}
                     </Row>
@@ -168,7 +170,7 @@ export default function CalendarScreen() {
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {merged.length === 0 ? (
-          <EmptyState icon={CalendarDays} iconColor="#BD7AF6" title="Keine Termine" />
+          <EmptyState icon={CalendarDays} iconColor={colors.accent.violet} title="Keine Termine" />
         ) : (
           merged.map((entry, index) => (
             <FadeInUp key={entry.id} delay={index * 25}>

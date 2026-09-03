@@ -3,13 +3,13 @@
   <desc id="d">Ein Stundenplan-Raster, dessen unterste Zeilen zu einer Welle werden.</desc>
   <defs>
     <linearGradient id="f-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7B6BFF"/>
-      <stop offset="1" stop-color="#5A46D6"/>
+      <stop offset="0" stop-color="#635BFF"/>
+      <stop offset="1" stop-color="#4E45D4"/>
     </linearGradient>
     <linearGradient id="f-wave" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#2ECCA8"/>
-      <stop offset="0.55" stop-color="#FAC748"/>
-      <stop offset="1" stop-color="#FF7677"/>
+      <stop offset="0" stop-color="#A3E635"/>
+      <stop offset="0.55" stop-color="#FF8C38"/>
+      <stop offset="1" stop-color="#E05353"/>
     </linearGradient>
     <clipPath id="f-clip">
       <path d="M256 24c105 0 143 5 179 41s41 74 41 191-5 143-41 179-74 41-179 41-143-5-179-41-41-74-41-179 5-155 41-191S151 24 256 24Z"/>
@@ -42,7 +42,7 @@
   </g>
 
   <!-- verspielter Funke -->
-  <g fill="#FAC748">
+  <g fill="#FF8C38">
     <path d="M392 96c4 20 10 26 30 30-20 4-26 10-30 30-4-20-10-26-30-30 20-4 26-10 30-30Z"/>
   </g>
 </svg>

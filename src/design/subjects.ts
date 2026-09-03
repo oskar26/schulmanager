@@ -4,46 +4,54 @@
  * Farbe/Emoji), mit kuratierten Treffern für die häufigsten deutschen Schulfächer.
  * Nutzer:innen können pro Fach überschreiben (settings store).
  *
- * Policy (Phase E): Das Emoji wird nur auf System-Oberflächen genutzt, die
- * keine Vektor-Icons rendern können — Browser-Tab-Titel und Notifications
+ * Policy: Das Emoji wird nur auf System-Oberflächen genutzt, die keine
+ * Vektor-Icons rendern können — Browser-Tab-Titel und Notifications
  * (Live-Island-Effects). Die In-App-Oberfläche bleibt emoji-frei und trägt
- * die Fach-Identität über Farbe + lucide-Icons.
+ * die Fach-Identität über Farbe + Lucide-Icons.
  */
+import { foregroundOn, palette } from '@/design/tokens';
 
 export type SubjectStyle = { color: string; emoji: string };
 
+const { accent } = palette;
+
+/** Fachfarben folgen der Phase-2-Akzentfamilie statt einem zweiten Pastell-Set. */
 const CURATED: Record<string, SubjectStyle> = {
-  mathematik: { color: '#48A3FF', emoji: '📐' },
-  mathe: { color: '#48A3FF', emoji: '📐' },
-  deutsch: { color: '#FF7677', emoji: '📖' },
-  englisch: { color: '#2ECCA8', emoji: '🇬' },
-  franzosisch: { color: '#BD7AF6', emoji: '🥐' },
-  latein: { color: '#C9A227', emoji: '🏛️' },
-  spanisch: { color: '#FAC748', emoji: '🌶️' },
-  physik: { color: '#5B7CFA', emoji: '🧲' },
-  chemie: { color: '#2ECCA8', emoji: '⚗️' },
-  biologie: { color: '#39B970', emoji: '🌱' },
-  informatik: { color: '#6C5CE7', emoji: '💻' },
-  geschichte: { color: '#B08968', emoji: '🏺' },
-  geographie: { color: '#3DBFA8', emoji: '🌍' },
-  geografie: { color: '#3DBFA8', emoji: '🌍' },
-  erdkunde: { color: '#3DBFA8', emoji: '🌍' },
-  sport: { color: '#FF9F43', emoji: '🏃' },
-  musik: { color: '#E86FC0', emoji: '🎵' },
-  kunst: { color: '#F26D9C', emoji: '🎨' },
-  religion: { color: '#9AA1B8', emoji: '🕊️' },
-  ethik: { color: '#9AA1B8', emoji: '💭' },
-  politik: { color: '#7C8BFF', emoji: '🏛️' },
-  sozialkunde: { color: '#7C8BFF', emoji: '🏛️' },
-  wirtschaft: { color: '#0FA36B', emoji: '📈' },
-  sachunterricht: { color: '#4FC3A1', emoji: '🔎' },
-  werken: { color: '#A6763F', emoji: '🔨' },
-  ganztag: { color: '#8A7CFF', emoji: '🧩' },
+  mathematik: { color: accent.violet, emoji: '📐' },
+  mathe: { color: accent.violet, emoji: '📐' },
+  deutsch: { color: accent.coral, emoji: '📖' },
+  englisch: { color: accent.limeDeep, emoji: '🇬' },
+  franzosisch: { color: accent.violet, emoji: '🥐' },
+  latein: { color: accent.amberDeep, emoji: '🏛️' },
+  spanisch: { color: accent.amber, emoji: '🌶️' },
+  physik: { color: accent.violet, emoji: '🧲' },
+  chemie: { color: accent.limeDeep, emoji: '⚗️' },
+  biologie: { color: palette.success, emoji: '🌱' },
+  informatik: { color: accent.violet, emoji: '💻' },
+  geschichte: { color: accent.amberDeep, emoji: '🏺' },
+  geographie: { color: accent.limeDeep, emoji: '🌍' },
+  geografie: { color: accent.limeDeep, emoji: '🌍' },
+  erdkunde: { color: accent.limeDeep, emoji: '🌍' },
+  sport: { color: accent.amber, emoji: '🏃' },
+  musik: { color: accent.violet, emoji: '🎵' },
+  kunst: { color: accent.coral, emoji: '🎨' },
+  religion: { color: accent.violet, emoji: '🕊️' },
+  ethik: { color: accent.violet, emoji: '💭' },
+  politik: { color: accent.violet, emoji: '🏛️' },
+  sozialkunde: { color: accent.violet, emoji: '🏛️' },
+  wirtschaft: { color: palette.success, emoji: '📈' },
+  sachunterricht: { color: accent.limeDeep, emoji: '🔎' },
+  werken: { color: accent.amberDeep, emoji: '🔨' },
+  ganztag: { color: accent.violet, emoji: '🧩' },
 };
 
 const FALLBACK_COLORS = [
-  '#6C5CE7', '#48A3FF', '#2ECCA8', '#FAC748', '#FF7677',
-  '#BD7AF6', '#39B970', '#FF9F43', '#5B7CFA', '#E86FC0',
+  accent.violet,
+  accent.amber,
+  accent.limeDeep,
+  accent.coral,
+  accent.amberDeep,
+  palette.success,
 ];
 
 const FALLBACK_EMOJI = ['📘', '✏️', '🧠', '🔬', '🗺️', '🎒', '📎', '🧮'];
@@ -62,7 +70,7 @@ const hash = (value: string) => {
 
 export function subjectStyle(name?: string | null, overrides?: Record<string, string>): SubjectStyle {
   const raw = (name ?? '').trim();
-  if (!raw) return { color: '#9CA2B6', emoji: '📚' };
+  if (!raw) return { color: palette.faint, emoji: '📚' };
 
   const key = normalise(raw);
   const override = overrides?.[key];
@@ -77,7 +85,7 @@ export function subjectStyle(name?: string | null, overrides?: Record<string, st
   };
 }
 
-/** Farbe + 18 % Deckkraft für Chips/Hintergründe (funktioniert in RN & Web). */
+/** Farbe + Alpha für Chips/Hintergründe (funktioniert in RN & Web). */
 export function tint(hex: string, alpha = 0.16): string {
   const value = hex.replace('#', '');
   const r = parseInt(value.slice(0, 2), 16);
@@ -88,10 +96,5 @@ export function tint(hex: string, alpha = 0.16): string {
 
 /** Lesbare Vordergrundfarbe zu einer Fach-Farbe. */
 export function readableOn(hex: string): string {
-  const value = hex.replace('#', '');
-  const r = parseInt(value.slice(0, 2), 16);
-  const g = parseInt(value.slice(2, 4), 16);
-  const b = parseInt(value.slice(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.68 ? '#121422' : '#FFFFFF';
+  return foregroundOn(hex);
 }

@@ -7,6 +7,7 @@
  */
 import type { Absence, CalendarEvent, Exam, Exemption, Homework, Lesson, Letter, MessageThread, Snapshot, SubjectGrades, Tile } from '@/api/types';
 import { addDays, isoDay, startOfWeek, toISO } from '@/lib/date';
+import { palette } from '@/design/tokens';
 
 interface Slot {
   hour: string;
@@ -358,11 +359,11 @@ function buildEvents(): CalendarEvent[] {
     return date.toISOString();
   };
   return [
-    { id: 'e-1', title: 'Elternabend Jahrgang 9', start: at(3, 19), end: at(3, 21), categoryName: 'Elternarbeit', color: '#6C5CE7' },
-    { id: 'e-2', title: 'Wandertag', start: at(4, 8), end: at(4, 16), categoryName: 'Exkursion', color: '#2ECCA8' },
-    { id: 'e-3', title: 'Schulfotograf', start: at(8, 9), end: at(8, 12), categoryName: 'Organisation', color: '#48A3FF' },
-    { id: 'e-4', title: 'Beweglicher Ferientag', start: at(12, 0), end: at(13, 0), allDay: true, isHoliday: true, categoryName: 'Ferien', color: '#FAC748' },
-    { id: 'e-5', title: 'Schulkonzert', start: at(18, 18), end: at(18, 20), categoryName: 'Kultur', color: '#BD7AF6' },
+    { id: 'e-1', title: 'Elternabend Jahrgang 9', start: at(3, 19), end: at(3, 21), categoryName: 'Elternarbeit', color: palette.accent.violet },
+    { id: 'e-2', title: 'Wandertag', start: at(4, 8), end: at(4, 16), categoryName: 'Exkursion', color: palette.accent.limeDeep },
+    { id: 'e-3', title: 'Schulfotograf', start: at(8, 9), end: at(8, 12), categoryName: 'Organisation', color: palette.accent.amberDeep },
+    { id: 'e-4', title: 'Beweglicher Ferientag', start: at(12, 0), end: at(13, 0), allDay: true, isHoliday: true, categoryName: 'Ferien', color: palette.accent.amber },
+    { id: 'e-5', title: 'Schulkonzert', start: at(18, 18), end: at(18, 20), categoryName: 'Kultur', color: palette.accent.coral },
   ];
 }
 

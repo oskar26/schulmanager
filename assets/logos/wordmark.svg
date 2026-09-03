@@ -2,13 +2,13 @@
   <title id="t">Schulflow – Wortmarke</title>
   <defs>
     <linearGradient id="w-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7B6BFF"/>
-      <stop offset="1" stop-color="#5A46D6"/>
+      <stop offset="0" stop-color="#635BFF"/>
+      <stop offset="1" stop-color="#4E45D4"/>
     </linearGradient>
     <linearGradient id="w-wave" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#2ECCA8"/>
-      <stop offset="0.55" stop-color="#FAC748"/>
-      <stop offset="1" stop-color="#FF7677"/>
+      <stop offset="0" stop-color="#A3E635"/>
+      <stop offset="0.55" stop-color="#FF8C38"/>
+      <stop offset="1" stop-color="#E05353"/>
     </linearGradient>
   </defs>
 
@@ -30,7 +30,7 @@
   </g>
 
   <text x="200" y="118" font-family="Inter, SF Pro Display, Segoe UI, Roboto, system-ui, sans-serif"
-        font-size="76" font-weight="800" fill="#121422" letter-spacing="-2">Schulflow</text>
+        font-size="76" font-weight="800" fill="#18191C" letter-spacing="-2">Schulflow</text>
   <text x="203" y="152" font-family="Inter, SF Pro Text, Segoe UI, Roboto, system-ui, sans-serif"
-        font-size="24" font-weight="600" fill="#6A7086" letter-spacing="4">SCHULE IM FLOW</text>
+        font-size="24" font-weight="600" fill="#5C5F66" letter-spacing="4">SCHULE IM FLOW</text>
 </svg>

@@ -7,12 +7,14 @@ import { useSnapshot } from '@/data/queries';
 import { WEEKDAYS } from '@/lib/date';
 import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useThemeColors } from '@/design/theme';
 
 /**
  * Ganztag/Betreuung. Die API liefert Familien bewusst nur gestrippte Angebote:
  * genutzt wird der Wochentag (JS-Nummerierung: So = 0) + Zeitraum, soweit vorhanden.
  */
 export default function AlldayScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const offers = data?.alldayOffers ?? [];
@@ -40,7 +42,7 @@ export default function AlldayScreen() {
         {offers.length === 0 ? (
           <EmptyState
             icon={Sun}
-            iconColor="#8A7CFF"
+            iconColor={colors.accent.violet}
             title="Keine Betreuungszeiten"
             hint="Entweder nimmt dein Kind nicht am Ganztag teil — oder das Modul ist nicht gebucht."
           />
@@ -55,11 +57,11 @@ export default function AlldayScreen() {
                     <Text className="text-[15px] font-bold text-ink">{WEEKDAYS[(weekday + 6) % 7]}</Text>
                     <Chip
                       label={dayOffers.length > 1 ? `${dayOffers.length} Angebote` : 'gebucht'}
-                      color="#8A7CFF"
+                      color={colors.accent.violet}
                     />
                   </Row>
                   <Row className="mt-2 gap-1.5">
-                    <Clock size={14} strokeWidth={2} color="#6A7086" />
+                    <Clock size={14} strokeWidth={2} color={colors.muted} />
                     <Text className="flex-1 text-[13px] text-muted">
                       {dayOffers
                         .map((offer) =>

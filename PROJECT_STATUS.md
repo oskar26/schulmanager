@@ -2,7 +2,7 @@
 
 > **Single Source of Truth** für den UI-Relaunch. Diese Datei wird zu Beginn jeder
 > Session gelesen und nach jeder erledigten Phase aktualisiert.
-> Letztes Update: 2026-09-03 · Status: **Phase 1 — abgeschlossen ✅ (wartet auf GO für Phase 2)**
+> Letztes Update: 2026-09-03 · Status: **Phase 2 — abgeschlossen ✅**
 
 ---
 
@@ -84,12 +84,12 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 | # | Mangel | Ort | Phase |
 |---|---|---|---|
 | M1 | ~~Bottom-Nav (schwarz) verdeckt Seiteninhalt~~ **✅ gefixt** — `useTabNavReserve()` (min. 100 px bzw. Safe-Area + 88 px) in allen 5 Tab-Screens | alle Tab-Screens | 1 ✅ |
-| M2 | Lila/Pastell-Header-Fläche widerspricht Ziel-Look | Dashboard & Tabs | 2 |
+| M2 | ~~Lila/Pastell-Header-Fläche widerspricht Ziel-Look~~ **✅ gefixt** — Canvas-/Charcoal-Header, Amber/Violet nur als gezielte Akzente | Dashboard, Tabs, Onboarding | 2 ✅ |
 | M3 | ~~Datum „Donnerstag, 3. …" abgeschnitten~~ **✅ gefixt** — Dashboard stapelt Wochentag (27 px/800) + Datum darunter | Dashboard-Header | 1 ✅ |
 | M4 | ~~Fächernamen „Mathe…" abgeschnitten~~ **✅ gefixt** — Stundenplan-Kacheln 2-zeilig bzw. shrink-to-fit; Dashboard/Inbox/Noten 2-zeilig | Timetable, Widgets, Listen | 1 ✅ |
 | M5 | ~~Tab-Header „Hausaufga…" abgeschnitten~~ **✅ gefixt** — `SegmentedControl` 12,5 px + shrink-to-fit + kompaktere Badges | Tasks & Inbox | 1 ✅ |
-| M6 | Alles ist gleichförmige Pastell-Pille → keine Hierarchie | global | 2/3 |
-| M7 | Pastell-Tokens (periwinkle-soft etc.) wirken „AI-Slop" | tokens/tailwind/global.css | 2 |
+| M6 | ~~Alles ist gleichförmige Pastell-Pille → keine Hierarchie~~ **✅ Grundlage gefixt** — weiße Form-Cards, starke Akzentflächen und kontrastreiche Chips | global | 2 ✅ |
+| M7 | ~~Pastell-Tokens (periwinkle-soft etc.) wirken „AI-Slop"~~ **✅ gefixt** — alte Utility-/Runtime-Werte auditiert und abgelöst | Tokens, UI, Bootstrap | 2 ✅ |
 
 ---
 
@@ -110,13 +110,21 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 - [x] Kontrolle: `npm run typecheck` ✅ + Smoke ✅ (`/`, `/timetable`, `/tasks`, `/inbox`,
       `/grades`, `/calendar` @ 390×844; `/` @ 1600×900 mit Sidebar)
 
-### Phase 2 — Design-System & Theme 🔄
-- [ ] Neue Tokens in `src/design/tokens.ts`, `tailwind.config.js`, `global.css`
-      (Creme-Canvas, Charcoal, Amber/Violet/Lime/Coral; alte Pastell-Tokens raus)
-- [ ] Globale Card-Styles überarbeiten: Radii 20–28, Reinweiß-Flächen,
-      kontrastreiche Badges (Charcoal-Chip / Amber-Chip / Lime-Chip)
-- [ ] Dark-Mode-Ableitung der neuen Palette
-- [ ] Lila Header-Flächen entfernen/ersetzen
+### Phase 2 — Design-System & Theme ✅ *abgeschlossen (2026-09-03)*
+- [x] Verbindliche Palette dreifach synchronisiert: `global.css` → `tailwind.config.js`
+      → `src/design/tokens.ts` (Creme-Canvas, Charcoal, Amber/Violet/Lime/Coral;
+      keine alten Periwinkle-/Pastell-Utilities mehr).
+- [x] Globale Kartenanatomie in `src/ui/primitives.tsx`: weiße `surface`-Flächen,
+      20/24/28-px-Radien, warme Linien und semantische, kontrastberechnete Chips/Badges.
+- [x] Dark-Ableitung implementiert: Canvas `#101114`, Surface `#18191C`, invertierte
+      Textfarben und dieselbe, behutsam aufgehellte Akzentfamilie. `useThemeColors()`
+      versorgt imperative React-Native-Farben neben NativeWind.
+- [x] Lila Header-/Pastellflächen ersetzt: Tabs, alle Detail-Screens, Onboarding,
+      Dashboard-Widgets und Live-Island nutzen Canvas/Charcoal mit gezielten Akzenten;
+      PWA-/Native-Bootstrap und Marken-Assets wurden passend nachgezogen.
+- [x] Audit & Verifikation: `npm run typecheck` ✅ · `npm run export:web` ✅ ·
+      `npm run smoke:matrix` ✅ (17 Routen × Phone/Tablet/Desktop = 51 Kombinationen)
+      sowie ein zusätzlicher Dark-Mode-Render-Smoke aller 17 Routen auf Phone-Breite ✅.
 
 ### Phase 3 — Komponentenseiten-Redesign 🔄
 - [ ] **Dashboard/Home:** fettes Welcome-Banner (Charcoal- oder Amber-Fläche),
@@ -160,4 +168,5 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 | Datum | Session | Ergebnis |
 |---|---|---|
 | 2026-09-03 | Relaunch-Kickoff | Briefing erhalten, `PROJECT_STATUS.md` angelegt, Warten auf GO für Phase-1-Code |
-| 2026-09-03 | Phase 1 | ✅ Abgeschlossen: `src/ui/nav-reserve.ts` (globale Bottom-Nav-Reserve ≥100 px, M1) + Truncation-Fixes M3/M4/M5 in Dashboard, Stundenplan, Aufgaben, Postfach, Noten, Widgets, LiveIsland, Kalender, Suche, Thread. Typecheck + Smoke (Phone & Desktop) grün. Nächster Schritt: GO für Phase 2 (Design-Tokens/Theme). |
+| 2026-09-03 | Phase 1 | ✅ Abgeschlossen: `src/ui/nav-reserve.ts` (globale Bottom-Nav-Reserve ≥100 px, M1) + Truncation-Fixes M3/M4/M5 in Dashboard, Stundenplan, Aufgaben, Postfach, Noten, Widgets, LiveIsland, Kalender, Suche, Thread. Typecheck + Smoke (Phone & Desktop) grün. |
+| 2026-09-03 | Phase 2 | ✅ Abgeschlossen: Creme/Charcoal + Amber/Violet/Lime/Coral in CSS, NativeWind und RN-Tokens synchronisiert; globale Card-/Badge-Kontraste, Dark-Mode-Bridge und alle Detail-Screens einschließlich Onboarding/Live-Island migriert. PWA-/Native-Farben und Marken-Assets aktualisiert. Typecheck, Web-Export und vollständige 51er Smoke-Matrix grün. |

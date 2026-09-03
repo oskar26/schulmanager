@@ -4,7 +4,7 @@
 > Zielbild: **High-End Bento Grid mit Soft-Brutalism-Touch** (große Radien, modular
 > gestapelte, farbig geblockte Kacheln, klare Hierarchien, kaum Emojis, nur Vektor-Icons).
 >
-> Stand dieser Datei: Basierend auf den schriftlichen Design-Direktiven des Auftragsgebers.
+> Stand dieser Datei: Phase-2-Theme-Migration abgeschlossen am 2026-09-03; Details und Abnahme in `PROJECT_STATUS.md`.
 > Die Referenzbilder und der APK-Bug-Screenshot lagen dem Bearbeiter **nicht als
 > Pixel** vor (kein Vision-Zugriff im Sandbox-Turn) — das MD kodiert daher die
 > extrahierten Layout-/Styling-Spezifikationen verbatim, damit ein späterer Turn die
@@ -80,12 +80,12 @@
 
 | Rolle | Light (Canvas/Kacheln) | Dark |
 |---|---|---|
-| **Canvas-Hintergrund** | Warmes Off-White/Creme `#F6F5F2` | Tiefes Slate-Navy `#0F172A` / `#111827` |
-| **Hero / Noten / Haupt-Subjects** | Periwinkle `#8C8EFF` / `#EDE9FE` | akzentuiert leuchtend (`#2B2B52`) |
-| **Status / Fristen / Kurse** | Warm Amber `#FFC83B` / `#FEF3C7` | `#FFC83B`-Leuchten auf dunkel (`#383015`) |
-| **Erledigt / positive Quote** | Soft Mint `#10B981` / `#D1FAE5` | `#10B981` (`#163C29`) |
-| **Dringend / Fehler** | Terracotta/Coral `#E0564C` / `#FEE2E2` | `#E0564C` (`#3F1D1D`) |
-| **Fokus-Kacheln & Bottom-Nav** | Charcoal `#18181B` / `#111827` | `#111827` (+ Karten `#1E293B`/`#334155`) |
+| **Canvas-Hintergrund** | Warmes Creme `#F6F4EE`, Karten Reinweiß | neutrales `#101114`, Karten `#18191C` |
+| **Fokus / Feature-Karten** | kräftiges Violet `#635BFF` (gezielt, nie als Pastell-Header) | aufgehelltes `#8C86FF` |
+| **Hauptaktion / Fristen** | Amber `#FF8C38`, dunkler On-Amber-Text | `#FFA05A`, gleicher dunkler On-Amber-Text |
+| **Erledigt / positive Quote** | Lime `#C3F073` bzw. Success `#3E9B5A` | `#D4F78C` bzw. `#6BC887` |
+| **Dringend / Fehler** | Coral `#E05353` | `#F16C6C` |
+| **Fokus-Kacheln & Bottom-Nav** | Charcoal `#18191C` / `#232428` | dieselbe neutrale Charcoal-Familie |
 
 ---
 
@@ -103,7 +103,7 @@
 - [x] Status (Angemeldet/Demo) in `settings.tsx` und `onboarding.tsx` jederzeit wechselbar.
 
 ### Phase C — Bento-Redesign Kern (abgeschlossen)
-- [x] `app/(tabs)/_layout.tsx`: schwebende Floating Bottom Nav (lucide, `#111827`, `borderRadius 36`, rote Badge-Pills).
+- [x] `app/(tabs)/_layout.tsx`: schwebende Floating Bottom Nav (Lucide, Charcoal `#18191C`, Coral-Badge-Pills).
 - [x] `src/ui/primitives.tsx`: `BentoCard`, `BentoGrid`, `Pill`, `RoundActionButton`, `AvatarStack`.
 - [x] Home `app/(tabs)/index.tsx`: neuer Header, Fortschritts-Pill, `BentoGrid`-Raster.
 - [x] Widgets `src/features/dashboard/widgets.tsx`: Bento-Anatomie, lucide-Header-Icons, Status-Pills.
@@ -112,7 +112,7 @@
   überlappende Avatare mit weißem Ring (bei Vertretung: Original- + Vertretungslehrkraft).
 
 ### Phase D — Dark Mode & Micro-Interactions (abgeschlossen)
-- [x] Theme-System konsolidieren (Light `#F6F5F2`+Pastell / Dark Slate-Navy `#0F172A`/`#1E293B`/`#334155`) — `settings.theme` (`system|light|dark`) auf ALLE Komponenten und Screens angewendet. `resolveTone` in `primitives.tsx` passt Pastelltöne automatisch an den Dark Mode an.
+- [x] Theme-System auf die verbindliche Creme/Charcoal- und Amber/Violet/Lime/Coral-Palette konsolidiert — `settings.theme` (`system|light|dark`) reagiert via NativeWind + `useThemeColors()` sofort in allen Komponenten und Screens. Keine zweite Pastell-Palette.
 - [x] Entrance: Karten/Widgets `FadeInDown` / `FadeInUp` mit `springify()` und `react-native-reanimated` (60/120fps).
 - [x] Touch: interaktive Kacheln, BentoCards, Buttons mit `PressableScale` (`withSpring scale:0.97`).
 - [x] Sanfte Tab-Übergänge: `FloatingTabBar` mit reanimated `useSharedValue` + `withSpring` Skalierung für aktiven Tab-Hintergrund und Badge-Indikator.

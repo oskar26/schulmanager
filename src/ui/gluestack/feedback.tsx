@@ -6,7 +6,8 @@ import { createSpinner } from '@gluestack-ui/spinner';
 import { createSwitch } from '@gluestack-ui/switch';
 import { createAvatar } from '@gluestack-ui/avatar';
 
-import { palette } from '@/design/tokens';
+import { foregroundOn, resolveThemeColor } from '@/design/tokens';
+import { useThemeColors } from '@/design/theme';
 
 const UIProgress = createProgress({ Root: View, FilledTrack: View });
 
@@ -18,14 +19,15 @@ export type ProgressProps = {
 };
 
 export function Progress({ value, className, trackClassName, color }: ProgressProps) {
+  const { colors, isDark } = useThemeColors();
   return (
     <UIProgress
       value={Math.max(0, Math.min(100, value))}
       className={`h-2 w-full overflow-hidden rounded-full bg-line ${className ?? ''}`}
     >
       <UIProgress.FilledTrack
-        className={`h-full rounded-full ${trackClassName ?? 'bg-brand'}`}
-        style={color ? { backgroundColor: color } : undefined}
+        className={`h-full rounded-full ${trackClassName ?? 'bg-accent-amber'}`}
+        style={color ? { backgroundColor: resolveThemeColor(color, isDark) } : undefined}
       />
     </UIProgress>
   );
@@ -34,7 +36,8 @@ export function Progress({ value, className, trackClassName, color }: ProgressPr
 const UISpinner = createSpinner({ Root: ActivityIndicator });
 
 export function Spinner({ size = 'small', color }: { size?: 'small' | 'large'; color?: string }) {
-  return <UISpinner size={size} color={color ?? palette.brand} />;
+  const { colors, isDark } = useThemeColors();
+  return <UISpinner size={size} color={resolveThemeColor(color ?? colors.accent.amber, isDark)} />;
 }
 
 const UISwitch = createSwitch({ Root: RNSwitch });
@@ -48,14 +51,15 @@ export function Switch({
   onValueChange: (next: boolean) => void;
   disabled?: boolean;
 }) {
+  const { colors } = useThemeColors();
   return (
     <UISwitch
       value={value}
       onValueChange={onValueChange}
       disabled={disabled}
-      trackColor={{ false: '#C9CEDD', true: palette.brand }}
-      thumbColor="#FFFFFF"
-      ios_backgroundColor="#C9CEDD"
+      trackColor={{ false: colors.line, true: colors.accent.amber }}
+      thumbColor={colors.surface}
+      ios_backgroundColor={colors.line}
     />
   );
 }
@@ -77,6 +81,8 @@ export function Avatar({
   color?: string;
   size?: number;
 }) {
+  const { colors, isDark } = useThemeColors();
+  const base = resolveThemeColor(color ?? colors.accent.violet, isDark);
   const initials = name
     .split(' ')
     .filter(Boolean)
@@ -87,11 +93,11 @@ export function Avatar({
   return (
     <UIAvatar
       className="items-center justify-center rounded-full"
-      style={{ width: size, height: size, backgroundColor: color ?? palette.brand }}
+      style={{ width: size, height: size, backgroundColor: base }}
     >
       <UIAvatar.FallbackText
-        className="font-bold text-white"
-        style={{ fontSize: size * 0.38 }}
+        className="font-bold"
+        style={{ fontSize: size * 0.38, color: foregroundOn(base, colors) }}
       >
         {initials || '?'}
       </UIAvatar.FallbackText>

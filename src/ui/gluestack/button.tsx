@@ -24,8 +24,8 @@ const buttonStyle = tva({
   base: 'flex-row items-center justify-center gap-2 rounded-2xl active:opacity-80',
   variants: {
     action: {
-      primary: 'bg-brand',
-      secondary: 'bg-brand-soft',
+      primary: 'bg-accent-amber',
+      secondary: 'bg-accent-amber/15',
       ghost: 'bg-transparent',
       surface: 'bg-surface border border-line',
       danger: 'bg-danger',
@@ -47,12 +47,12 @@ const buttonTextStyle = tva({
   base: 'font-semibold',
   parentVariants: {
     action: {
-      primary: 'text-white',
-      secondary: 'text-brand-ink',
-      ghost: 'text-brand',
+      primary: 'text-on-amber',
+      secondary: 'text-on-amber',
+      ghost: 'text-accent-amber-deep',
       surface: 'text-ink',
-      danger: 'text-white',
-      success: 'text-white',
+      danger: 'text-on-coral',
+      success: 'text-on-lime',
     },
     size: { sm: 'text-[13px]', md: 'text-[15px]', lg: 'text-[16px]', icon: 'text-[15px]' },
   },

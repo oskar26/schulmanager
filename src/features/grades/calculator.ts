@@ -4,6 +4,7 @@
  * „Welche Note brauche ich in der nächsten Arbeit, um auf X zu kommen?"
  */
 import type { Grade, SubjectGrades } from '@/api/types';
+import { palette } from '@/design/tokens';
 
 export const average = (grades: Grade[]): number | null => {
   const usable = grades.filter((grade) => grade.numeric != null);
@@ -60,11 +61,11 @@ export const gradeLabel = (value: number | null | undefined, system: 0 | 1 = 0):
 
 /** Farbe nach Notenqualität — für Balken und Chips. */
 export function gradeColor(value: number | null | undefined, system: 0 | 1 = 0): string {
-  if (value == null) return '#9CA2B6';
+  if (value == null) return palette.faint;
   const normalised = system === 1 ? (15 - value) / 15 * 5 + 1 : value;
-  if (normalised <= 1.5) return '#22B07A';
-  if (normalised <= 2.5) return '#2ECCA8';
-  if (normalised <= 3.5) return '#FAC748';
-  if (normalised <= 4.5) return '#E8981E';
-  return '#E24848';
+  if (normalised <= 1.5) return palette.success;
+  if (normalised <= 2.5) return palette.accent.limeDeep;
+  if (normalised <= 3.5) return palette.accent.amber;
+  if (normalised <= 4.5) return palette.warning;
+  return palette.danger;
 }

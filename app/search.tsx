@@ -10,6 +10,7 @@ import { formatRelativeDay } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { Card, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
+import { useThemeColors } from '@/design/theme';
 
 interface Hit {
   id: string;
@@ -21,6 +22,7 @@ interface Hit {
 }
 
 export default function SearchScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const [query, setQuery] = useState('');
@@ -68,7 +70,7 @@ export default function SearchScreen() {
           kind: 'Arbeit',
           title: `${exam.subject} · ${exam.type ?? 'Arbeit'}`,
           subtitle: formatRelativeDay(exam.date),
-          color: '#E24848',
+          color: colors.danger,
           href: '/tasks',
         }),
       );
@@ -94,7 +96,7 @@ export default function SearchScreen() {
           kind: 'Brief',
           title: letter.subject,
           subtitle: letter.sender ?? 'Schule',
-          color: '#6C5CE7',
+          color: colors.accent.violet,
           href: '/inbox',
         }),
       );
@@ -107,7 +109,7 @@ export default function SearchScreen() {
           kind: 'Nachricht',
           title: thread.subject,
           subtitle: thread.sender,
-          color: '#48A3FF',
+          color: colors.accent.violet,
           href: '/inbox',
         }),
       );
@@ -120,7 +122,7 @@ export default function SearchScreen() {
           kind: 'Termin',
           title: event.title,
           subtitle: formatRelativeDay(event.start.slice(0, 10)),
-          color: event.color ?? '#BD7AF6',
+          color: event.color ?? colors.accent.violet,
           href: '/calendar',
         }),
       );
@@ -133,28 +135,28 @@ export default function SearchScreen() {
           kind: 'Aushang',
           title: tile.title,
           subtitle: excerpt(htmlToText(tile.content), 50),
-          color: '#22B07A',
+          color: colors.success,
           href: '/inbox',
         }),
       );
 
     return out.slice(0, 40);
-  }, [data, query]);
+  }, [colors, data, query]);
 
   const suggestions = ['Mathe', 'Sport', 'Klassenarbeit', 'Elternabend', 'Hausaufgabe'];
 
   return (
     <Screen adaptive="narrow">
       <Row className="gap-2 px-4 pb-3 pt-2">
-        <IconButton icon={X} onPress={() => router.back()} color="#6A7086" size={36} />
+        <IconButton icon={X} onPress={() => router.back()} size={36} />
         <View className="flex-1 flex-row items-center rounded-2xl border border-line bg-surface px-3">
-          <Search size={17} strokeWidth={2} color="#9CA2B6" />
+          <Search size={17} strokeWidth={2} color={colors.faint} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             autoFocus
             placeholder="Fächer, Aufgaben, Briefe, Termine …"
-            placeholderTextColor="#9CA2B6"
+            placeholderTextColor={colors.faint}
             className="ml-2 h-11 flex-1 text-[15px] text-ink"
           />
         </View>
@@ -175,10 +177,10 @@ export default function SearchScreen() {
                 </Pressable>
               ))}
             </Row>
-            <EmptyState icon={Search} iconColor="#6C5CE7" title="Alles auf einmal durchsuchen" hint="Stundenplan, Aufgaben, Noten, Briefe, Nachrichten, Termine und Aushänge." />
+            <EmptyState icon={Search} iconColor={colors.accent.violet} title="Alles auf einmal durchsuchen" hint="Stundenplan, Aufgaben, Noten, Briefe, Nachrichten, Termine und Aushänge." />
           </>
         ) : hits.length === 0 ? (
-          <EmptyState icon={SearchX} iconColor="#E24848" title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
+          <EmptyState icon={SearchX} iconColor={colors.danger} title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
         ) : (
           hits.map((hit, index) => (
             <FadeInUp key={hit.id} delay={Math.min(index, 8) * 30}>
@@ -204,7 +206,7 @@ export default function SearchScreen() {
                       {hit.kind} · {hit.subtitle}
                     </Muted>
                   </View>
-                  <ChevronRight size={15} strokeWidth={2} color="#9CA2B6" />
+                  <ChevronRight size={15} strokeWidth={2} color={colors.faint} />
                 </Row>
               </Card>
               </Pressable>

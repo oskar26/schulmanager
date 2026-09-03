@@ -13,6 +13,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Stack } from 'tamagui';
 
+import { palette } from '@/design/tokens';
+
 type MotionProps = {
   children: React.ReactNode;
   delay?: number;
@@ -85,7 +87,7 @@ export function PressableScale({
 }
 
 /** Pulsierender Punkt für „läuft gerade" / „live". */
-export function LivePulse({ color = '#22B07A', size = 8 }: { color?: string; size?: number }) {
+export function LivePulse({ color = palette.success, size = 8 }: { color?: string; size?: number }) {
   const [on, setOn] = useState(false);
 
   useEffect(() => {

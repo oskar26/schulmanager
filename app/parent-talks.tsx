@@ -12,8 +12,10 @@ import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
 import { useSession } from '@/state/session';
+import { useThemeColors } from '@/design/theme';
 
 export default function ParentTalksScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data, isLoading } = useSnapshot();
   const rounds = data?.parentTalkRounds ?? [];
@@ -35,7 +37,7 @@ export default function ParentTalksScreen() {
         ) : rounds.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
-            iconColor="#E8981E"
+            iconColor={colors.warning}
             title="Keine Sprechtage"
             hint="Aktuell ist keine Runde geplant — oder das Modul ist nicht gebucht."
           />
@@ -55,7 +57,7 @@ export default function ParentTalksScreen() {
                     </View>
                     <Chip
                       label={booked.length > 0 ? `${booked.length} gebucht` : 'keine Termine'}
-                      color={booked.length > 0 ? '#22B07A' : '#9CA2B6'}
+                      color={booked.length > 0 ? colors.success : colors.faint}
                     />
                   </Row>
 
@@ -63,7 +65,7 @@ export default function ParentTalksScreen() {
                     <View className="mt-3 gap-1.5">
                       {booked.map((appointment) => (
                         <Row key={String(appointment.id)} className="gap-2 rounded-xl bg-success/10 px-3 py-2">
-                          <User size={14} strokeWidth={2} color="#1FA26F" />
+                          <User size={14} strokeWidth={2} color={colors.success} />
                           <Text className="flex-1 text-[13px] font-semibold text-ink">
                             {[appointment.teacher?.lastname, appointment.teacher?.firstname].filter(Boolean).join(', ') ||
                               'Lehrkraft'}
@@ -115,6 +117,7 @@ export default function ParentTalksScreen() {
 /* ------------------------------------------------------------------ Buchung */
 
 function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () => void }) {
+  const { colors } = useThemeColors();
   const { api } = useSession.getState();
   const isDemo = useSession((state) => state.status !== 'connected');
   const book = useBookProposal();
@@ -165,16 +168,16 @@ function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () 
             key={teacher.id}
             onPress={() => void loadSlots(teacher.id)}
             className={`rounded-2xl border px-4 py-3 ${
-              teacherId === teacher.id ? 'border-brand bg-brand-soft' : 'border-line bg-surface'
+              teacherId === teacher.id ? 'border-accent-amber bg-accent-amber/15' : 'border-line bg-surface'
             }`}
           >
-            <Text className={`text-[14px] font-semibold ${teacherId === teacher.id ? 'text-brand-ink' : 'text-ink'}`}>
+            <Text className={`text-[14px] font-semibold ${teacherId === teacher.id ? 'text-on-amber' : 'text-ink'}`}>
               {teacher.name}
             </Text>
           </Pressable>
         ))}
         {teachers.size === 0 ? (
-          <EmptyState icon={Users} iconColor="#E8981E" title="Keine Angebote" hint="In dieser Runde werden keine Termine angeboten." />
+          <EmptyState icon={Users} iconColor={colors.warning} title="Keine Angebote" hint="In dieser Runde werden keine Termine angeboten." />
         ) : null}
       </View>
 
@@ -208,9 +211,9 @@ function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () 
                     },
                   );
                 }}
-                className="rounded-xl bg-brand px-3.5 py-2.5 active:opacity-80"
+                className="rounded-xl bg-accent-amber px-3.5 py-2.5 active:opacity-80"
               >
-                <Text className="text-[13px] font-bold text-white">
+                <Text className="text-[13px] font-bold text-on-amber">
                   {slot.start ? formatDay(slot.start) : 'Termin'} · {slot.start ? formatTime(slot.start) : ''}
                 </Text>
               </Pressable>

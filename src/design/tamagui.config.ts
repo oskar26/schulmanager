@@ -1,13 +1,13 @@
 /**
  * Tamagui-Konfiguration.
  * Tamagui liefert in Schulflow die Animations-Treiber und Design-Tokens;
- * das visuelle Styling kommt aus NativeWind/gluestack. Beide lesen dieselben Tokens
- * aus `src/design/tokens.ts`, damit es keine zwei Wahrheiten gibt.
+ * das visuelle Styling kommt aus NativeWind/gluestack. Beide lesen dieselben
+ * Phase-2-Tokens aus `src/design/tokens.ts`.
  */
 import { createAnimations } from '@tamagui/animations-react-native';
 import { createFont, createTamagui, createTokens } from 'tamagui';
 
-import { palette, radius, space } from './tokens';
+import { darkPalette, palette, radius, space } from './tokens';
 
 export const animations = createAnimations({
   bouncy: { type: 'spring', damping: 12, mass: 0.9, stiffness: 180 },
@@ -18,24 +18,39 @@ export const animations = createAnimations({
 
 const tokens = createTokens({
   color: {
-    brand: palette.brand,
-    brandSoft: palette.brandSoft,
-    mint: palette.mint,
-    lemon: palette.lemon,
-    coral: palette.coral,
-    sky: palette.sky,
-    grape: palette.grape,
+    canvas: palette.canvas,
+    surface: palette.surface,
+    elevated: palette.elevated,
+    charcoal: palette.charcoal,
+    charcoalElevated: palette.charcoalElevated,
     ink: palette.ink,
     muted: palette.muted,
-    surface: palette.surface,
-    bg: palette.bg,
-    darkBg: palette.darkBg,
-    darkSurface: palette.darkSurface,
-    darkInk: palette.darkInk,
+    faint: palette.faint,
+    line: palette.line,
+    amber: palette.accent.amber,
+    amberDeep: palette.accent.amberDeep,
+    violet: palette.accent.violet,
+    lime: palette.accent.lime,
+    limeDeep: palette.accent.limeDeep,
+    coral: palette.accent.coral,
+    success: palette.success,
+    warning: palette.warning,
+    danger: palette.danger,
+    darkCanvas: darkPalette.canvas,
+    darkSurface: darkPalette.surface,
+    darkInk: darkPalette.ink,
   },
   space: { 0: 0, 1: space.xs, 2: space.sm, 3: space.md, 4: space.lg, 5: space.xl, 6: space.xxl, true: space.md },
   size: { 0: 0, 1: 20, 2: 28, 3: 36, 4: 44, 5: 56, 6: 72, true: 44 },
-  radius: { 0: 0, 1: radius.sm, 2: radius.md, 3: radius.lg, 4: radius.xl, 5: radius.blob, true: radius.lg },
+  radius: {
+    0: 0,
+    1: radius.sm,
+    2: radius.md,
+    3: radius.cardSm,
+    4: radius.card,
+    5: radius.cardLg,
+    true: radius.card,
+  },
   zIndex: { 0: 0, 1: 10, 2: 100, 3: 1000 },
 });
 
@@ -53,18 +68,18 @@ export const tamaguiConfig = createTamagui({
   tokens,
   themes: {
     light: {
-      background: palette.bg,
+      background: palette.canvas,
       backgroundStrong: palette.surface,
       color: palette.ink,
       colorMuted: palette.muted,
-      accent: palette.brand,
+      accent: palette.accent.amber,
     },
     dark: {
-      background: palette.darkBg,
-      backgroundStrong: palette.darkSurface,
-      color: palette.darkInk,
-      colorMuted: '#9AA1B8',
-      accent: '#8A7CFF',
+      background: darkPalette.canvas,
+      backgroundStrong: darkPalette.surface,
+      color: darkPalette.ink,
+      colorMuted: darkPalette.muted,
+      accent: darkPalette.accent.amber,
     },
   },
   fonts: {

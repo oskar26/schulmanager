@@ -31,8 +31,10 @@ import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner, Switch } from '@/ui/gluestack/feedback';
 import { useSession } from '@/state/session';
 import { DEFAULT_SETTINGS, WIDGET_META, useSettings } from '@/state/settings';
+import { useThemeColors } from '@/design/theme';
 
 export default function SettingsScreen() {
+  const { colors } = useThemeColors();
   const router = useRouter();
   const { data } = useSnapshot();
   const { settings, update, updateNotifications, toggleWidget, moveWidget, setCredentials, getCredentials, clearCredentials } =
@@ -104,14 +106,14 @@ export default function SettingsScreen() {
     <Screen adaptive="content">
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
-          <IconButton icon="chevron-back" onPress={() => router.back()} color="#6A7086" size={36} />
+          <IconButton icon="chevron-back" onPress={() => router.back()} color={colors.muted} size={36} />
           <Title>Einstellungen</Title>
         </Row>
       </Row>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {/* ---------------------------------------------------------- Konto */}
-        <SectionHeader title="Konto" icon={Lock} iconColor="#6C5CE7" />
+        <SectionHeader title="Konto" icon={Lock} iconColor={colors.accent.violet} />
         <Card padded={false}>
           <View className="p-4">
             <Muted className="text-[12px]">
@@ -128,11 +130,11 @@ export default function SettingsScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="name@beispiel.de"
-              placeholderTextColor="#9CA2B6"
+              placeholderTextColor={colors.faint}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
-              className="h-12 rounded-2xl border border-line bg-bg px-4 text-[15px] text-ink"
+              className="h-12 rounded-2xl border border-line bg-canvas px-4 text-[15px] text-ink"
             />
 
             <Text className="mb-1.5 mt-3 text-[12px] font-bold text-muted">Passwort</Text>
@@ -141,10 +143,10 @@ export default function SettingsScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
-                placeholderTextColor="#9CA2B6"
+                placeholderTextColor={colors.faint}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
-                className="h-12 rounded-2xl border border-line bg-bg px-4 pr-12 text-[15px] text-ink"
+                className="h-12 rounded-2xl border border-line bg-canvas px-4 pr-12 text-[15px] text-ink"
               />
               <Pressable
                 onPress={() => setShowPassword((value) => !value)}
@@ -152,9 +154,9 @@ export default function SettingsScreen() {
                 hitSlop={8}
               >
                 {showPassword ? (
-                  <EyeOff size={20} strokeWidth={2} color="#9CA2B6" />
+                  <EyeOff size={20} strokeWidth={2} color={colors.faint} />
                 ) : (
-                  <Eye size={20} strokeWidth={2} color="#9CA2B6" />
+                  <Eye size={20} strokeWidth={2} color={colors.faint} />
                 )}
               </Pressable>
             </View>
@@ -168,9 +170,9 @@ export default function SettingsScreen() {
                   value={code}
                   onChangeText={setCode}
                   placeholder="123456"
-                  placeholderTextColor="#9CA2B6"
+                  placeholderTextColor={colors.faint}
                   keyboardType="number-pad"
-                  className="h-12 rounded-2xl border border-line bg-bg px-4 text-[15px] text-ink"
+                  className="h-12 rounded-2xl border border-line bg-canvas px-4 text-[15px] text-ink"
                 />
               </>
             ) : null}
@@ -195,13 +197,13 @@ export default function SettingsScreen() {
 
             {error ? (
               <Row className="mt-3 gap-2 rounded-2xl bg-danger/10 p-3">
-                <AlertTriangle size={16} strokeWidth={2.1} color="#E24848" />
+                <AlertTriangle size={16} strokeWidth={2.1} color={colors.danger} />
                 <Text className="flex-1 text-[12px] text-danger">{error}</Text>
               </Row>
             ) : null}
             {notice ? (
               <Row className="mt-3 gap-2 rounded-2xl bg-success/10 p-3">
-                <CheckCircle2 size={16} strokeWidth={2.1} color="#22B07A" />
+                <CheckCircle2 size={16} strokeWidth={2.1} color={colors.success} />
                 <Text className="flex-1 text-[12px] text-success">{notice}</Text>
               </Row>
             ) : null}
@@ -214,7 +216,7 @@ export default function SettingsScreen() {
                 onPress={handleConnect}
                 className="flex-1"
               >
-                {status === 'connecting' ? <Spinner color="#FFFFFF" /> : null}
+                {status === 'connecting' ? <Spinner color={colors.on.amber} /> : null}
                 <ButtonText>{connected ? 'Erneut verbinden' : 'Verbinden'}</ButtonText>
               </Button>
               {connected ? (
@@ -228,7 +230,7 @@ export default function SettingsScreen() {
           <Divider />
           <ListRow
             icon={FlaskConical}
-            iconColor="#FAC748"
+            iconColor={colors.accent.amber}
             title="Demo-Modus"
             subtitle="Erfundene Beispieldaten statt echter Schuldaten"
             right={
@@ -243,7 +245,7 @@ export default function SettingsScreen() {
         {/* ---------------------------------------------------------- Schule */}
         {data?.institution ? (
           <>
-            <SectionHeader title="Schule" icon={School} iconColor="#48A3FF" />
+            <SectionHeader title="Schule" icon={School} iconColor={colors.accent.violet} />
             <Card padded={false}>
               <ListRow icon={Building2} title={data.institution.name ?? '—'} subtitle={[data.institution.street, data.institution.city].filter(Boolean).join(', ')} />
               <Divider className="ml-16" />
@@ -255,7 +257,7 @@ export default function SettingsScreen() {
                 <Muted className="text-[11px]">Freigeschaltete Module</Muted>
                 <Row className="mt-2 flex-wrap gap-1.5">
                   {(data.modules ?? []).map((module) => (
-                    <Chip key={module} label={module} color="#6C5CE7" />
+                    <Chip key={module} label={module} color={colors.accent.violet} />
                   ))}
                 </Row>
               </View>
@@ -264,7 +266,7 @@ export default function SettingsScreen() {
         ) : null}
 
         {/* ---------------------------------------------------------- Dashboard */}
-        <SectionHeader title="Dashboard-Widgets" icon={LayoutGrid} iconColor="#6C5CE7" />
+        <SectionHeader title="Dashboard-Widgets" icon={LayoutGrid} iconColor={colors.accent.violet} />
         <Card padded={false}>
           {settings.widgets
             .filter((widget) => widget.id !== 'grades' || gradesOn)
@@ -273,8 +275,8 @@ export default function SettingsScreen() {
             return (
               <View key={widget.id}>
                 <Row className="gap-3 px-4 py-3">
-                  <View className="h-8 w-8 items-center justify-center rounded-[10px] bg-brand-soft">
-                    <LayoutGrid size={16} strokeWidth={2} color="#6C5CE7" />
+                  <View className="h-8 w-8 items-center justify-center rounded-[10px] bg-accent-violet/15">
+                    <LayoutGrid size={16} strokeWidth={2} color={colors.accent.violet} />
                   </View>
                   <View className="flex-1">
                     <Text className="text-[14px] font-semibold text-ink">{meta.title}</Text>
@@ -285,14 +287,14 @@ export default function SettingsScreen() {
                       icon="chevron-up"
                       size={28}
                       background="bg-line/50"
-                      color="#6A7086"
+                      color={colors.muted}
                       onPress={() => moveWidget(widget.id, -1)}
                     />
                     <IconButton
                       icon="chevron-down"
                       size={28}
                       background="bg-line/50"
-                      color="#6A7086"
+                      color={colors.muted}
                       onPress={() => moveWidget(widget.id, 1)}
                     />
                     <Switch value={widget.enabled} onValueChange={() => toggleWidget(widget.id)} />
@@ -305,7 +307,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Benachrichtigungen */}
-        <SectionHeader title="Benachrichtigungen" icon={Bell} iconColor="#E8981E" />
+        <SectionHeader title="Benachrichtigungen" icon={Bell} iconColor={colors.warning} />
         <Card padded={false}>
           {(
             [
@@ -358,7 +360,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Live-Island */}
-        <SectionHeader title="Live-Island" icon={Rocket} iconColor="#48A3FF" />
+        <SectionHeader title="Live-Island" icon={Rocket} iconColor={colors.accent.violet} />
         <Card padded={false}>
           <ListRow
             title="Insel oben mittig"
@@ -382,7 +384,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Erscheinungsbild */}
-        <SectionHeader title="Erscheinungsbild" icon={Palette} iconColor="#BD7AF6" />
+        <SectionHeader title="Erscheinungsbild" icon={Palette} iconColor={colors.accent.violet} />
         <Card padded={false}>
           <View className="p-4">
             <Muted className="mb-2 text-[12px]">Farbschema</Muted>
@@ -392,12 +394,12 @@ export default function SettingsScreen() {
                   key={option}
                   onPress={() => update({ theme: option })}
                   className={`flex-1 items-center rounded-2xl py-2.5 ${
-                    settings.theme === option ? 'bg-brand' : 'bg-line/50'
+                    settings.theme === option ? 'bg-accent-amber' : 'bg-line/50'
                   }`}
                 >
                   <Text
                     className={`text-[13px] font-semibold ${
-                      settings.theme === option ? 'text-white' : 'text-muted'
+                      settings.theme === option ? 'text-on-amber' : 'text-muted'
                     }`}
                   >
                     {option === 'system' ? 'System' : option === 'light' ? 'Hell' : 'Dunkel'}
@@ -429,13 +431,13 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Datenschutz */}
-        <SectionHeader title="Datenschutz" icon={Shield} iconColor="#22B07A" />
+        <SectionHeader title="Datenschutz" icon={Shield} iconColor={colors.success} />
         <Card padded={false}>
           {gradesOn ? (
             <>
               <ListRow
                 icon={EyeOff}
-                iconColor="#48A3FF"
+                iconColor={colors.accent.violet}
                 title="Noten verbergen"
                 subtitle="Zeigt •••, bis du sie einblendest"
                 right={<Switch value={settings.hideGrades} onValueChange={(value) => update({ hideGrades: value })} />}
@@ -445,7 +447,7 @@ export default function SettingsScreen() {
           ) : null}
           <ListRow
             icon={Fingerprint}
-            iconColor="#22B07A"
+            iconColor={colors.success}
             title="Biometrie beim Start"
             subtitle="Face ID / Fingerabdruck vor dem Öffnen"
             right={
@@ -458,7 +460,7 @@ export default function SettingsScreen() {
           <Divider className="ml-16" />
           <ListRow
             icon={Trash2}
-            iconColor="#E24848"
+            iconColor={colors.danger}
             danger
             title="Lokale Daten löschen"
             subtitle="Cache, Haken und gespeicherte Zugangsdaten"
@@ -479,7 +481,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* ---------------------------------------------------------- Über */}
-        <SectionHeader title="Über Schulflow" icon={Info} iconColor="#6C5CE7" />
+        <SectionHeader title="Über Schulflow" icon={Info} iconColor={colors.accent.violet} />
         <Card>
           <Text className="text-[14px] font-bold text-ink">Schulflow 1.0</Text>
           <Muted className="mt-1 text-[12px]">
@@ -488,10 +490,10 @@ export default function SettingsScreen() {
             und respektiert das Rate-Limit des Servers.
           </Muted>
           <Row className="mt-3 flex-wrap gap-2">
-            <Chip label="React Native · Expo" color="#6C5CE7" />
-            <Chip label="gluestack-ui" color="#22B07A" />
-            <Chip label="Tamagui" color="#48A3FF" />
-            <Chip label="NativeWind" color="#BD7AF6" />
+            <Chip label="React Native · Expo" color={colors.accent.violet} />
+            <Chip label="gluestack-ui" color={colors.success} />
+            <Chip label="Tamagui" color={colors.accent.violet} />
+            <Chip label="NativeWind" color={colors.accent.violet} />
           </Row>
         </Card>
 

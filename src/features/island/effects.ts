@@ -21,6 +21,7 @@ import { Platform } from 'react-native';
 import type { IslandState } from '@/features/island/use-island';
 import { getNativeIsland } from '@/features/island/bridge';
 import { useSettings } from '@/state/settings';
+import { palette } from '@/design/tokens';
 
 const WEB_BASE_TITLE = 'Schulflow';
 const FALLBACK_CHANNEL = 'schulflow.live-island-fallback';
@@ -113,7 +114,7 @@ async function showFallback(state: IslandState, body: string): Promise<void> {
         autoDismiss: false,
         categoryIdentifier: 'schulflow-live',
         data: { deepLink: 'schulflow://timetable' },
-        color: '#6C5CE7',
+        color: palette.accent.amber,
       },
       trigger: null,
     });
