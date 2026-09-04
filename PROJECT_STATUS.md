@@ -2,7 +2,12 @@
 
 > **Single Source of Truth** für den UI-Relaunch. Diese Datei wird zu Beginn jeder
 > Session gelesen und nach jeder erledigten Phase aktualisiert.
-> Letztes Update: 2026-09-03 · Status: **Phase 4 — Ready ✅**
+> Letztes Update: 2026-09-04 · Status: **Farbflächen-Redesign · Phase 1 ✅**
+>
+> **Neu ab 2026-09-04:** Der weitere Fahrplan lebt in
+> [`docs/redesign-phasen.md`](docs/redesign-phasen.md) („Farbflächen-Stil“,
+> 9 Phasen mit Akzeptanzkriterien). Die dortigen Phasen 1–9 lösen die alte
+> Nummerierung unten ab; Abschnitt 2 (Tokens) wird dort fortgeschrieben.
 
 ---
 
@@ -215,3 +220,4 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 | 2026-09-03 | Phase 2 | ✅ Abgeschlossen: Creme/Charcoal + Amber/Violet/Lime/Coral in CSS, NativeWind und RN-Tokens synchronisiert; globale Card-/Badge-Kontraste, Dark-Mode-Bridge und alle Detail-Screens einschließlich Onboarding/Live-Island migriert. PWA-/Native-Farben und Marken-Assets aktualisiert. Typecheck, Web-Export und vollständige 51er Smoke-Matrix grün. |
 | 2026-09-03 | Phase 3 | ✅ Abgeschlossen: Dashboard-Welcome-Banner (Charcoal-Hero + Fortschritt + Heute-Statistik), Stundenplan als vertikale Tages-Timeline mit Tages-Pills (Phone; kein Mini-Kachel-Raster mehr), farbcodierte Prioritäts-Karten mit Action-Buttons in Aufgaben (Coral/Amber/Lime/Violet, direktes Abhaken, Detail-Sheet) und Postfach (Briefe mit Inline-Bestätigen, Neu-Akzente), Noten-Hero auf Lime. Typecheck + Smoke-Matrix (quick 18 Kombinationen + alle 5 Screens inkl. Tablets/Desktop + Nachrichten-Tab) grün. |
 | 2026-09-03 | Phase 4 | ✅ **Ready.** Motion-Layer ausgebaut (PressableScale mit Hover/Disabled, neues PressableOpacity, LinearTransition-Layout-Springs in FadeInUp/Down), Hover-States webweit, Touch-Targets systematisch auf ≥ 44 px (touchSlopFor, min-h, hitSlop), Tab-Wechsel mit Haptik. Verifikation: typecheck ✅ · export:web ✅ · Smoke-Matrix 51/51 ✅ · Dark-Mode-Stichprobe 17/17 ✅ (neues `--dark`-Flag). Abschluss-Aufzeichnungen in `docs/screenshots/` (13 statische DOM-Snapshots). |
+| 2026-09-04 | Farbflächen-Redesign Phase 1 | ✅ **Design-System-Fundament** (`docs/redesign-phasen.md`): feste Block-Palette (13 Farbfamilien + `onBlocks` + Dark-Varianten) und Prioritäts-Ampel (Coral/Amber/Lime) in RN-Tokens/CSS/Tailwind/Tamagui; Radius-Skala 28/24/20/999; `typeScale`; neue Komponenten `IconBadge`, `ColorBlockCard` (+`BlockText`/`BlockCaption`/`useBlockInk`), `StatCard`/`StatNumber`; `Pill`/`Chip` fetter mit Radius 20 + Icon; `SegmentedControl` 48 px/Pillen-Track; `Card`/`BentoCard` randlos; Fachfarben auf Block-Palette + `categories.ts`; Emoji-/`tint()`-Bugs gefixt. Typecheck ✅ · Smoke-Matrix (quick, 18 Kombis) + Dark-Stichproben ✅. |

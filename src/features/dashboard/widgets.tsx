@@ -50,6 +50,7 @@ import {
   Card,
   Divider,
   EmptyState,
+  IconBadge,
   Muted,
   Pill,
   RoundActionButton,
@@ -71,8 +72,8 @@ const tomorrowISO = () => toISO(addDays(new Date(), 1));
 /* ------------------------------------------------------------------ Widget-Header */
 
 /**
- * Bento-Kopfzeile einer Karte: Lucide-Icon in getönter Kachel + Titel,
- * rechts Badge, Text-Link oder runder Ecken-Pfeil.
+ * Bento-Kopfzeile einer Karte: einheitliches IconBadge (farbiger Kreis) +
+ * Titel, rechts Badge, Text-Link oder runder Ecken-Pfeil.
  */
 function WidgetHeader({
   icon: IconComponent,
@@ -94,13 +95,8 @@ function WidgetHeader({
   return (
     <Row className="justify-between px-5 pb-1 pt-5">
       <Row className="flex-1 gap-2.5">
-        <View
-          className="h-8 w-8 items-center justify-center rounded-[10px]"
-          style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
-        >
-          <IconComponent size={17} strokeWidth={2.2} color={resolvedIconColor} />
-        </View>
-        <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={1}>
+        <IconBadge icon={IconComponent} color={resolvedIconColor} size="md" />
+        <Text className="flex-1 text-[16px] font-extrabold tracking-[-0.2px] text-ink" numberOfLines={1}>
           {title}
         </Text>
       </Row>
@@ -108,7 +104,7 @@ function WidgetHeader({
         <Badge count={badge} />
       ) : action ? (
         <PressableOpacity onPress={onAction} hitSlop={14} accessibilityRole="button">
-          <Text className="text-[12px] font-semibold text-accent-amber-deep">{action}</Text>
+          <Text className="text-[12.5px] font-bold text-accent-amber-deep">{action}</Text>
         </PressableOpacity>
       ) : onAction ? (
         <RoundActionButton onPress={onAction} size={34} color={resolvedIconColor} accessibilityLabel={title} />
@@ -700,13 +696,8 @@ export function QuickActionsWidget({ snapshot }: WidgetProps) {
           {actions.map((action) => (
             <PressableScale key={action.label} onPress={() => router.push(action.href as never)} className="flex-1">
               <Card className="items-center py-3.5" padded={false}>
-                <View
-                  className="h-10 w-10 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: tint(action.color, 0.14) }}
-                >
-                  <action.icon size={19} strokeWidth={2.1} color={action.color} />
-                </View>
-                <Text className="mt-1.5 text-[11px] font-semibold text-ink">{action.label}</Text>
+                <IconBadge icon={action.icon} color={action.color} size="lg" />
+                <Text className="mt-1.5 text-[11px] font-bold text-ink">{action.label}</Text>
               </Card>
             </PressableScale>
           ))}
@@ -717,13 +708,8 @@ export function QuickActionsWidget({ snapshot }: WidgetProps) {
             {moduleActions.slice(0, 5).map((action) => (
               <PressableScale key={action.label} onPress={() => router.push(action.href as never)} className="flex-1">
                 <Card className="items-center py-3.5" padded={false}>
-                  <View
-                    className="h-10 w-10 items-center justify-center rounded-2xl"
-                    style={{ backgroundColor: tint(action.color, 0.14) }}
-                  >
-                    <action.icon size={19} strokeWidth={2.1} color={action.color} />
-                  </View>
-                  <Text className="mt-1.5 text-[11px] font-semibold text-ink">{action.label}</Text>
+                  <IconBadge icon={action.icon} color={action.color} size="lg" />
+                  <Text className="mt-1.5 text-[11px] font-bold text-ink">{action.label}</Text>
                 </Card>
               </PressableScale>
             ))}
