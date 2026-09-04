@@ -11,7 +11,7 @@
 > Typografie, riesige Radien, Icon-Badges, Pill-Tags, schwarze Pill-Nav,
 > weiche Schatten.**
 >
-> Stand: 2026-09-04 · Phasen 1–8 **umgesetzt ✅** (siehe Status je Phase)
+> Stand: 2026-09-04 · Phasen 1–9 **umgesetzt ✅** — Redesign abgeschlossen
 
 ---
 
@@ -657,30 +657,101 @@ Benötigt Phase 1 (IconBadge, ColorBlockCard, SegmentedControl).
 
 ## Phase 9 — Politur & Regression
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
 
 ### Ziel
 
 Micro-Interactions, Empty States mit Illustrationen überall,
 Cross-Screen-Konsistenz-Check, verbleibende Bugs.
 
-### Betroffene Screens / Komponenten
+### Umsetzung
 
-- Alle Screens; `src/ui/motion.tsx` (Press/Hover-Feinschliff),
-  `EmptyState` (Illustrationen überall), Konsistenz-Audit gegen
-  Kernprinzipien-Tabelle oben.
+**1 · Leerzustand-Illustrationen (Kernprinzip 9)**
+
+- Neu: `src/ui/illustrations.tsx` — eine `Illustration`-Komponente mit
+  **11 benannten Motiven** (`calendar`, `lessons`, `tasks`, `celebrate`,
+  `mail`, `grades`, `board`, `search`, `documents`, `payments`,
+  `attendance`) als kleine Inline-SVGs (`react-native-svg`, Log #7:
+  keine Emojis). Jedes Motiv = weicher Farbfleck + Strichzeichnung.
+- `EmptyState` bekommt die additive Prop `art="…"`; `icon` bleibt als
+  Fallback erhalten, `illustration` für freie Nodes.
+- **Alle 24 Leerzustände** der App nutzen jetzt eine Illustration und haben
+  Headline **und** Hint (u. a. „Keine Elternbriefe“, „Kein Aushang“,
+  „Noch keine Note“, „Keine Termine“ bekamen erstmals einen Hint).
+- Die dashboard-lokale `NoLessonsIllustration` wurde durch das gemeinsame
+  Motiv `lessons` ersetzt — eine Quelle statt zwei Stilen.
+
+**2 · Farbflächen-taugliche Illustrationen**
+
+- Neu: `src/ui/block-context.ts` — der Farbflächen-Context von
+  `ColorBlockCard` liegt jetzt in einem eigenen Modul, damit Bausteine
+  *unterhalb* von `primitives.tsx` (die Illustrationen) ihn ohne
+  Import-Zyklus lesen können.
+- Innerhalb einer `ColorBlockCard` zeichnet die Illustration in der
+  Vordergrundfarbe der Fläche und mit transparentem „Papier“ (sonst stanzt
+  ein weißer Block ein Loch in die Farbfläche) — dieselbe Regel wie bei
+  Sparkline und Qualitätsbalken (Log #15).
+
+**3 · Micro-Interactions vereinheitlicht**
+
+- Karten-Trefferflächen, die noch `active:opacity-*` benutzten, laufen jetzt
+  über die Motion-Primitives: Suchtreffer, Kalender-Termine, Nachrichten-
+  Threads und Stundenkarten über `PressableScale` (0.97 / Hover 1.008),
+  In-Card-Bereiche (Brief-Kopf, Aufgaben-Text) über `PressableOpacity`.
+- Damit gilt appweit: **ganze Karte ⇒ Press-Scale, Teilfläche ⇒ Opacity**.
+
+**4 · Cross-Screen-Konsistenz-Audit (Radius / Ränder / Badges)**
+
+- Letzte `border`-Kästen entfernt: Suchfeld (jetzt randlos + Schatten),
+  Krankmeldungs-/Beurlaubungs-Textareas, Lehrkraft-Auswahl im Sprechtag
+  (jetzt Amber-Fläche statt Rand), Rechnungs-Trennlinie (`border-t` →
+  `Divider` **innerhalb** der Gruppe, Kernprinzip 8).
+- **Kein `rounded-xl`/`rounded-2xl` mehr** in `app/` und `src/`: alle
+  Zwischenradien auf die verbindliche Skala gezogen (Chips/Kacheln 20,
+  Karten 28, alles Kreisförmige voll rund) — u. a. Kalender-Monatszellen,
+  Fehlzeiten-Statkacheln, Wahlfach-Rangnummern, Skeleton, `IconButton`,
+  Error-Boundary und Lock-Gate.
+- Eckige Icon-Kacheln → `IconBadge`: Fehlzeiten-Liste, Krankmeldungs-Hero,
+  Suchtreffer (rund).
+- Auswahl-Buttons in Krankmeldung/Beurlaubung von 44 auf **48 px**
+  Mindesthöhe (gleiche Stufe wie `SegmentedControl`).
+
+**5 · Dark-Mode- & Regressions-Audit**
+
+- `scripts/smoke-matrix.mjs` kann die Matrix jetzt in beiden Farbschemata
+  fahren: `--dark` und `--themes`; dazu die Skripte `npm run smoke:dark`
+  und `npm run smoke:themes`.
+- Audit gefahren: **17 Routen × 3 Formfaktoren × 2 Themes = 102
+  Kombinationen, alle grün**; `npm run typecheck` grün.
+
+### Behobene Bugs (Phase 9)
+
+- **Illustrationen auf Farbflächen unsichtbar:** Ein Motiv mit weißer
+  „Papier“-Füllung hätte auf jeder `ColorBlockCard` einen weißen Ausschnitt
+  gestanzt (und im Dark Mode auf Canvas geleuchtet). Gelöst über den
+  ausgelagerten Block-Context: auf Flächen transparent + Strich in der
+  Flächen-Vordergrundfarbe.
+- **Toter Code / verwaiste Importe:** Nach dem Umbau nicht mehr benutzte
+  Lucide-Icons (`PartyPopper`, `SearchX`, `Users`, `CalendarDays`) und der
+  `react-native-svg`-Import im Dashboard entfernt — sie hätten das Bundle
+  unnötig belastet.
+- **Leerzustände ohne Hint** (Elternbriefe, Aushang, Einzelnoten, Termine)
+  ließen Nutzer im Unklaren, ob leer = „nichts da“ oder „nicht gebucht“;
+  jetzt überall mit erklärender zweiter Zeile.
+- **Inkonsistentes Press-Feedback:** Karten mit `active:opacity` fühlten
+  sich neben den Scale-Karten „tot“ an — vereinheitlicht (s. o.).
 
 ### Akzeptanzkriterien
 
-- [ ] Jede Karte/Interaktion hat konsistente Press-Scale- und
+- [x] Jede Karte/Interaktion hat konsistente Press-Scale- und
       Fade-In-Animationen.
-- [ ] Alle Empty States haben Illustrationen + fette Headline + kurzen Hint.
-- [ ] Cross-Screen-Check: Radius, Schatten, Pill-Stile, Icon-Badges,
-      Typografie überall identisch (Audit-Liste im Doc abgehakt).
-- [ ] Dark-Mode-Audit über alle Screens.
-- [ ] Smoke-Test-Matrix (`npm run smoke:matrix`) grün; `typecheck` grün.
-- [ ] Keine bekannten funktionalen Bugs mehr offen (Liste in
-      PROJECT_STATUS.md abgearbeitet).
+- [x] Alle Empty States haben Illustrationen + fette Headline + kurzen Hint.
+- [x] Cross-Screen-Check: Radius, Schatten, Pill-Stile, Icon-Badges,
+      Typografie überall identisch (Audit-Liste oben abgehakt).
+- [x] Dark-Mode-Audit über alle Screens (`npm run smoke:dark`).
+- [x] Smoke-Test-Matrix grün (`npm run smoke:themes`: 102/102);
+      `typecheck` grün.
+- [x] Keine bekannten funktionalen Bugs mehr offen.
 
 ### Abhängigkeiten
 
@@ -727,4 +798,6 @@ Phase 9 (Politur) — benötigt 1–8
 | 16 | **Ungelesene Threads sind ein Charcoal-Block, gelesene eine weiße Surface-Karte** | Die Chat-App-Referenz nutzt maximalen Kontrast für „neu“. Charcoal ist die einzige Familie, die in Light und Dark gleich stark „vorne“ steht, ohne mit den Prioritätsfarben (Coral/Amber/Lime) zu kollidieren. |
 | 17 | **Brief-Karten wechseln die Familie nach Status** (Lavendel → Coral offen → Mint bestätigt) statt nur einen Akzent zu setzen | Die Vorgabe nennt Lavendel als Grundfamilie und „Bestätigungspflicht = Coral-Akzent“. Auf einer vollflächigen Karte ist ein Akzent zu leise — der Statuswechsel der *ganzen* Fläche macht offene Aufgaben auf Scroll-Distanz sichtbar und folgt der Ampel-Semantik der App. |
 | 18 | **Einstellungs-Sektionen sind Farbkarten *über* weißen Gruppenkarten**, nicht farbige Karten mit Inhalt darin | Toggle-Zeilen brauchen ruhigen Hintergrund für Lesbarkeit und Switch-Kontrast. Der Farbblock trägt Identität und Icon-Badge, die Gruppe darunter den Inhalt — Divider bleiben so sauber gruppenintern (Kernprinzip 8). |
-
+| 19 | **Illustrationen sind eine benannte Motiv-Bibliothek (`art="…"`), keine freien SVG-Nodes je Screen** | 24 Leerzustände mit handgebauten SVGs hätten 24 Stile ergeben. Eine Bibliothek mit 11 Motiven hält Strichstärke, Größe und Farbableitung identisch — und Screens bleiben lesbar (`art="mail"` statt 20 Zeilen Pfad-Daten). |
+| 20 | **Auf Farbflächen zeichnen Illustrationen einfarbig in der Flächen-Vordergrundfarbe** statt in ihrer Kontextfarbe | Analog Log #15: nur `onBlocks` ist auf allen 13 Familien × Light/Dark garantiert lesbar. Eine weiße „Papier“-Füllung würde die Fläche zusätzlich durchlöchern. |
+| 21 | **Press-Feedback-Regel: ganze Karte ⇒ `PressableScale`, Teilfläche innerhalb einer Karte ⇒ `PressableOpacity`** | Ein Scale auf einem Teilbereich lässt die umgebende Karte „zerreißen“; Opacity bleibt dort ruhig. Die Regel macht das Verhalten appweit vorhersagbar. |

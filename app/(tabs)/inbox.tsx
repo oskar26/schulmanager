@@ -50,7 +50,7 @@ import {
 } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { ErrorBoundary } from '@/ui/error-boundary';
 
@@ -115,6 +115,7 @@ export default function InboxScreen() {
           </View>
         ) : tabs.length === 0 ? (
           <EmptyState
+            art="mail"
             icon={Inbox}
             iconColor={colors.blocks.violet}
             title="Postfach nicht gebucht"
@@ -122,7 +123,7 @@ export default function InboxScreen() {
           />
         ) : activeTab === 'letters' ? (
           data.letters.length === 0 ? (
-            <EmptyState icon={MailOpen} iconColor={colors.blocks.lavender} title="Keine Elternbriefe" />
+            <EmptyState art="mail" iconColor={colors.blocks.lavender} title="Keine Elternbriefe" hint="Neue Briefe der Schule landen direkt hier." />
           ) : (
             data.letters.map((item, index) => (
               <LetterCard
@@ -139,6 +140,7 @@ export default function InboxScreen() {
         ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
             <EmptyState
+              art="mail"
               icon={MessagesSquare}
               iconColor={colors.blocks.violet}
               title="Keine Nachrichten"
@@ -168,7 +170,7 @@ export default function InboxScreen() {
             ))
           )
         ) : data.tiles.length === 0 ? (
-          <EmptyState icon={MapPin} iconColor={colors.blocks.amber} title="Kein Aushang" />
+          <EmptyState art="board" iconColor={colors.blocks.amber} title="Kein Aushang" hint="Sekretariat, Bibliothek und Fundsachen melden sich hier." />
         ) : (
           data.tiles.map((item, index) => (
             <BoardCard
@@ -319,11 +321,11 @@ function LetterCard({
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
       <ColorBlockCard color={tone} className="mb-2.5" padded={false}>
-        <Pressable
+        <PressableOpacity
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel={`Brief öffnen: ${letter.subject}`}
-          className="px-4 pb-3.5 pt-4 hover:opacity-90 active:opacity-80"
+          className="px-4 pb-3.5 pt-4"
         >
           <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
             <IconBadge icon={StatusIcon} color={ink} tone="tint" size="lg" />
@@ -350,7 +352,7 @@ function LetterCard({
               </Row>
             </View>
           </Row>
-        </Pressable>
+        </PressableOpacity>
 
         {/* Action-Zeile: Brief direkt bestätigen, ohne ihn zu öffnen */}
         {needsAction ? (
@@ -451,11 +453,13 @@ function ThreadCard({ thread, index, onOpen }: { thread: MessageThread; index: n
 
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
-      <Pressable
+      <PressableScale
         onPress={open}
         accessibilityRole="button"
         accessibilityLabel={`Nachricht von ${thread.sender || 'Schule'} öffnen`}
-        className="mb-2.5 hover:opacity-90 active:opacity-80"
+        className="mb-2.5"
+        scale={0.97}
+        hoverScale={1.008}
       >
         <Card style={{ padding: 16 }} padded={false}>
           <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
@@ -488,7 +492,7 @@ function ThreadCard({ thread, index, onOpen }: { thread: MessageThread; index: n
             </View>
           </Row>
         </Card>
-      </Pressable>
+      </PressableScale>
     </FadeInUp>
   );
 }

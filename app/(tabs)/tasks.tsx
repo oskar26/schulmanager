@@ -43,7 +43,7 @@ import {
   useBlockInk,
   type IconBadgeSize,
 } from '@/ui/primitives';
-import { FadeInUp, PressableScale } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Progress } from '@/ui/gluestack/feedback';
@@ -234,6 +234,7 @@ export default function TasksScreen() {
           <ExamsTab upcomingExams={upcomingExams} plan={plan} colors={colors} onGoPlan={() => setTab('plan')} />
         ) : planByDay.length === 0 ? (
           <EmptyState
+            art="tasks"
             icon={Sparkles}
             iconColor={colors.accent.violet}
             title="Nichts zu lernen"
@@ -279,8 +280,9 @@ function HomeworkTab({
 
       {grouped.length === 0 ? (
         <EmptyState
+          art="celebrate"
           icon={CheckCheck}
-          iconColor={colors.success}
+          iconColor={colors.priority.ok}
           title="Keine offenen Aufgaben"
           hint="Alles abgehakt. Genieß den Nachmittag."
         />
@@ -423,11 +425,11 @@ function HomeworkTaskCard({
           label={`${item.subject}: ${done ? 'wieder öffnen' : 'als erledigt markieren'}`}
         />
 
-        <Pressable
+        <PressableOpacity
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel={`${item.subject}: Details öffnen`}
-          className="min-w-0 flex-1 hover:opacity-90 active:opacity-75"
+          className="min-w-0 flex-1"
         >
           <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
             <OnBlockBadge icon={SubjectIcon} size="md" className="mt-0.5" />
@@ -463,7 +465,7 @@ function HomeworkTaskCard({
             ) : null}
             {done ? <Undo2 size={13} strokeWidth={2.4} color={ink} style={{ opacity: 0.6 }} /> : null}
           </Row>
-        </Pressable>
+        </PressableOpacity>
       </Row>
     </ColorBlockCard>
   );
@@ -485,6 +487,7 @@ function ExamsTab({
   if (upcomingExams.length === 0) {
     return (
       <EmptyState
+        art="grades"
         icon={BarChart3}
         iconColor={colors.warning}
         title="Keine Arbeiten angekündigt"

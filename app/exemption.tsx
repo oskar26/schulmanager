@@ -29,7 +29,7 @@ export default function ExemptionScreen() {
     return (
       <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
-          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-accent-amber/15">
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-accent-amber/15">
             <Send color={colors.accent.violet} size={32} strokeWidth={2} />
           </View>
           <Title>Antrag gestellt</Title>
@@ -64,7 +64,7 @@ export default function ExemptionScreen() {
                 <Pressable
                   key={offset}
                   onPress={() => setStart(iso)}
-                  className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-2.5 hover:opacity-90 active:opacity-80 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
+                  className={`min-h-[48px] flex-1 items-center justify-center rounded-[20px] py-2.5 hover:opacity-90 active:opacity-80 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
                 >
                   <Text className={`text-[12px] font-bold ${active ? 'text-on-amber' : 'text-muted'}`}>
                     in {offset} T.
@@ -79,7 +79,7 @@ export default function ExemptionScreen() {
               <Pressable
                 key={value}
                 onPress={() => setDays(value)}
-                className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-2.5 hover:opacity-90 active:opacity-80 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
+                className={`min-h-[48px] flex-1 items-center justify-center rounded-[20px] py-2.5 hover:opacity-90 active:opacity-80 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
               >
                 <Text className={`text-[13px] font-bold ${days === value ? 'text-on-amber' : 'text-muted'}`}>
                   {value} {value === 1 ? 'Tag' : 'Tage'}
@@ -105,7 +105,7 @@ export default function ExemptionScreen() {
             placeholder="z. B. Familienfeier, Facharzttermin, Wettkampf"
             placeholderTextColor={colors.faint}
             multiline
-            className="mt-2 min-h-[90px] rounded-2xl border border-line bg-canvas p-3 text-[15px] text-ink"
+            className="mt-2 min-h-[90px] rounded-[20px] bg-canvas p-3.5 text-[15px] text-ink"
           />
         </Card>
         </FadeInUp>

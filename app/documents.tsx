@@ -126,6 +126,7 @@ export default function DocumentsScreen() {
           </View>
         ) : folders.length === 0 && documents.length === 0 ? (
           <EmptyState
+            art="documents"
             icon={FolderOpen}
             iconColor={colors.accent.amber}
             title="Kein Inhalt"

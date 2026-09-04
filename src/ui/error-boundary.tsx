@@ -55,7 +55,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
     return (
       <View className="flex-1 items-center justify-center bg-canvas px-8">
-        <View className="h-16 w-16 items-center justify-center rounded-2xl bg-danger/15">
+        <View className="h-16 w-16 items-center justify-center rounded-full bg-danger/15">
           <AlertCircle size={32} strokeWidth={2} color={palette.danger} />
         </View>
         <Text className="mt-4 text-center text-[20px] font-bold tracking-tight text-ink">
@@ -66,13 +66,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           unberührt — probiere den Bildschirm neu zu laden.
         </Text>
         {__DEV__ && error?.message ? (
-          <ScrollView className="mt-3 max-h-32 rounded-2xl bg-surface p-3" contentContainerStyle={{ flexGrow: 0 }}>
+          <ScrollView className="mt-3 max-h-32 rounded-[20px] bg-surface p-3" contentContainerStyle={{ flexGrow: 0 }}>
             <Text className="text-[11px] text-muted">{error.message}</Text>
           </ScrollView>
         ) : null}
         <Pressable
           onPress={this.reset}
-          className="mt-5 rounded-2xl bg-accent-amber px-6 py-3.5 hover:opacity-90 active:opacity-80"
+          className="mt-5 rounded-full bg-accent-amber px-6 py-3.5 hover:opacity-90 active:opacity-80"
         >
           <Text className="text-[15px] font-bold text-on-amber">Neu versuchen</Text>
         </Pressable>

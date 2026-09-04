@@ -5,7 +5,7 @@ import { Check, ChevronLeft, Info, Receipt, Tag } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { formatDay } from '@/lib/date';
-import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
+import { Card, Chip, Divider, EmptyState, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
 
@@ -52,6 +52,7 @@ export default function PaymentsScreen() {
 
         {invoices.length === 0 ? (
           <EmptyState
+            art="payments"
             icon={Receipt}
             iconColor={colors.success}
             title="Keine Rechnungen"
@@ -86,7 +87,8 @@ export default function PaymentsScreen() {
                   </View>
                 </Row>
                 {invoice.number != null || invoice.items.length > 0 ? (
-                  <View className="border-t border-line px-4 py-2.5">
+                  <View className="px-4 py-2.5">
+                    <Divider className="mb-2.5" />
                     {invoice.number != null ? (
                       <Row className="gap-1.5">
                         <Tag size={13} strokeWidth={2} color={colors.faint} />

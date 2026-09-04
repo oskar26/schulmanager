@@ -2,12 +2,18 @@
 
 > **Single Source of Truth** für den UI-Relaunch. Diese Datei wird zu Beginn jeder
 > Session gelesen und nach jeder erledigten Phase aktualisiert.
-> Letztes Update: 2026-09-04 · Status: **Farbflächen-Redesign · Phasen 1–8 ✅**
+> Letztes Update: 2026-09-04 · Status: **Farbflächen-Redesign · Phasen 1–9 ✅ (abgeschlossen)**
 >
 > **Neu ab 2026-09-04:** Der weitere Fahrplan lebt in
 > [`docs/redesign-phasen.md`](docs/redesign-phasen.md) („Farbflächen-Stil“,
 > 9 Phasen mit Akzeptanzkriterien). Die dortigen Phasen 1–9 lösen die alte
 > Nummerierung unten ab; Abschnitt 2 (Tokens) wird dort fortgeschrieben.
+>
+> **Abschluss (Phase 9, 2026-09-04):** Alle 9 Phasen sind umgesetzt und
+> abgenommen. Es sind **keine funktionalen Bugs mehr offen** (Mängelliste
+> M1–M7 abgearbeitet, Phasen-Bugs je Phase dokumentiert). Verifikation:
+> `npm run typecheck` ✅ · `npm run smoke:themes` ✅ (17 Routen × 3
+> Formfaktoren × Light/Dark = **102/102**).
 
 ---
 
@@ -226,3 +232,4 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 | 2026-09-04 | Farbflächen-Redesign Phase 6 | ✅ **Noten-Feinschliff** (`app/(tabs)/grades.tsx`): Lime-Hero (Radius 32) mit `StatNumber`-Gesamtschnitt + Notenzahl und getönten „Stärkstes Fach“/„Größter Hebel“-Kacheln; Fach-Karten als gesättigte `ColorBlockCard` mit `IconBadge lg`, riesiger Notenzahl, Trend-Pill und 20er-Noten-Chips. Neu `src/features/grades/sparkline.tsx` (`Sparkline` ab 3 datierten Noten, `QualityBar` als Fallback — beide qualitätsnormalisiert, Log #13/#15) und `gradeTrend()`/`datedSeries()`/`gradeRatio()` im Calculator. Detail-Sheet mit Fachfarben-Kopf + großer Sparkline. Bugs: Schnitt-Rundung, gemischte Notensysteme (Log #14), `worst !== best`-Identitätsvergleich, leere Fächer als eigene Gruppe, Rechner-Reset beim Fachwechsel, „verbergen“ im Sheet. Typecheck ✅ · Smoke-Matrix ✅. |
 | 2026-09-04 | Farbflächen-Redesign Phase 7 | ✅ **Postfach & Chat** (`app/(tabs)/inbox.tsx`, `app/thread.tsx`): Brett-Karten pro Eintrag nach Kategorie eingefärbt (`categoryFromText`, neu `categoryIcon()`/`categoryLabel()`); Brief-Karten als Farbflächen mit Statuswechsel Lavendel→Coral→Mint (Log #17), Randfarbe-Only entfernt; ungelesene Threads als Charcoal-Block mit Amber-Avatar (Log #16), gelesene als Surface-Karte; Chat-Detail mit runden Bubbles (Radius 24, eigene Nachrichten Amber-Block), Slate-Empfängerkarte und randlosem Antwortfeld. Bugs: `categoryBlock()`-Fallback lieferte `undefined`-Farbe, Tab-Badges ohne `Boolean()`-Normalisierung, Bestätigungs-Race (Liste + Sheet), paralleler Anhang-Download, Brief-Detail-Race beim schnellen Wechsel, doppeltes `markThreadRead`. Typecheck ✅ · Smoke-Matrix ✅. |
 | 2026-09-04 | Farbflächen-Redesign Phase 8 | ✅ **Einstellungen** (`app/settings.tsx` neu strukturiert): `SectionBlock` (Farbkarte + `IconBadge lg` je Sektion — Konto Mint, Schule Sky, Dashboard Violet, Benachrichtigungen Apricot, Live-Island Lavendel, Erscheinungsbild Amber, Datenschutz Charcoal, Über Slate), `SettingsGroup` (Divider nur gruppenintern, Log #18) und `ToggleRow`/`InfoRow` mit ≥ 56 px Höhe; Farbschema über das gemeinsame `SegmentedControl`; Modul-/Über-Badges als fette Pills; randlose Eingabefelder (Radius 20, min-h 52). Bugs: `moveWidget` überspringt jetzt ausgeblendete Widgets (optionales `visibleIds`), „Lokale Daten löschen“ setzte `onboarded` zurück, `Switch` mit `accessibilityLabel`. Typecheck ✅ · **volle Smoke-Matrix (17 Routen × 3 Formfaktoren)** ✅ + Dark-Stichproben ✅. |
+| 2026-09-04 | Farbflächen-Redesign Phase 9 | ✅ **Politur & Regression — Redesign abgeschlossen.** Neu `src/ui/illustrations.tsx` (11 Inline-SVG-Motive) + `EmptyState art="…"`: **alle 24 Leerzustände** haben jetzt Illustration, fette Headline und Hint; dashboard-lokale `NoLessonsIllustration` abgelöst. Neu `src/ui/block-context.ts` — Illustrationen zeichnen auf Farbflächen kontraststark in der Flächenfarbe (Log #20), ohne Import-Zyklus. Micro-Interactions vereinheitlicht (Log #21: Karte ⇒ `PressableScale`, Teilfläche ⇒ `PressableOpacity`) in Suche, Kalender, Postfach, Aufgaben, Stundenplan. Konsistenz-Audit: letzte `border`-Kästen entfernt (Suchfeld, Textareas, Sprechtag-Auswahl, Rechnungs-Trennlinie → gruppeninterner `Divider`), **kein `rounded-xl`/`rounded-2xl` mehr** in `app/`+`src/` (Skala 20/28/rund), eckige Icon-Kacheln → `IconBadge`, Auswahl-Buttons auf 48 px. Toter Code entfernt (4 verwaiste Icons + `react-native-svg`-Import). Smoke-Matrix kann jetzt Themes fahren (`--dark`/`--themes`, `npm run smoke:dark|smoke:themes`). Typecheck ✅ · **102/102 Kombinationen Light+Dark** ✅. |

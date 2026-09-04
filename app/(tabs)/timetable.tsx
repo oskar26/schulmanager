@@ -380,6 +380,7 @@ function DayList({
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {lessons.length === 0 ? (
           <EmptyState
+            art="lessons"
             icon={Sun}
             iconColor={colors.accent.violet}
             title="Kein Unterricht"
@@ -434,7 +435,7 @@ function LessonBlockCard({
         : null;
 
   return (
-    <Pressable onPress={onPress} className="active:opacity-80" accessibilityRole="button">
+    <PressableScale onPress={onPress} scale={0.97} hoverScale={1.008} accessibilityRole="button">
       {/* Vollflächige Farbblock-Karte in Fachfarbe — kein Rand, kein linker Streifen.
           Entfall als Coral-Block, damit der freie Tag auf den ersten Blick klar ist. */}
       <ColorBlockCard
@@ -452,7 +453,7 @@ function LessonBlockCard({
           compact={compact}
         />
       </ColorBlockCard>
-    </Pressable>
+    </PressableScale>
   );
 }
 

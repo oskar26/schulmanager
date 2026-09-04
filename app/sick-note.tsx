@@ -6,7 +6,7 @@ import { Info, Stethoscope, X } from 'lucide-react-native';
 import { useCreateSickNote, useSnapshot } from '@/data/queries';
 import { addDays, formatLongDay, toISO } from '@/lib/date';
 import { activeLessonsOn } from '@/features/insights/engine';
-import { Card, Chip, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
+import { Card, Chip, IconBadge, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
@@ -34,7 +34,7 @@ export default function SickNoteScreen() {
     return (
       <Screen adaptive="narrow">
         <View className="flex-1 items-center justify-center gap-3 px-8">
-          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-danger/15">
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-danger/15">
             <Stethoscope color={colors.danger} size={32} strokeWidth={2} />
           </View>
           <Title>Krankmeldung übermittelt</Title>
@@ -62,9 +62,7 @@ export default function SickNoteScreen() {
         <FadeInUp>
         <Card className="mb-3 bg-accent-amber/15">
           <Row className="gap-3">
-            <View className="h-10 w-10 items-center justify-center rounded-xl bg-accent-amber/15">
-              <Stethoscope size={20} strokeWidth={2} color={colors.accent.amberDeep} />
-            </View>
+            <IconBadge icon={Stethoscope} color={colors.accent.amberDeep} tone="tint" size="lg" />
             <View className="flex-1">
               <Text className="text-[14px] font-bold text-on-amber">In zwei Schritten erledigt</Text>
               <Muted className="mt-0.5 text-[12px]">
@@ -87,7 +85,7 @@ export default function SickNoteScreen() {
                 <Pressable
                   key={iso}
                   onPress={() => setStart(iso)}
-                  className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-3 hover:opacity-90 active:opacity-80 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
+                  className={`min-h-[48px] flex-1 items-center justify-center rounded-[20px] py-3 hover:opacity-90 active:opacity-80 ${active ? 'bg-accent-amber' : 'bg-line/50'}`}
                 >
                   <Text className={`text-[13px] font-bold ${active ? 'text-on-amber' : 'text-muted'}`}>
                     {offset === 0 ? 'Heute' : offset === 1 ? 'Morgen' : 'Übermorgen'}
@@ -106,7 +104,7 @@ export default function SickNoteScreen() {
               <Pressable
                 key={value}
                 onPress={() => setDays(value)}
-                className={`min-h-[44px] flex-1 items-center justify-center rounded-2xl py-3 hover:opacity-90 active:opacity-80 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
+                className={`min-h-[48px] flex-1 items-center justify-center rounded-[20px] py-3 hover:opacity-90 active:opacity-80 ${days === value ? 'bg-accent-amber' : 'bg-line/50'}`}
               >
                 <Text className={`text-[15px] font-extrabold ${days === value ? 'text-on-amber' : 'text-muted'}`}>
                   {value}
@@ -134,7 +132,7 @@ export default function SickNoteScreen() {
             placeholder="z. B. Erkältung mit Fieber"
             placeholderTextColor={colors.faint}
             multiline
-            className="mt-2 min-h-[80px] rounded-2xl border border-line bg-canvas p-3 text-[15px] text-ink"
+            className="mt-2 min-h-[80px] rounded-[20px] bg-canvas p-3.5 text-[15px] text-ink"
           />
         </Card>
         </FadeInUp>

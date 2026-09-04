@@ -41,6 +41,7 @@ export default function AlldayScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {offers.length === 0 ? (
           <EmptyState
+            art="calendar"
             icon={Sun}
             iconColor={colors.accent.violet}
             title="Keine Betreuungszeiten"

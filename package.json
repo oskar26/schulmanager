@@ -18,7 +18,9 @@
     "smoke:matrix": "node scripts/smoke-matrix.mjs",
     "icons": "node scripts/render-icons.mjs",
     "export:web": "expo export --platform web",
-    "serve:web": "node scripts/web-proxy.mjs"
+    "serve:web": "node scripts/web-proxy.mjs",
+    "smoke:dark": "node scripts/smoke-matrix.mjs --dark",
+    "smoke:themes": "node scripts/smoke-matrix.mjs --themes"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

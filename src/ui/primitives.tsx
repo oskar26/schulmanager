@@ -18,6 +18,8 @@ import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
 import { PressableOpacity, PressableScale } from '@/ui/motion';
+import { Illustration, type IllustrationName } from '@/ui/illustrations';
+import { ColorBlockContext, useBlockContext } from '@/ui/block-context';
 
 /**
  * Phase 4 · Touch-Targets: Kleine visuelle Flächen bekommen automatisch genug
@@ -296,8 +298,6 @@ export function IconBadge({
 
 /* ------------------------------------------- ColorBlockCard (Phase 1) */
 
-/** Context der aufgelösten Farbfläche — Kinder bekommen die passende Textfarbe. */
-const ColorBlockContext = React.createContext<{ fg: string } | null>(null);
 
 /**
  * Vordergrundfarbe innerhalb einer `ColorBlockCard`: kontrastsicher zur
@@ -305,7 +305,7 @@ const ColorBlockContext = React.createContext<{ fg: string } | null>(null);
  */
 export function useBlockInk(): string {
   const { colors } = useThemeColors();
-  const context = React.useContext(ColorBlockContext);
+  const context = useBlockContext();
   return context?.fg ?? colors.ink;
 }
 
@@ -633,24 +633,29 @@ export function Badge({ count, className = '' }: { count: number; className?: st
 /* ------------------------------------------------------------------ States */
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <View className={`overflow-hidden rounded-2xl bg-line/70 ${className}`} />;
+  // Radius folgt der Chip-Stufe (20) — Skeletons sitzen meist an Stelle von
+  // Pills, Zeilen und kleinen Kacheln.
+  return <View className={`overflow-hidden rounded-[20px] bg-line/70 ${className}`} />;
 }
 
 export function EmptyState({
   icon,
   iconColor,
   illustration,
+  art,
   title,
   hint,
 }: {
-  /** Lucide-Icon im runden IconBadge (die App-Oberfläche bleibt emoji-frei). */
+  /** Lucide-Icon im runden IconBadge (Fallback, wenn keine Illustration passt). */
   icon?: LucideIcon;
   iconColor?: string;
-  /**
-   * Optionaler Illustrations-Node (SVG) statt Icon — Phase 3/9 setzt hier die
-   * verspielten Leerzustand-Illustrationen ein.
-   */
+  /** Freier Illustrations-Node (SVG) — überschreibt `art` und `icon`. */
   illustration?: React.ReactNode;
+  /**
+   * Phase 9: benannte Leerzustand-Illustration aus `src/ui/illustrations.tsx`.
+   * Kernprinzip 9 („verspielte Illustrationen statt nur Icon+Text“).
+   */
+  art?: IllustrationName;
   title: string;
   hint?: string;
 }) {
@@ -662,7 +667,11 @@ export function EmptyState({
   return (
     <View className="items-center justify-center gap-2.5 px-8 py-12">
       {illustration ??
-        (IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="xl" tone="tint" strokeWidth={2} /> : null)}
+        (art ? (
+          <Illustration name={art} color={iconColor} />
+        ) : IconComponent ? (
+          <IconBadge icon={IconComponent} color={iconColor} size="xl" tone="tint" strokeWidth={2} />
+        ) : null)}
       <Text className="text-center text-[17px] font-extrabold tracking-[-0.2px]" style={{ color: ink }}>{title}</Text>
       {hint ? <Text className="text-center text-[13px] leading-5" style={{ color: ink, opacity: 0.72 }}>{hint}</Text> : null}
     </View>
@@ -782,7 +791,7 @@ export function IconButton({
       hitSlop={touchSlopFor(size)}
       style={{ width: size, height: size }}
       scale={0.92}
-      className={`items-center justify-center rounded-2xl ${background}`}
+      className={`items-center justify-center rounded-full ${background}`}
     >
       {LucideComp ? (
         <LucideComp size={Math.round(size * 0.52)} strokeWidth={2.2} color={resolvedColor} />

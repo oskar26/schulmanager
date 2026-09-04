@@ -109,6 +109,7 @@ export default function ThreadScreen() {
             </View>
           ) : !data || data.length === 0 ? (
             <EmptyState
+              art="mail"
               icon={MessageSquare}
               iconColor={colors.accent.violet}
               title="Keine Nachrichten im Verlauf"

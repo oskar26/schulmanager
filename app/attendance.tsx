@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, ChevronLeft, FileText, Lightbulb } from 'luc
 
 import { useSnapshot } from '@/data/queries';
 import { formatLongDay } from '@/lib/date';
-import { Card, Chip, Divider, EmptyState, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
+import { Card, Chip, Divider, EmptyState, IconBadge, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
 import { Progress } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
@@ -36,15 +36,15 @@ export default function AttendanceScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         <Card floating>
           <Row className="gap-3">
-            <View className="flex-1 items-center rounded-2xl bg-line/40 py-3">
+            <View className="flex-1 items-center rounded-[20px] bg-line/40 py-3">
               <Text className="text-[24px] font-extrabold text-ink">{stats.total}</Text>
               <Muted className="text-[11px]">gesamt</Muted>
             </View>
-            <View className="flex-1 items-center rounded-2xl bg-success/15 py-3">
+            <View className="flex-1 items-center rounded-[20px] bg-success/15 py-3">
               <Text className="text-[24px] font-extrabold text-success">{stats.excused}</Text>
               <Muted className="text-[11px]">entschuldigt</Muted>
             </View>
-            <View className="flex-1 items-center rounded-2xl bg-danger/15 py-3">
+            <View className="flex-1 items-center rounded-[20px] bg-danger/15 py-3">
               <Text className="text-[24px] font-extrabold text-danger">{stats.unexcused}</Text>
               <Muted className="text-[11px]">offen</Muted>
             </View>
@@ -77,23 +77,18 @@ export default function AttendanceScreen() {
 
         <SectionHeader title="Einzelne Fehlzeiten" icon={FileText} iconColor={colors.warning} />
         {absences.length === 0 ? (
-          <EmptyState icon={CheckCircle2} iconColor={colors.success} title="Keine Fehlzeiten" hint="Lückenlos anwesend." />
+          <EmptyState art="attendance" iconColor={colors.success} title="Keine Fehlzeiten" hint="Lückenlos anwesend." />
         ) : (
           <Card padded={false}>
             {absences.map((entry, index) => (
               <FadeInUp key={String(entry.id)} delay={index * 25}>
                 <Row className="gap-3 px-4 py-3">
-                  <View
-                    className={`h-9 w-9 items-center justify-center rounded-xl ${
-                      entry.excused ? 'bg-success/15' : 'bg-danger/15'
-                    }`}
-                  >
-                    {entry.excused ? (
-                      <CheckCircle2 size={18} strokeWidth={2.1} color={colors.success} />
-                    ) : (
-                      <AlertCircle size={18} strokeWidth={2.1} color={colors.danger} />
-                    )}
-                  </View>
+                  <IconBadge
+                    icon={entry.excused ? CheckCircle2 : AlertCircle}
+                    color={entry.excused ? colors.success : colors.danger}
+                    tone="tint"
+                    size="md"
+                  />
                   <View className="flex-1">
                     <Text className="text-[14px] font-semibold text-ink">{formatLongDay(entry.date)}</Text>
                     <Muted className="text-[12px]">

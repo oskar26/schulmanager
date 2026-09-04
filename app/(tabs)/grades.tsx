@@ -144,6 +144,7 @@ export default function GradesScreen() {
           </View>
         ) : subjects.length === 0 ? (
           <EmptyState
+            art="grades"
             icon={Lock}
             iconColor={colors.accent.violet}
             title="Keine Noten sichtbar"
@@ -513,7 +514,7 @@ function SubjectSheet({
             Einzelnoten
           </Text>
           {subject.grades.length === 0 ? (
-            <EmptyState icon={Sparkles} iconColor={tone} title="Noch keine Note" />
+            <EmptyState art="grades" iconColor={tone} title="Noch keine Note" hint="Sobald die Schule eine Note einträgt, erscheint sie hier." />
           ) : (
             subject.grades.map((grade, index) => (
               <View key={grade.id}>

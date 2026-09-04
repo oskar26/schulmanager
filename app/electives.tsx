@@ -73,6 +73,7 @@ export default function ElectivesScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {elections.length === 0 ? (
           <EmptyState
+            art="board"
             icon={Vote}
             iconColor={colors.accent.violet}
             title="Keine Wahlen offen"
@@ -113,7 +114,7 @@ export default function ElectivesScreen() {
                       {list.map((elective, index) => (
                         <Row key={String(elective.id)} className="gap-2">
                           <View
-                            className={`h-8 w-8 items-center justify-center rounded-xl ${
+                            className={`h-8 w-8 items-center justify-center rounded-full ${
                               index < max ? 'bg-accent-violet' : 'bg-line/50'
                             }`}
                           >

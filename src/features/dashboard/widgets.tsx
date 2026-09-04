@@ -25,7 +25,6 @@ import {
   ListChecks,
   Mail,
   MapPin,
-  PartyPopper,
   Plane,
   Search,
   ShoppingBag,
@@ -35,7 +34,6 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react-native';
-import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 import type { Lesson, Snapshot } from '@/api/types';
 import { useHomeworkDone, useModuleActive } from '@/data/queries';
@@ -137,30 +135,6 @@ function InkPill({ label, icon, className = '' }: { label: string; icon?: Lucide
   return <Pill label={label} color={ink} tone="tint" icon={icon} className={className} />;
 }
 
-/** Kleine, emoji-freie SVG für schulfreie Tage. */
-function NoLessonsIllustration() {
-  const ink = useBlockInk();
-  const soft = tint(ink, 0.13);
-  const softer = tint(ink, 0.08);
-
-  return (
-    <View style={{ width: 126, height: 88, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={126} height={88} viewBox="0 0 126 88" accessible={false}>
-        <Circle cx="21" cy="19" r="11" fill={soft} />
-        <Line x1="21" y1="2" x2="21" y2="7" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Line x1="4" y1="19" x2="9" y2="19" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Line x1="33" y1="7" x2="37" y2="3" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Rect x="39" y="26" width="54" height="43" rx="11" fill={softer} stroke={ink} strokeWidth="2.2" />
-        <Path d="M49 38h34M49 47h25M49 56h18" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Path d="M95 57c8-1 14 4 16 12-8 3-16 0-19-7" fill={soft} stroke={ink} strokeWidth="2.2" strokeLinejoin="round" />
-        <Path d="M93 68c5-5 10-8 16-10" stroke={ink} strokeWidth="2" strokeLinecap="round" />
-        <Circle cx="105" cy="24" r="3" fill={ink} opacity="0.72" />
-        <Circle cx="114" cy="34" r="2" fill={ink} opacity="0.42" />
-      </Svg>
-    </View>
-  );
-}
-
 /* ------------------------------------------------------------------ Nächste Stunde */
 
 export function NextLessonWidget({ snapshot }: WidgetProps) {
@@ -173,11 +147,7 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
     return (
       <ColorBlockCard color={colors.blocks.sky}>
         <WidgetHeader icon={BookOpen} title="Nächste Stunde" />
-        <EmptyState
-          illustration={<NoLessonsIllustration />}
-          title="Kein Unterricht"
-          hint={status.label || 'Genieß den freien Tag.'}
-        />
+        <EmptyState art="lessons" title="Kein Unterricht" hint={status.label || 'Genieß den freien Tag.'} />
       </ColorBlockCard>
     );
   }
@@ -362,11 +332,7 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
     return (
       <ColorBlockCard color={colors.blocks.teal}>
         <WidgetHeader icon={CalendarDays} title="Stundenplan" />
-        <EmptyState
-          illustration={<NoLessonsIllustration />}
-          title="Kein Unterricht"
-          hint="Genieß den freien Tag."
-        />
+        <EmptyState art="lessons" title="Kein Unterricht" hint="Genieß den freien Tag." />
       </ColorBlockCard>
     );
   }
@@ -470,7 +436,7 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
         </View>
       ) : null}
       {open.length === 0 ? (
-        <EmptyState icon={PartyPopper} iconColor={colors.blocks.violet} title="Nichts offen" hint="Alle Aufgaben erledigt." />
+        <EmptyState art="celebrate" title="Nichts offen" hint="Alle Aufgaben erledigt." />
       ) : (
         <View className="gap-2 px-5 pb-5">
           {open.map((item) => (
