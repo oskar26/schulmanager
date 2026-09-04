@@ -56,12 +56,49 @@
     --sf-accent-lime-deep: 163 230 53;     /* #A3E635 */
     --sf-accent-coral: 224 83 83;          /* #E05353 */
 
+    /*
+     * Farbflächen-Familie (Redesign Phase 1 · docs/redesign-phasen.md):
+     * 13 gesättigte Vollton-Flächen für Fach-/Kategorie-/Sektionskarten.
+     * Werte 1:1 zu `palette.blocks` in src/design/tokens.ts.
+     */
+    --sf-block-violet: 99 91 255;          /* #635BFF */
+    --sf-block-lavender: 179 160 255;      /* #B3A0FF */
+    --sf-block-sky: 92 181 241;            /* #5CB5F1 */
+    --sf-block-teal: 53 188 174;           /* #35BCAE */
+    --sf-block-mint: 143 227 190;          /* #8FE3BE */
+    --sf-block-lime: 195 240 115;          /* #C3F073 */
+    --sf-block-sun: 255 211 92;            /* #FFD35C */
+    --sf-block-amber: 255 140 56;          /* #FF8C38 */
+    --sf-block-apricot: 255 181 112;       /* #FFB570 */
+    --sf-block-coral: 224 83 83;           /* #E05353 */
+    --sf-block-pink: 247 154 192;          /* #F79AC0 */
+    --sf-block-slate: 154 166 191;         /* #9AA6BF */
+    --sf-block-charcoal: 24 25 28;         /* #18191C */
+
     /* Lesbare Vordergründe auf Volltonflächen */
     --sf-on-amber: 43 22 0;                /* #2B1600 */
     --sf-on-lime: 31 42 0;                 /* #1F2A00 */
     --sf-on-violet: 255 255 255;
     --sf-on-coral: 255 255 255;
     --sf-on-charcoal: 255 255 255;
+    --sf-on-block-violet: 255 255 255;
+    --sf-on-block-lavender: 36 26 85;      /* #241A55 */
+    --sf-on-block-sky: 7 50 87;            /* #073257 */
+    --sf-on-block-teal: 4 51 46;           /* #04332E */
+    --sf-on-block-mint: 14 59 40;          /* #0E3B28 */
+    --sf-on-block-lime: 31 42 0;           /* #1F2A00 */
+    --sf-on-block-sun: 59 43 0;            /* #3B2B00 */
+    --sf-on-block-amber: 43 22 0;          /* #2B1600 */
+    --sf-on-block-apricot: 58 29 0;        /* #3A1D00 */
+    --sf-on-block-coral: 255 255 255;
+    --sf-on-block-pink: 74 13 44;          /* #4A0D2C */
+    --sf-on-block-slate: 27 36 54;         /* #1B2436 */
+    --sf-on-block-charcoal: 255 255 255;
+
+    /* Feste Prioritäts-Ampel: Coral = dringend, Amber = bald, Lime = ok */
+    --sf-priority-urgent: 224 83 83;       /* #E05353 */
+    --sf-priority-soon: 255 140 56;        /* #FF8C38 */
+    --sf-priority-ok: 195 240 115;         /* #C3F073 */
 
     /* Semantik */
     --sf-success: 62 155 90;               /* #3E9B5A */
@@ -90,11 +127,45 @@
     --sf-accent-lime-deep: 185 234 87;     /* #B9EA57 */
     --sf-accent-coral: 241 108 108;        /* #F16C6C */
 
+    /* Farbflächen-Familie — gleiche Helligkeitsklasse, leicht angehoben */
+    --sf-block-violet: 140 134 255;        /* #8C86FF */
+    --sf-block-lavender: 195 179 255;      /* #C3B3FF */
+    --sf-block-sky: 124 198 246;           /* #7CC6F6 */
+    --sf-block-teal: 85 204 191;           /* #55CCBF */
+    --sf-block-mint: 166 239 210;          /* #A6EFD2 */
+    --sf-block-lime: 212 247 140;          /* #D4F78C */
+    --sf-block-sun: 255 222 133;           /* #FFDE85 */
+    --sf-block-amber: 255 160 90;          /* #FFA05A */
+    --sf-block-apricot: 255 196 142;       /* #FFC48E */
+    --sf-block-coral: 241 108 108;         /* #F16C6C */
+    --sf-block-pink: 248 176 208;          /* #F8B0D0 */
+    --sf-block-slate: 169 180 203;         /* #A9B4CB */
+    --sf-block-charcoal: 35 36 40;         /* #232428 */
+
     --sf-on-amber: 43 22 0;
     --sf-on-lime: 31 42 0;
     --sf-on-violet: 255 255 255;
     --sf-on-coral: 255 255 255;
     --sf-on-charcoal: 255 255 255;
+    /* On-Farben der Blöcke bleiben in Light und Dark identisch (gleiche
+       Helligkeitsklasse der Flächen). */
+    --sf-on-block-violet: 255 255 255;
+    --sf-on-block-lavender: 36 26 85;
+    --sf-on-block-sky: 7 50 87;
+    --sf-on-block-teal: 4 51 46;
+    --sf-on-block-mint: 14 59 40;
+    --sf-on-block-lime: 31 42 0;
+    --sf-on-block-sun: 59 43 0;
+    --sf-on-block-amber: 43 22 0;
+    --sf-on-block-apricot: 58 29 0;
+    --sf-on-block-coral: 255 255 255;
+    --sf-on-block-pink: 74 13 44;
+    --sf-on-block-slate: 27 36 54;
+    --sf-on-block-charcoal: 255 255 255;
+
+    --sf-priority-urgent: 241 108 108;     /* #F16C6C */
+    --sf-priority-soon: 255 160 90;        /* #FFA05A */
+    --sf-priority-ok: 212 247 140;         /* #D4F78C */
 
     --sf-success: 107 200 135;             /* #6BC887 */
     --sf-warning: 242 180 74;              /* #F2B44A */

@@ -26,6 +26,11 @@ import { PressableOpacity, PressableScale } from '@/ui/motion';
 const touchSlopFor = (size: number) => (size >= 44 ? 0 : Math.ceil((44 - size) / 2));
 
 /* ------------------------------------------------------------------ Text */
+/*
+ * Typo-Skala (Redesign Phase 1 · `typeScale` in design/tokens.ts):
+ * Display 38/800 · Title 28/800 · Headline 18/700 · Body 15/500 ·
+ * Caption 12/600 · Label 10.5/800 uppercase · Stat-Zahlen 44/56 px.
+ */
 
 type TxtProps = React.ComponentProps<typeof Text> & { className?: string };
 
@@ -38,17 +43,40 @@ export const Muted = ({ className = '', ...props }: TxtProps) => (
 );
 
 export const Display = ({ className = '', ...props }: TxtProps) => (
-  <Text {...props} className={`text-[32px] font-extrabold tracking-[-0.5px] text-ink ${className}`} />
+  <Text {...props} className={`text-[38px] font-extrabold leading-[43px] tracking-[-1px] text-ink ${className}`} />
 );
 
 export const Title = ({ className = '', ...props }: TxtProps) => (
-  <Text {...props} className={`text-[25px] font-extrabold tracking-[-0.5px] text-ink ${className}`} />
+  <Text {...props} className={`text-[28px] font-extrabold leading-[33px] tracking-[-0.6px] text-ink ${className}`} />
+);
+
+export const Headline = ({ className = '', ...props }: TxtProps) => (
+  <Text {...props} className={`text-[18px] font-bold leading-[24px] tracking-[-0.2px] text-ink ${className}`} />
 );
 
 export const Label = ({ className = '', ...props }: TxtProps) => (
   <Text
     {...props}
-    className={`text-[11px] font-bold uppercase tracking-[1.4px] text-faint ${className}`}
+    className={`text-[10.5px] font-extrabold uppercase tracking-[1.4px] text-faint ${className}`}
+  />
+);
+
+/**
+ * Riesige Stat-Zahl („Statistiken als riesige Zahl + kleine Caption“).
+ * `size="lg"` für Hero-Zahlen (Gesamtschnitt, Countdown), Standard für Kacheln.
+ */
+export const StatNumber = ({
+  size = 'md',
+  className = '',
+  ...props
+}: TxtProps & { size?: 'md' | 'lg' }) => (
+  <Text
+    {...props}
+    className={
+      size === 'lg'
+        ? `text-[56px] font-extrabold leading-[58px] tracking-[-1.5px] ${className}`
+        : `text-[44px] font-extrabold leading-[47px] tracking-[-1.2px] ${className}`
+    }
   />
 );
 
@@ -144,7 +172,7 @@ export function Card({
     <View
       {...rest}
       style={[floating ? shadow.float : shadow.card, style]}
-      className={`rounded-[24px] border border-line/70 bg-surface ${padded ? 'p-[18px]' : ''} ${className}`}
+      className={`rounded-[28px] bg-surface ${padded ? 'p-[18px]' : ''} ${className}`}
     >
       {children}
     </View>
@@ -156,6 +184,254 @@ export function Row({ children, className = '', ...rest }: ViewProps & { classNa
     <View {...rest} className={`flex-row items-center ${className}`}>
       {children}
     </View>
+  );
+}
+
+/* ------------------------------------------------- IconBadge (Phase 1) */
+
+const ICON_BADGE_SIZES = { sm: 28, md: 36, lg: 44, xl: 56 } as const;
+const ICON_BADGE_ICONS = { sm: 14, md: 18, lg: 22, xl: 27 } as const;
+export type IconBadgeSize = keyof typeof ICON_BADGE_SIZES;
+
+/**
+ * IconBadge — DIE einheitliche Icon-Kachel des Farbflächen-Stils: vollrunder
+ * Kreis in Vollfarbe mit zentriertem, kontrastsicherem Icon (`solid`) oder in
+ * 14-%-Tönung mit farbigem Icon (`tint`, für ruhige Kontexte).
+ * Ersetzt alle handgebauten Icon-Kacheln (Header, Listen, Widgets, Empty
+ * States).
+ */
+export function IconBadge({
+  icon: IconComponent,
+  color,
+  size = 'md',
+  tone = 'solid',
+  strokeWidth = 2.2,
+  className = '',
+  style,
+  accessibilityLabel,
+}: {
+  icon: LucideIcon;
+  /** Kreisfarbe (Light- oder Dark-Hex); Default Violet. */
+  color?: string;
+  size?: IconBadgeSize;
+  tone?: 'solid' | 'tint';
+  strokeWidth?: number;
+  className?: string;
+  style?: ViewStyle;
+  accessibilityLabel?: string;
+}) {
+  const { colors, isDark } = useThemeColors();
+  const base = resolveThemeColor(color ?? colors.accent.violet, isDark);
+  const box = ICON_BADGE_SIZES[size];
+  const iconSize = ICON_BADGE_ICONS[size];
+  return (
+    <View
+      accessibilityRole={accessibilityLabel ? 'image' : undefined}
+      accessibilityLabel={accessibilityLabel}
+      className={`items-center justify-center ${className}`}
+      style={[
+        {
+          width: box,
+          height: box,
+          borderRadius: box / 2,
+          backgroundColor: tone === 'tint' ? tint(base, 0.14) : base,
+        },
+        style,
+      ]}
+    >
+      <IconComponent
+        size={iconSize}
+        strokeWidth={strokeWidth}
+        color={tone === 'tint' ? base : foregroundOn(base, colors)}
+      />
+    </View>
+  );
+}
+
+/* ------------------------------------------- ColorBlockCard (Phase 1) */
+
+/** Context der aufgelösten Farbfläche — Kinder bekommen die passende Textfarbe. */
+const ColorBlockContext = React.createContext<{ fg: string } | null>(null);
+
+/**
+ * Vordergrundfarbe innerhalb einer `ColorBlockCard`: kontrastsicher zur
+ * Flächenfarbe (inkl. Dark-Mode-Auflösung). Außerhalb eines Blocks: Ink.
+ */
+export function useBlockInk(): string {
+  const { colors } = useThemeColors();
+  const context = React.useContext(ColorBlockContext);
+  return context?.fg ?? colors.ink;
+}
+
+/** Text auf einer Farbfläche — erbt automatisch die kontrastsichere Farbe. */
+export const BlockText = ({ className = '', ...props }: TxtProps) => {
+  const fg = useBlockInk();
+  return <Text {...props} style={[{ color: fg }, props.style]} className={`text-[15px] font-semibold ${className}`} />;
+};
+
+/** Sekundärtext auf einer Farbfläche — gleiche Farbe, reduzierte Deckkraft. */
+export const BlockCaption = ({ className = '', ...props }: TxtProps) => {
+  const fg = useBlockInk();
+  return (
+    <Text
+      {...props}
+      style={[{ color: fg, opacity: 0.72 }, props.style]}
+      className={`text-[13px] font-medium ${className}`}
+    />
+  );
+};
+
+/**
+ * ColorBlockCard — die Farbflächen-Karte des Redesigns: vollflächig eingefärbt
+ * (Fach-, Kategorie- oder Prioritätsfarbe), Radius 28, weicher Schatten,
+ * **kein Rand**. Optional pressbar (Press-Scale). Kinder nutzen `BlockText`/
+ * `BlockCaption` oder `useBlockInk()` für Textfarben.
+ */
+export function ColorBlockCard({
+  children,
+  color,
+  onPress,
+  accessibilityLabel,
+  accessibilityRole,
+  padded = true,
+  radius: cardRadius = radius.card,
+  elevated = false,
+  dim = false,
+  className = '',
+  style,
+  ...rest
+}: ViewProps & {
+  /** Flächenfarbe (Light- oder Dark-Hex; wird theme-aufgelöst). */
+  color: string;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  accessibilityRole?: 'button' | 'link';
+  padded?: boolean;
+  radius?: number;
+  /** Starkere Schattenfläche für Hero-Blöcke. */
+  elevated?: boolean;
+  /** Reduzierte Deckkraft (z. B. erledigte Aufgaben). */
+  dim?: boolean;
+  className?: string;
+}) {
+  const { colors, isDark } = useThemeColors();
+  const base = resolveThemeColor(color, isDark);
+  const fg = foregroundOn(base, colors);
+  const boxStyle: ViewStyle = {
+    borderRadius: cardRadius,
+    overflow: 'hidden',
+    backgroundColor: base,
+    opacity: dim ? 0.55 : 1,
+    ...(elevated ? shadow.float : shadow.card),
+  };
+
+  const inner = (
+    <ColorBlockContext.Provider value={{ fg }}>
+      <View
+        {...rest}
+        style={[boxStyle, style]}
+        className={`${padded ? 'p-5' : ''} ${className}`}
+      >
+        {children}
+      </View>
+    </ColorBlockContext.Provider>
+  );
+
+  if (!onPress) return inner;
+
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole={accessibilityRole ?? 'button'}
+      accessibilityLabel={accessibilityLabel}
+      scale={0.97}
+      hoverScale={1.008}
+      style={{ borderRadius: cardRadius }}
+    >
+      {inner}
+    </PressableScale>
+  );
+}
+
+/* ------------------------------------------------- StatCard (Phase 1) */
+
+/**
+ * StatCard — „Statistiken als riesige Zahl + kleine Caption, statt
+ * Fließtext“. Plain auf Surface oder als vollflächiger Farbblock (`block`).
+ */
+export function StatCard({
+  value,
+  caption,
+  color,
+  block,
+  icon,
+  align = 'left',
+  size = 'md',
+  className = '',
+  style,
+}: {
+  value: string | number;
+  caption: string;
+  /** Zahl-/Caption-Farbe (nur ohne `block`). */
+  color?: string;
+  /** Vollflächen-Farbe — Karte wird zum Farbblock. */
+  block?: string;
+  icon?: LucideIcon;
+  align?: 'left' | 'center';
+  size?: 'md' | 'lg';
+  className?: string;
+  style?: ViewStyle;
+}) {
+  const { colors, isDark } = useThemeColors();
+  const blockFg = block ? foregroundOn(resolveThemeColor(block, isDark), colors) : undefined;
+
+  const body = (
+    <>
+      {icon ? (
+        <IconBadge
+          icon={icon}
+          color={block ?? color}
+          tone={block ? 'solid' : 'tint'}
+          size="sm"
+          className={align === 'center' ? '' : 'mb-2'}
+          style={{
+            // Auf Vollton-Blöcken: transparent-abgedunkelter/aufgehellter Kreis
+            // statt Vollfarbe, damit Zahl & Badge sich nicht beißen.
+            backgroundColor: block ? (blockFg === '#FFFFFF' ? 'rgba(0,0,0,0.16)' : 'rgba(255,255,255,0.55)') : undefined,
+          }}
+        />
+      ) : null}
+      <StatNumber
+        size={size}
+        className={align === 'center' ? 'text-center' : ''}
+        style={{ color: blockFg ?? resolveThemeColor(color ?? colors.ink, isDark) }}
+        adjustsFontSizeToFit
+        numberOfLines={1}
+      >
+        {value}
+      </StatNumber>
+      <Text
+        className={`mt-0.5 text-[10.5px] font-extrabold uppercase tracking-[1.2px] ${align === 'center' ? 'text-center' : ''}`}
+        style={{ color: blockFg ?? resolveThemeColor(color ?? colors.muted, isDark), opacity: block ? 0.72 : 1 }}
+        numberOfLines={2}
+      >
+        {caption}
+      </Text>
+    </>
+  );
+
+  if (block) {
+    return (
+      <ColorBlockCard color={block} padded style={[{ paddingTop: 16, paddingBottom: 14, paddingHorizontal: 16 }, style]} className={className}>
+        {body}
+      </ColorBlockCard>
+    );
+  }
+
+  return (
+    <Card padded style={[{ paddingTop: 16, paddingBottom: 14, paddingHorizontal: 16 }, style]} className={className}>
+      {body}
+    </Card>
   );
 }
 
@@ -173,29 +449,20 @@ export function SectionHeader({
   title: string;
   action?: string;
   onAction?: () => void;
-  /** Lucide-Icon in getönter Kachel (die App-Oberfläche bleibt emoji-frei). */
+  /** Lucide-Icon im einheitlichen IconBadge (die App-Oberfläche bleibt emoji-frei). */
   icon?: LucideIcon;
   iconColor?: string;
 }) {
-  const { colors, isDark } = useThemeColors();
-  const resolvedIconColor = resolveThemeColor(iconColor ?? colors.accent.violet, isDark);
   const IconComponent = icon;
   return (
     <Row className="mb-3 mt-6 justify-between px-1">
-      <Row className="flex-1 gap-2">
-        {IconComponent ? (
-          <View
-            className="h-8 w-8 items-center justify-center rounded-[10px]"
-            style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
-          >
-            <IconComponent size={16} strokeWidth={2.2} color={resolvedIconColor} />
-          </View>
-        ) : null}
-        <Text className="flex-shrink text-[18px] font-bold tracking-tight text-ink">{title}</Text>
+      <Row className="flex-1 gap-2.5">
+        {IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="sm" /> : null}
+        <Text className="flex-shrink text-[19px] font-extrabold tracking-[-0.3px] text-ink">{title}</Text>
       </Row>
       {action ? (
         <PressableOpacity onPress={onAction} hitSlop={14} accessibilityRole="button">
-          <Text className="text-[13px] font-bold text-accent-amber-deep">{action}</Text>
+          <Text className="text-[13px] font-extrabold text-accent-amber-deep">{action}</Text>
         </PressableOpacity>
       ) : null}
     </Row>
@@ -222,6 +489,47 @@ function variantColor(variant: ChipVariant, colors: ReturnType<typeof useThemeCo
   }
 }
 
+/** Gemeinsame Pill-/Chip-Optik des Farbflächen-Stils: Radius 20, fett, Icon-fähig. */
+function PillBase({
+  label,
+  color,
+  tone = 'tint',
+  icon: IconComponent,
+  iconSize = 13,
+  textClassName = '',
+  className = '',
+}: {
+  label: string;
+  color: string;
+  tone: 'tint' | 'solid' | 'outline';
+  icon?: LucideIcon;
+  iconSize?: number;
+  textClassName: string;
+  className: string;
+}) {
+  const { colors, isDark } = useThemeColors();
+  const base = resolveThemeColor(color, isDark);
+  const fg = tone === 'solid' ? foregroundOn(base, colors) : base;
+  const style: ViewStyle =
+    tone === 'solid'
+      ? { backgroundColor: base }
+      : tone === 'outline'
+        ? { borderWidth: 1.5, borderColor: base, backgroundColor: 'transparent' }
+        : { backgroundColor: tint(base, 0.15) };
+
+  return (
+    <View
+      style={style}
+      className={`flex-row items-center gap-1 rounded-[20px] self-start px-3 py-1.5 ${className}`}
+    >
+      {IconComponent ? <IconComponent size={iconSize} strokeWidth={2.6} color={fg} /> : null}
+      <Text className={`flex-shrink font-extrabold ${textClassName}`} style={{ color: fg }} numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 /**
  * Kontraststarker Status-Chip. `variant` deckt die verbindlichen Charcoal-,
  * Amber- und Lime-Chips ab; `color` bleibt für Fachfarben und Semantik offen.
@@ -231,33 +539,27 @@ export function Chip({
   color,
   variant = 'amber',
   tone = 'tint',
+  icon,
   className = '',
 }: {
   label: string;
   color?: string;
   variant?: ChipVariant;
   tone?: 'tint' | 'solid' | 'outline';
+  icon?: LucideIcon;
   className?: string;
 }) {
-  const { colors, isDark } = useThemeColors();
-  const base = resolveThemeColor(color ?? variantColor(variant, colors), isDark);
-  const style: ViewStyle =
-    tone === 'solid'
-      ? { backgroundColor: base }
-      : tone === 'outline'
-        ? { borderWidth: 1, borderColor: base, backgroundColor: 'transparent' }
-        : { backgroundColor: tint(base, 0.14) };
-
+  const { colors } = useThemeColors();
   return (
-    <View style={style} className={`flex-row items-center gap-1 rounded-full px-2.5 py-1 ${className}`}>
-      <Text
-        className="flex-shrink text-[11px] font-extrabold"
-        style={{ color: tone === 'solid' ? foregroundOn(base, colors) : base }}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-    </View>
+    <PillBase
+      label={label}
+      color={color ?? variantColor(variant, colors)}
+      tone={tone}
+      icon={icon}
+      iconSize={12}
+      textClassName="text-[11.5px]"
+      className={`px-2.5 py-1 ${className}`}
+    />
   );
 }
 
@@ -285,29 +587,27 @@ export function Skeleton({ className = '' }: { className?: string }) {
 export function EmptyState({
   icon,
   iconColor,
+  illustration,
   title,
   hint,
 }: {
-  /** Lucide-Icon in einer getönten Kachel (die App-Oberfläche bleibt emoji-frei). */
+  /** Lucide-Icon im runden IconBadge (die App-Oberfläche bleibt emoji-frei). */
   icon?: LucideIcon;
   iconColor?: string;
+  /**
+   * Optionaler Illustrations-Node (SVG) statt Icon — Phase 3/9 setzt hier die
+   * verspielten Leerzustand-Illustrationen ein.
+   */
+  illustration?: React.ReactNode;
   title: string;
   hint?: string;
 }) {
-  const { colors, isDark } = useThemeColors();
-  const resolvedIconColor = resolveThemeColor(iconColor ?? colors.accent.violet, isDark);
   const IconComponent = icon;
   return (
-    <View className="items-center justify-center gap-2 px-8 py-12">
-      {IconComponent ? (
-        <View
-          className="h-14 w-14 items-center justify-center rounded-[20px]"
-          style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
-        >
-          <IconComponent size={26} strokeWidth={2} color={resolvedIconColor} />
-        </View>
-      ) : null}
-      <Text className="text-center text-[16px] font-bold text-ink">{title}</Text>
+    <View className="items-center justify-center gap-2.5 px-8 py-12">
+      {illustration ??
+        (IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="xl" tone="tint" strokeWidth={2} /> : null)}
+      <Text className="text-center text-[17px] font-extrabold tracking-[-0.2px] text-ink">{title}</Text>
       {hint ? <Text className="text-center text-[13px] leading-5 text-muted">{hint}</Text> : null}
     </View>
   );
@@ -325,27 +625,27 @@ export function SegmentedControl<T extends string>({
   onChange: (next: T) => void;
 }) {
   return (
-    <View className="flex-row rounded-2xl bg-line/60 p-1">
+    <View className="flex-row rounded-full bg-line/60 p-1.5">
       {options.map((option) => {
         const active = option.value === value;
         return (
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
-            className={`min-h-[44px] flex-1 flex-row items-center justify-center gap-1 rounded-xl px-1 py-1 active:opacity-80 ${
-              active ? 'bg-surface hover:bg-surface' : 'hover:bg-line'
+            className={`min-h-[48px] flex-1 flex-row items-center justify-center gap-1.5 rounded-full px-2 py-1.5 active:opacity-80 ${
+              active ? 'bg-surface hover:bg-surface' : 'hover:bg-line/60'
             }`}
             style={active ? shadow.card : undefined}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
           >
-            {/* Phase 1 · M5: Label darf schrumpfen statt abzuschneiden („Hausaufga…“).
-                Phase 4: min-h 44 px — Segment-Buttons sind volle Touch-Targets. */}
+            {/* Label darf schrumpfen statt abzuschneiden („Hausaufga…“);
+                min-h 48 px — Segment-Buttons sind volle Touch-Targets. */}
             <Text
-              className={`text-[12.5px] font-semibold ${active ? 'text-ink' : 'text-muted'}`}
+              className={`text-[13.5px] ${active ? 'font-extrabold text-ink' : 'font-semibold text-muted'}`}
               numberOfLines={1}
               adjustsFontSizeToFit
-              minimumFontScale={0.75}
+              minimumFontScale={0.72}
             >
               {option.label}
             </Text>
@@ -366,7 +666,7 @@ export function ListRow({
   onPress,
   danger,
 }: {
-  /** Lucide-Icon-Komponente in getönter Kachel (Emoji-frei). */
+  /** Lucide-Icon-Komponente im runden IconBadge (Emoji-frei). */
   icon?: LucideIcon;
   iconColor?: string;
   title: string;
@@ -375,18 +675,10 @@ export function ListRow({
   onPress?: () => void;
   danger?: boolean;
 }) {
-  const { colors, isDark } = useThemeColors();
-  const resolvedIconColor = resolveThemeColor(iconColor ?? colors.accent.violet, isDark);
+  const { colors } = useThemeColors();
   const content = (
     <Row className="gap-3 px-4 py-3.5">
-      {IconComponent ? (
-        <View
-          className="h-9 w-9 items-center justify-center rounded-xl"
-          style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
-        >
-          <IconComponent size={18} strokeWidth={2.1} color={resolvedIconColor} />
-        </View>
-      ) : null}
+      {IconComponent ? <IconBadge icon={IconComponent} color={danger ? colors.danger : iconColor} size="md" /> : null}
       <View className="flex-1">
         <Text className={`text-[15px] font-semibold ${danger ? 'text-danger' : 'text-ink'}`}>{title}</Text>
         {subtitle ? <Text className="mt-0.5 text-[12px] text-muted">{subtitle}</Text> : null}
@@ -520,39 +812,35 @@ export function resolveTone(tone?: string, isDark = false): string | undefined {
  * Status-Pill — farbige, runde Markierung für Metadaten wie „Fällig morgen“,
  * „Raum“ oder „Vertretung“. Charcoal, Amber und Lime stehen als Varianten
  * bereit; Fach- und Semantikfarben können weiterhin explizit übergeben werden.
+ * Seit Phase 1 des Farbflächen-Redesigns: Radius 20, fetter Text (13 px),
+ * optionales Lucide-Icon.
  */
 export function Pill({
   label,
   color,
   variant = 'amber',
   tone = 'tint',
+  icon,
   className = '',
 }: {
   label: string;
   color?: string;
   variant?: ChipVariant;
   tone?: 'tint' | 'solid' | 'outline';
+  icon?: LucideIcon;
   className?: string;
 }) {
-  const { colors, isDark } = useThemeColors();
-  const base = resolveThemeColor(color ?? variantColor(variant, colors), isDark);
-  const style: ViewStyle =
-    tone === 'solid'
-      ? { backgroundColor: base }
-      : tone === 'outline'
-        ? { borderWidth: 1, borderColor: base, backgroundColor: 'transparent' }
-        : { backgroundColor: tint(base, 0.14) };
-
+  const { colors } = useThemeColors();
   return (
-    <View style={style} className={`flex-row items-center rounded-full px-3 py-1.5 ${className}`}>
-      <Text
-        className="flex-shrink text-[11px] font-extrabold"
-        style={{ color: tone === 'solid' ? foregroundOn(base, colors) : base }}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-    </View>
+    <PillBase
+      label={label}
+      color={color ?? variantColor(variant, colors)}
+      tone={tone}
+      icon={icon}
+      iconSize={13}
+      textClassName="text-[13px]"
+      className={className}
+    />
   );
 }
 
@@ -656,15 +944,17 @@ export function AvatarStack({
 }
 
 /**
- * Bento-Kachel: große, klare Formkarte (24–28 px), optionaler Farbblock und
- * dezenter Schatten. Ohne `tone` ist sie immer eine Reinweiß-/Surface-Karte.
+ * Bento-Kachel: große, klare Formkarte (Radius 28), optionaler Farbblock und
+ * dezenter Schatten — seit Phase 1 des Farbflächen-Redesigns ohne sichtbaren
+ * Rand. Ohne `tone` ist sie immer eine Reinweiß-/Surface-Karte; für echte
+ * Farbflächen bevorzugt `ColorBlockCard` verwenden.
  */
 export function BentoCard({
   children,
   className = '',
   tone,
   onPress,
-  radius: cardRadius = radius.cardLg,
+  radius: cardRadius = radius.card,
   padded = true,
   style,
   ...rest
@@ -676,15 +966,13 @@ export function BentoCard({
   radius?: number;
   padded?: boolean;
 }) {
-  const { colors, isDark } = useThemeColors();
+  const { isDark } = useThemeColors();
   const resolvedTone = resolveTone(tone, isDark);
 
   const boxStyle: ViewStyle = {
     borderRadius: cardRadius,
     overflow: 'hidden',
     ...shadow.card,
-    borderWidth: resolvedTone ? 0 : 1,
-    borderColor: colors.line,
     ...(resolvedTone ? { backgroundColor: resolvedTone } : {}),
   };
   const inner = (

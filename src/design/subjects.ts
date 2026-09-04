@@ -1,57 +1,79 @@
 /**
- * Fach-Farben & -Emojis.
+ * Fach-Farben & -Emojis — feste Palette auf Basis der Farbflächen-Familie
+ * (`palette.blocks`, Redesign Phase 1 · docs/redesign-phasen.md).
+ *
  * Deterministisch aus dem Fachnamen abgeleitet (gleiches Fach ⇒ immer gleiche
- * Farbe/Emoji), mit kuratierten Treffern für die häufigsten deutschen Schulfächer.
+ * Farbe/Icon), mit kuratierten Treffern für die häufigsten deutschen Schulfächer.
  * Nutzer:innen können pro Fach überschreiben (settings store).
  *
  * Policy: Das Emoji wird nur auf System-Oberflächen genutzt, die keine
  * Vektor-Icons rendern können — Browser-Tab-Titel und Notifications
  * (Live-Island-Effects). Die In-App-Oberfläche bleibt emoji-frei und trägt
- * die Fach-Identität über Farbe + Lucide-Icons.
+ * die Fach-Identität über die Farbfläche + Lucide-Icons (`subjectIcon`).
  */
-import { foregroundOn, palette } from '@/design/tokens';
+import { foregroundOn, palette, resolveThemeColor, type BlockName } from '@/design/tokens';
 
 export type SubjectStyle = { color: string; emoji: string };
 
-const { accent } = palette;
+const { blocks } = palette;
 
-/** Fachfarben folgen der Phase-2-Akzentfamilie statt einem zweiten Pastell-Set. */
-const CURATED: Record<string, SubjectStyle> = {
-  mathematik: { color: accent.violet, emoji: '📐' },
-  mathe: { color: accent.violet, emoji: '📐' },
-  deutsch: { color: accent.coral, emoji: '📖' },
-  englisch: { color: accent.limeDeep, emoji: '🇬' },
-  franzosisch: { color: accent.violet, emoji: '🥐' },
-  latein: { color: accent.amberDeep, emoji: '🏛️' },
-  spanisch: { color: accent.amber, emoji: '🌶️' },
-  physik: { color: accent.violet, emoji: '🧲' },
-  chemie: { color: accent.limeDeep, emoji: '⚗️' },
-  biologie: { color: palette.success, emoji: '🌱' },
-  informatik: { color: accent.violet, emoji: '💻' },
-  geschichte: { color: accent.amberDeep, emoji: '🏺' },
-  geographie: { color: accent.limeDeep, emoji: '🌍' },
-  geografie: { color: accent.limeDeep, emoji: '🌍' },
-  erdkunde: { color: accent.limeDeep, emoji: '🌍' },
-  sport: { color: accent.amber, emoji: '🏃' },
-  musik: { color: accent.violet, emoji: '🎵' },
-  kunst: { color: accent.coral, emoji: '🎨' },
-  religion: { color: accent.violet, emoji: '🕊️' },
-  ethik: { color: accent.violet, emoji: '💭' },
-  politik: { color: accent.violet, emoji: '🏛️' },
-  sozialkunde: { color: accent.violet, emoji: '🏛️' },
-  wirtschaft: { color: palette.success, emoji: '📈' },
-  sachunterricht: { color: accent.limeDeep, emoji: '🔎' },
-  werken: { color: accent.amberDeep, emoji: '🔨' },
-  ganztag: { color: accent.violet, emoji: '🧩' },
+/**
+ * Kuratierte Fachbelegung: jedes häufige deutsche Schulfach bekommt eine
+ * feste Familie aus der 13-Farb-Block-Palette. Angrenzende Fächer eines
+ * typischen Stundenplans bekommen bewusst unterschiedliche Familien.
+ */
+const CURATED: Record<string, { block: BlockName; emoji: string }> = {
+  mathematik: { block: 'violet', emoji: '📐' },
+  mathe: { block: 'violet', emoji: '📐' },
+  deutsch: { block: 'coral', emoji: '📖' },
+  englisch: { block: 'sky', emoji: '🇬🇧' },
+  franzosisch: { block: 'pink', emoji: '🥐' },
+  latein: { block: 'lavender', emoji: '🏛️' },
+  spanisch: { block: 'apricot', emoji: '🌶️' },
+  physik: { block: 'slate', emoji: '🧲' },
+  chemie: { block: 'teal', emoji: '⚗️' },
+  biologie: { block: 'mint', emoji: '🌱' },
+  bio: { block: 'mint', emoji: '🌱' },
+  informatik: { block: 'charcoal', emoji: '💻' },
+  info: { block: 'charcoal', emoji: '💻' },
+  geschichte: { block: 'amber', emoji: '🏺' },
+  gesch: { block: 'amber', emoji: '🏺' },
+  politik: { block: 'violet', emoji: '🏛️' },
+  sozialkunde: { block: 'violet', emoji: '🏛️' },
+  gemeinschaftskunde: { block: 'violet', emoji: '🏛️' },
+  wirtschaft: { block: 'sun', emoji: '📈' },
+  religion: { block: 'lavender', emoji: '🕊️' },
+  ethik: { block: 'lavender', emoji: '💭' },
+  philosophie: { block: 'lavender', emoji: '💭' },
+  musik: { block: 'pink', emoji: '🎵' },
+  kunst: { block: 'coral', emoji: '🎨' },
+  geographie: { block: 'lime', emoji: '🌍' },
+  geografie: { block: 'lime', emoji: '🌍' },
+  erdkunde: { block: 'lime', emoji: '🌍' },
+  sachunterricht: { block: 'sky', emoji: '🔎' },
+  werken: { block: 'apricot', emoji: '🔨' },
+  technik: { block: 'apricot', emoji: '🔨' },
+  ganztag: { block: 'slate', emoji: '🧩' },
 };
 
-const FALLBACK_COLORS = [
-  accent.violet,
-  accent.amber,
-  accent.limeDeep,
-  accent.coral,
-  accent.amberDeep,
-  palette.success,
+/**
+ * Fallback-Zyklus über die volle Farbflächen-Familie. Charcoal bleibt
+ * bewusst außen vor: ein randloser dunkler Block wäre auf dem dunklen Canvas
+ * nicht mehr erkennbar (Entscheidung #4 im Phasen-Dokument).
+ */
+const FALLBACK_BLOCKS: BlockName[] = [
+  'violet',
+  'sky',
+  'mint',
+  'amber',
+  'coral',
+  'lavender',
+  'teal',
+  'lime',
+  'apricot',
+  'pink',
+  'slate',
+  'sun',
 ];
 
 const FALLBACK_EMOJI = ['📘', '✏️', '🧠', '🔬', '🗺️', '🎒', '📎', '🧮'];
@@ -68,6 +90,11 @@ const hash = (value: string) => {
   return h;
 };
 
+/**
+ * Farbfläche eines Fachs (Light-Hex). Für Dark-Theme-Flächen direkt
+ * `subjectBlockStyle(name, true)` verwenden oder selbst durch
+ * `resolveThemeColor()` schicken.
+ */
 export function subjectStyle(name?: string | null, overrides?: Record<string, string>): SubjectStyle {
   const raw = (name ?? '').trim();
   if (!raw) return { color: palette.faint, emoji: '📚' };
@@ -76,18 +103,31 @@ export function subjectStyle(name?: string | null, overrides?: Record<string, st
   const override = overrides?.[key];
   const curated = CURATED[key] ?? Object.entries(CURATED).find(([k]) => key.startsWith(k))?.[1];
 
-  if (curated) return { color: override ?? curated.color, emoji: curated.emoji };
+  if (curated) return { color: override ?? blocks[curated.block], emoji: curated.emoji };
 
   const h = hash(key);
-  return {
-    color: override ?? FALLBACK_COLORS[h % FALLBACK_COLORS.length],
-    emoji: FALLBACK_EMOJI[h % FALLBACK_EMOJI.length],
-  };
+  const block = FALLBACK_BLOCKS[h % FALLBACK_BLOCKS.length];
+  return { color: override ?? blocks[block], emoji: FALLBACK_EMOJI[h % FALLBACK_EMOJI.length] };
+}
+
+/**
+ * Theme-aufgelöste Fachfarbe: im Dark Theme wird automatisch die hellere
+ * Block-Variante verwendet. `overrides` bleibt nutzbar (Nutzer-Farben werden
+ * durch `resolveThemeColor` ebenfalls übersetzt, wenn sie einer bekannten
+ * Light-Farbe entsprechen).
+ */
+export function subjectColor(name?: string | null, isDark = false, overrides?: Record<string, string>): string {
+  return resolveThemeColor(subjectStyle(name, overrides).color, isDark);
 }
 
 /** Farbe + Alpha für Chips/Hintergründe (funktioniert in RN & Web). */
 export function tint(hex: string, alpha = 0.16): string {
-  const value = hex.replace('#', '');
+  const value = (hex ?? '').replace('#', '');
+  if (!/^[0-9A-Fa-f]{6}$/.test(value)) {
+    // Härtung: ungültige Eingaben erzeugten früher `rgba(NaN, …)`-Styles,
+    // die RN stumm verschluckt hat. Jetzt sichtbar transparent.
+    return 'transparent';
+  }
   const r = parseInt(value.slice(0, 2), 16);
   const g = parseInt(value.slice(2, 4), 16);
   const b = parseInt(value.slice(4, 6), 16);
