@@ -1,10 +1,4 @@
-/**
- * Schulflow UI-Primitives (Design-System Fundament).
- *
- * Vollflächige Farbflächen (ColorBlockCard), kreisförmige Icon-Badges (IconBadge),
- * riesige Stat-Karten (StatCard), Status-Pills (Pill), griffige Segmented Controls
- * und adaptive Shell-Container.
- */
+/** Basis-Bausteine der Schulflow-Oberfläche (NativeWind + gluestack). */
 import React from 'react';
 import {
   Modal,
@@ -19,26 +13,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react-native';
 
-import {
-  foregroundOn,
-  palette,
-  radius,
-  resolveThemeColor,
-  shadow,
-  type ThemePalette,
-} from '@/design/tokens';
+import { foregroundOn, radius, resolveThemeColor, shadow } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
 import { PressableOpacity, PressableScale } from '@/ui/motion';
 
 /**
- * Touch-Targets: Kleine visuelle Flächen bekommen automatisch genug
+ * Phase 4 · Touch-Targets: Kleine visuelle Flächen bekommen automatisch genug
  * `hitSlop`, damit die effektive Trefferfläche ≥ 44 px bleibt (HIG/Material).
  */
-export const touchSlopFor = (size: number) => (size >= 44 ? 0 : Math.ceil((44 - size) / 2));
+const touchSlopFor = (size: number) => (size >= 44 ? 0 : Math.ceil((44 - size) / 2));
 
-/* ------------------------------------------------------------------ Typography */
+/* ------------------------------------------------------------------ Text */
 
 type TxtProps = React.ComponentProps<typeof Text> & { className?: string };
 
@@ -51,239 +38,19 @@ export const Muted = ({ className = '', ...props }: TxtProps) => (
 );
 
 export const Display = ({ className = '', ...props }: TxtProps) => (
-  <Text {...props} className={`text-[34px] font-extrabold tracking-[-0.6px] text-ink ${className}`} />
+  <Text {...props} className={`text-[32px] font-extrabold tracking-[-0.5px] text-ink ${className}`} />
 );
 
 export const Title = ({ className = '', ...props }: TxtProps) => (
-  <Text {...props} className={`text-[26px] font-extrabold tracking-[-0.5px] text-ink ${className}`} />
-);
-
-export const Headline = ({ className = '', ...props }: TxtProps) => (
-  <Text {...props} className={`text-[19px] font-bold tracking-tight text-ink ${className}`} />
+  <Text {...props} className={`text-[25px] font-extrabold tracking-[-0.5px] text-ink ${className}`} />
 );
 
 export const Label = ({ className = '', ...props }: TxtProps) => (
   <Text
     {...props}
-    className={`text-[11px] font-extrabold uppercase tracking-[1.2px] text-faint ${className}`}
+    className={`text-[11px] font-bold uppercase tracking-[1.4px] text-faint ${className}`}
   />
 );
-
-/* ------------------------------------------------------------------ IconBadge */
-
-export interface IconBadgeProps {
-  icon: LucideIcon;
-  color?: string;
-  iconColor?: string;
-  size?: number;
-  iconSize?: number;
-  tone?: 'solid' | 'tint';
-  className?: string;
-  style?: ViewStyle;
-}
-
-/**
- * Icon-Badge: Farbiger Kreis mit zentriertem Vektor-Icon (Kernkomponente des Redesigns).
- */
-export function IconBadge({
-  icon: IconComponent,
-  color,
-  iconColor,
-  size = 44,
-  iconSize,
-  tone = 'tint',
-  className = '',
-  style,
-}: IconBadgeProps) {
-  const { colors, isDark } = useThemeColors();
-  const baseColor = resolveThemeColor(color ?? colors.accent.violet, isDark);
-  const calculatedIconSize = iconSize ?? Math.round(size * 0.48);
-
-  const bg =
-    tone === 'solid'
-      ? baseColor
-      : tint(baseColor, isDark ? 0.28 : 0.16);
-
-  const effectiveIconColor =
-    iconColor ??
-    (tone === 'solid'
-      ? foregroundOn(baseColor, colors)
-      : baseColor);
-
-  return (
-    <View
-      className={`items-center justify-center ${className}`}
-      style={[
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: bg,
-        },
-        style,
-      ]}
-    >
-      <IconComponent size={calculatedIconSize} strokeWidth={2.3} color={effectiveIconColor} />
-    </View>
-  );
-}
-
-/* ------------------------------------------------------------------ ColorBlockCard */
-
-export interface ColorBlockCardProps extends ViewProps {
-  children: React.ReactNode;
-  color?: string;
-  tone?: 'solid' | 'tint' | 'surface';
-  onPress?: () => void;
-  radius?: number;
-  padded?: boolean;
-  floating?: boolean;
-  className?: string;
-}
-
-/**
- * ColorBlockCard: Vollflächige Farbkarte (Radius 28px) ohne dünne Umrandungen,
- * mit weichem Schatten und automatischer Kontrastanpassung.
- */
-export function ColorBlockCard({
-  children,
-  color,
-  tone = 'tint',
-  onPress,
-  radius: cardRadius = radius.cardLg,
-  padded = true,
-  floating = false,
-  className = '',
-  style,
-  ...rest
-}: ColorBlockCardProps) {
-  const { colors, isDark } = useThemeColors();
-
-  const baseColor = color ? resolveThemeColor(color, isDark) : undefined;
-  let bg = colors.surface;
-  let hasBorder = false;
-
-  if (tone === 'solid' && baseColor) {
-    bg = baseColor;
-  } else if (tone === 'tint' && baseColor) {
-    bg = tint(baseColor, isDark ? 0.22 : 0.14);
-  } else if (tone === 'surface') {
-    bg = colors.surface;
-    hasBorder = false;
-  }
-
-  const boxStyle: ViewStyle = {
-    borderRadius: cardRadius,
-    overflow: 'hidden',
-    backgroundColor: bg,
-    ...(hasBorder ? { borderWidth: 1, borderColor: colors.line } : {}),
-    ...(floating ? shadow.float : shadow.card),
-  };
-
-  const inner = (
-    <View
-      {...rest}
-      style={[boxStyle, style]}
-      className={`${padded ? 'p-5' : ''} ${className}`}
-    >
-      {children}
-    </View>
-  );
-
-  if (!onPress) return inner;
-
-  return (
-    <PressableScale
-      onPress={onPress}
-      accessibilityRole="button"
-      scale={0.97}
-      hoverScale={1.008}
-      style={{ borderRadius: cardRadius }}
-    >
-      {inner}
-    </PressableScale>
-  );
-}
-
-/* ------------------------------------------------------------------ StatCard */
-
-export interface StatCardProps extends ViewProps {
-  value: string | number;
-  label: string;
-  subLabel?: string;
-  icon?: LucideIcon;
-  color?: string;
-  tone?: 'solid' | 'tint' | 'surface';
-  onPress?: () => void;
-  className?: string;
-}
-
-/**
- * StatCard: Große fette Zahl (32–44px) + prägnante Caption + optionales Icon-Badge.
- */
-export function StatCard({
-  value,
-  label,
-  subLabel,
-  icon: IconComponent,
-  color,
-  tone = 'tint',
-  onPress,
-  className = '',
-  style,
-  ...rest
-}: StatCardProps) {
-  const { colors, isDark } = useThemeColors();
-  const baseColor = resolveThemeColor(color ?? colors.accent.amber, isDark);
-  const textColor = tone === 'solid' ? foregroundOn(baseColor, colors) : colors.ink;
-  const captionColor = tone === 'solid' ? foregroundOn(baseColor, colors) : colors.muted;
-
-  return (
-    <ColorBlockCard
-      color={baseColor}
-      tone={tone}
-      onPress={onPress}
-      className={`flex-1 ${className}`}
-      style={style}
-      {...rest}
-    >
-      <View className="flex-row items-center justify-between">
-        <Text
-          style={{ color: captionColor }}
-          className="text-[12px] font-extrabold uppercase tracking-wider"
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
-        {IconComponent ? (
-          <IconBadge
-            icon={IconComponent}
-            color={baseColor}
-            tone={tone === 'solid' ? 'solid' : 'tint'}
-            size={32}
-            iconSize={16}
-          />
-        ) : null}
-      </View>
-      <Text
-        style={{ color: textColor }}
-        className="mt-2 text-[32px] font-extrabold tracking-tight"
-        numberOfLines={1}
-      >
-        {value}
-      </Text>
-      {subLabel ? (
-        <Text
-          style={{ color: captionColor }}
-          className="mt-0.5 text-[12px] font-medium opacity-90"
-          numberOfLines={1}
-        >
-          {subLabel}
-        </Text>
-      ) : null}
-    </ColorBlockCard>
-  );
-}
 
 /* ------------------------------------------------------------------ Layout */
 
@@ -296,6 +63,13 @@ export function Screen({
   children: React.ReactNode;
   className?: string;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  /**
+   * `adaptive` zentriert und begrenzt den Inhalt auf Tablets/Desktop:
+   * · 'content'   → Lesebreite (~1120 dp)
+   * · 'dashboard' → volle Kartenbreite (~1280–1440 dp)
+   * · 'narrow'    → Dialogbreite (~640 dp), z. B. Formulare und Suche
+   * Auf Phones ist die Prop ein No-Op.
+   */
   adaptive?: 'content' | 'dashboard' | 'narrow';
 }) {
   const layout = useLayout();
@@ -318,6 +92,11 @@ export function Screen({
   );
 }
 
+/**
+ * Breiten-Wrapper für Inhalte: Auf Tablets/Desktop bleibt der Inhalt lesbar
+ * zentriert, statt sich endlos in die Breite zu strecken. `narrow` eignet sich
+ * für Formulare und Dialoge (Krankmeldung, Suche …).
+ */
 export function AdaptiveContent({
   children,
   className = '',
@@ -329,6 +108,7 @@ export function AdaptiveContent({
   children: React.ReactNode;
   className?: string;
   narrow?: boolean;
+  /** Layout-Maß des Dashboards (breiter als normale Lesespalten). */
   dashboard?: boolean;
 }) {
   const layout = useLayout();
@@ -357,34 +137,14 @@ export function Card({
   className = '',
   padded = true,
   floating = false,
-  color,
-  tone = 'surface',
   style,
   ...rest
-}: ViewProps & {
-  children: React.ReactNode;
-  className?: string;
-  padded?: boolean;
-  floating?: boolean;
-  color?: string;
-  tone?: 'solid' | 'tint' | 'surface';
-}) {
-  const { colors, isDark } = useThemeColors();
-  const baseColor = color ? resolveThemeColor(color, isDark) : undefined;
-
-  let bg = colors.surface;
-  if (tone === 'solid' && baseColor) bg = baseColor;
-  else if (tone === 'tint' && baseColor) bg = tint(baseColor, isDark ? 0.22 : 0.14);
-
+}: ViewProps & { children: React.ReactNode; className?: string; padded?: boolean; floating?: boolean }) {
   return (
     <View
       {...rest}
-      style={[
-        floating ? shadow.float : shadow.card,
-        { borderRadius: radius.cardLg, backgroundColor: bg },
-        style,
-      ]}
-      className={`${padded ? 'p-[18px]' : ''} ${className}`}
+      style={[floating ? shadow.float : shadow.card, style]}
+      className={`rounded-[24px] border border-line/70 bg-surface ${padded ? 'p-[18px]' : ''} ${className}`}
     >
       {children}
     </View>
@@ -400,7 +160,7 @@ export function Row({ children, className = '', ...rest }: ViewProps & { classNa
 }
 
 export function Divider({ className = '' }: { className?: string }) {
-  return <View className={`h-[1px] w-full bg-line/80 ${className}`} />;
+  return <View className={`h-[1px] w-full bg-line ${className}`} />;
 }
 
 export function SectionHeader({
@@ -413,6 +173,7 @@ export function SectionHeader({
   title: string;
   action?: string;
   onAction?: () => void;
+  /** Lucide-Icon in getönter Kachel (die App-Oberfläche bleibt emoji-frei). */
   icon?: LucideIcon;
   iconColor?: string;
 }) {
@@ -421,11 +182,16 @@ export function SectionHeader({
   const IconComponent = icon;
   return (
     <Row className="mb-3 mt-6 justify-between px-1">
-      <Row className="flex-1 gap-2.5">
+      <Row className="flex-1 gap-2">
         {IconComponent ? (
-          <IconBadge icon={IconComponent} color={resolvedIconColor} size={32} iconSize={16} />
+          <View
+            className="h-8 w-8 items-center justify-center rounded-[10px]"
+            style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
+          >
+            <IconComponent size={16} strokeWidth={2.2} color={resolvedIconColor} />
+          </View>
         ) : null}
-        <Text className="flex-shrink text-[19px] font-extrabold tracking-tight text-ink">{title}</Text>
+        <Text className="flex-shrink text-[18px] font-bold tracking-tight text-ink">{title}</Text>
       </Row>
       {action ? (
         <PressableOpacity onPress={onAction} hitSlop={14} accessibilityRole="button">
@@ -436,11 +202,11 @@ export function SectionHeader({
   );
 }
 
-/* ------------------------------------------------------------------ Chips & Pills */
+/* ------------------------------------------------------------------ Chips */
 
 type ChipVariant = 'charcoal' | 'amber' | 'lime' | 'violet' | 'coral';
 
-function variantColor(variant: ChipVariant, colors: ThemePalette): string {
+function variantColor(variant: ChipVariant, colors: ReturnType<typeof useThemeColors>['colors']): string {
   switch (variant) {
     case 'charcoal':
       return colors.charcoal;
@@ -456,19 +222,21 @@ function variantColor(variant: ChipVariant, colors: ThemePalette): string {
   }
 }
 
+/**
+ * Kontraststarker Status-Chip. `variant` deckt die verbindlichen Charcoal-,
+ * Amber- und Lime-Chips ab; `color` bleibt für Fachfarben und Semantik offen.
+ */
 export function Chip({
   label,
   color,
   variant = 'amber',
   tone = 'tint',
-  icon: IconComponent,
   className = '',
 }: {
   label: string;
   color?: string;
   variant?: ChipVariant;
   tone?: 'tint' | 'solid' | 'outline';
-  icon?: LucideIcon;
   className?: string;
 }) {
   const { colors, isDark } = useThemeColors();
@@ -477,51 +245,19 @@ export function Chip({
     tone === 'solid'
       ? { backgroundColor: base }
       : tone === 'outline'
-        ? { borderWidth: 1.5, borderColor: base, backgroundColor: 'transparent' }
-        : { backgroundColor: tint(base, isDark ? 0.25 : 0.16) };
-
-  const textColor = tone === 'solid' ? foregroundOn(base, colors) : base;
+        ? { borderWidth: 1, borderColor: base, backgroundColor: 'transparent' }
+        : { backgroundColor: tint(base, 0.14) };
 
   return (
-    <View style={style} className={`flex-row items-center gap-1.5 rounded-full px-3 py-1 ${className}`}>
-      {IconComponent ? (
-        <IconComponent size={12} strokeWidth={2.4} color={textColor} />
-      ) : null}
+    <View style={style} className={`flex-row items-center gap-1 rounded-full px-2.5 py-1 ${className}`}>
       <Text
-        className="flex-shrink text-[11px] font-extrabold tracking-wide"
-        style={{ color: textColor }}
+        className="flex-shrink text-[11px] font-extrabold"
+        style={{ color: tone === 'solid' ? foregroundOn(base, colors) : base }}
         numberOfLines={1}
       >
         {label}
       </Text>
     </View>
-  );
-}
-
-export function Pill({
-  label,
-  color,
-  variant = 'amber',
-  tone = 'tint',
-  icon: IconComponent,
-  className = '',
-}: {
-  label: string;
-  color?: string;
-  variant?: ChipVariant;
-  tone?: 'tint' | 'solid' | 'outline';
-  icon?: LucideIcon;
-  className?: string;
-}) {
-  return (
-    <Chip
-      label={label}
-      color={color}
-      variant={variant}
-      tone={tone}
-      icon={IconComponent}
-      className={`px-3 py-1.5 ${className}`}
-    />
   );
 }
 
@@ -547,45 +283,32 @@ export function Skeleton({ className = '' }: { className?: string }) {
 }
 
 export function EmptyState({
-  icon: IconComponent,
+  icon,
   iconColor,
   title,
   hint,
-  actionLabel,
-  onAction,
 }: {
+  /** Lucide-Icon in einer getönten Kachel (die App-Oberfläche bleibt emoji-frei). */
   icon?: LucideIcon;
   iconColor?: string;
   title: string;
   hint?: string;
-  actionLabel?: string;
-  onAction?: () => void;
 }) {
   const { colors, isDark } = useThemeColors();
   const resolvedIconColor = resolveThemeColor(iconColor ?? colors.accent.violet, isDark);
+  const IconComponent = icon;
   return (
-    <View className="items-center justify-center gap-3 px-8 py-12">
+    <View className="items-center justify-center gap-2 px-8 py-12">
       {IconComponent ? (
-        <IconBadge
-          icon={IconComponent}
-          color={resolvedIconColor}
-          size={56}
-          iconSize={26}
-          tone="tint"
-        />
-      ) : null}
-      <Text className="text-center text-[17px] font-extrabold text-ink">{title}</Text>
-      {hint ? (
-        <Text className="text-center text-[13px] leading-5 text-muted">{hint}</Text>
-      ) : null}
-      {actionLabel && onAction ? (
-        <PressableScale
-          onPress={onAction}
-          className="mt-2 rounded-full bg-charcoal px-5 py-2.5 active:opacity-90"
+        <View
+          className="h-14 w-14 items-center justify-center rounded-[20px]"
+          style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
         >
-          <Text className="text-[13px] font-bold text-white">{actionLabel}</Text>
-        </PressableScale>
+          <IconComponent size={26} strokeWidth={2} color={resolvedIconColor} />
+        </View>
       ) : null}
+      <Text className="text-center text-[16px] font-bold text-ink">{title}</Text>
+      {hint ? <Text className="text-center text-[13px] leading-5 text-muted">{hint}</Text> : null}
     </View>
   );
 }
@@ -601,7 +324,6 @@ export function SegmentedControl<T extends string>({
   value: T;
   onChange: (next: T) => void;
 }) {
-  const { colors } = useThemeColors();
   return (
     <View className="flex-row rounded-2xl bg-line/60 p-1">
       {options.map((option) => {
@@ -610,18 +332,20 @@ export function SegmentedControl<T extends string>({
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
-            className={`min-h-[44px] flex-1 flex-row items-center justify-center gap-1.5 rounded-xl px-2 py-1 active:opacity-80 ${
+            className={`min-h-[44px] flex-1 flex-row items-center justify-center gap-1 rounded-xl px-1 py-1 active:opacity-80 ${
               active ? 'bg-surface hover:bg-surface' : 'hover:bg-line'
             }`}
             style={active ? shadow.card : undefined}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
           >
+            {/* Phase 1 · M5: Label darf schrumpfen statt abzuschneiden („Hausaufga…“).
+                Phase 4: min-h 44 px — Segment-Buttons sind volle Touch-Targets. */}
             <Text
-              className={`text-[13px] font-bold ${active ? 'text-ink' : 'text-muted'}`}
+              className={`text-[12.5px] font-semibold ${active ? 'text-ink' : 'text-muted'}`}
               numberOfLines={1}
               adjustsFontSizeToFit
-              minimumFontScale={0.8}
+              minimumFontScale={0.75}
             >
               {option.label}
             </Text>
@@ -642,6 +366,7 @@ export function ListRow({
   onPress,
   danger,
 }: {
+  /** Lucide-Icon-Komponente in getönter Kachel (Emoji-frei). */
   icon?: LucideIcon;
   iconColor?: string;
   title: string;
@@ -655,13 +380,18 @@ export function ListRow({
   const content = (
     <Row className="gap-3 px-4 py-3.5">
       {IconComponent ? (
-        <IconBadge icon={IconComponent} color={resolvedIconColor} size={38} iconSize={18} />
+        <View
+          className="h-9 w-9 items-center justify-center rounded-xl"
+          style={{ backgroundColor: tint(resolvedIconColor, 0.14) }}
+        >
+          <IconComponent size={18} strokeWidth={2.1} color={resolvedIconColor} />
+        </View>
       ) : null}
       <View className="flex-1">
-        <Text className={`text-[15px] font-bold ${danger ? 'text-danger' : 'text-ink'}`}>{title}</Text>
-        {subtitle ? <Text className="mt-0.5 text-[12px] font-medium text-muted">{subtitle}</Text> : null}
+        <Text className={`text-[15px] font-semibold ${danger ? 'text-danger' : 'text-ink'}`}>{title}</Text>
+        {subtitle ? <Text className="mt-0.5 text-[12px] text-muted">{subtitle}</Text> : null}
       </View>
-      {right ?? (onPress ? <ChevronRight size={17} strokeWidth={2.4} color={colors.faint} /> : null)}
+      {right ?? (onPress ? <ChevronRight size={17} strokeWidth={2.2} color={colors.faint} /> : null)}
     </Row>
   );
 
@@ -700,6 +430,7 @@ export function IconButton({
     <PressableScale
       onPress={onPress}
       accessibilityRole="button"
+      // Phase 4: kleine Icon-Buttons halten per hitSlop die 44-px-Regel ein.
       hitSlop={touchSlopFor(size)}
       style={{ width: size, height: size }}
       scale={0.92}
@@ -714,7 +445,7 @@ export function IconButton({
   );
 }
 
-/* ------------------------------------------------------------------ Sheet & Modal */
+/* ------------------------------------------------------------------ Sheet */
 
 export function Sheet({
   open,
@@ -730,6 +461,7 @@ export function Sheet({
   const layout = useLayout();
 
   if (layout.isDesktop || layout.isTablet) {
+    // Großer Screen ⇒ zentrierter Dialog statt Bottom-Sheet.
     return (
       <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
         <View className="flex-1 items-center justify-center bg-black/45 p-6">
@@ -774,12 +506,57 @@ export function Sheet({
   );
 }
 
-/* ------------------------------------------------------------------ Action Buttons & Avatars */
+/* ------------------------------------------------------------------ Bento (Phase 2) */
 
+/**
+ * Kompatibler Name für bestehende Bento-Aufrufe: Light-Töne werden im Dark
+ * Theme automatisch in ihre definierte neue Ableitung überführt.
+ */
 export function resolveTone(tone?: string, isDark = false): string | undefined {
   return tone ? resolveThemeColor(tone, isDark) : undefined;
 }
 
+/**
+ * Status-Pill — farbige, runde Markierung für Metadaten wie „Fällig morgen“,
+ * „Raum“ oder „Vertretung“. Charcoal, Amber und Lime stehen als Varianten
+ * bereit; Fach- und Semantikfarben können weiterhin explizit übergeben werden.
+ */
+export function Pill({
+  label,
+  color,
+  variant = 'amber',
+  tone = 'tint',
+  className = '',
+}: {
+  label: string;
+  color?: string;
+  variant?: ChipVariant;
+  tone?: 'tint' | 'solid' | 'outline';
+  className?: string;
+}) {
+  const { colors, isDark } = useThemeColors();
+  const base = resolveThemeColor(color ?? variantColor(variant, colors), isDark);
+  const style: ViewStyle =
+    tone === 'solid'
+      ? { backgroundColor: base }
+      : tone === 'outline'
+        ? { borderWidth: 1, borderColor: base, backgroundColor: 'transparent' }
+        : { backgroundColor: tint(base, 0.14) };
+
+  return (
+    <View style={style} className={`flex-row items-center rounded-full px-3 py-1.5 ${className}`}>
+      <Text
+        className="flex-shrink text-[11px] font-extrabold"
+        style={{ color: tone === 'solid' ? foregroundOn(base, colors) : base }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/** Runde Action-Ecke: 44×44, klarer Charcoal-Kontrast statt pastelliger Blase. */
 export function RoundActionButton({
   onPress,
   icon: IconComponent = ArrowUpRight,
@@ -819,7 +596,7 @@ export function RoundActionButton({
         elevation: 4,
       }}
     >
-      <IconComponent size={Math.round(size * 0.42)} strokeWidth={2.4} color={resolvedColor} />
+      <IconComponent size={Math.round(size * 0.42)} strokeWidth={2.2} color={resolvedColor} />
     </PressableScale>
   );
 }
@@ -833,9 +610,10 @@ function initialsOf(name: string) {
     .join('');
 }
 
+/** Überlappende Avatare mit Oberflächen-Ring (marginRight: -8) — für Gruppen/Kurse. */
 export function AvatarStack({
   items,
-  size = 32,
+  size = 30,
   ring,
 }: {
   items: { name: string; color: string }[];
@@ -878,7 +656,8 @@ export function AvatarStack({
 }
 
 /**
- * Bento-Kachel: Kompatibler Wrapper um ColorBlockCard.
+ * Bento-Kachel: große, klare Formkarte (24–28 px), optionaler Farbblock und
+ * dezenter Schatten. Ohne `tone` ist sie immer eine Reinweiß-/Surface-Karte.
  */
 export function BentoCard({
   children,
@@ -897,22 +676,43 @@ export function BentoCard({
   radius?: number;
   padded?: boolean;
 }) {
-  return (
-    <ColorBlockCard
-      color={tone}
-      tone={tone ? 'solid' : 'surface'}
-      onPress={onPress}
-      radius={cardRadius}
-      padded={padded}
-      className={className}
-      style={style}
+  const { colors, isDark } = useThemeColors();
+  const resolvedTone = resolveTone(tone, isDark);
+
+  const boxStyle: ViewStyle = {
+    borderRadius: cardRadius,
+    overflow: 'hidden',
+    ...shadow.card,
+    borderWidth: resolvedTone ? 0 : 1,
+    borderColor: colors.line,
+    ...(resolvedTone ? { backgroundColor: resolvedTone } : {}),
+  };
+  const inner = (
+    <View
       {...rest}
+      style={[boxStyle, style]}
+      className={`bg-surface ${padded ? 'p-5' : ''} ${className}`}
     >
       {children}
-    </ColorBlockCard>
+    </View>
+  );
+
+  if (!onPress) return inner;
+
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      scale={0.97}
+      hoverScale={1.008}
+      style={{ borderRadius: cardRadius }}
+    >
+      {inner}
+    </PressableScale>
   );
 }
 
+/** Einfacher Raster-Wrapper mit einheitlichem Abstand (flex-row + wrap). */
 export function BentoGrid({
   children,
   gap = 14,

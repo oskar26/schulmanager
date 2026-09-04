@@ -16,8 +16,8 @@ import { PressableScale } from '@/ui/motion';
 import { hapticLight } from '@/lib/haptics';
 
 /**
- * Icons pro Tab — nur Lucide-Vektoren. Reine Icons ohne Text-Labels
- * auf der schwebenden Kapsel (schwarze Pill-Nav laut Redesign-Vorgabe).
+ * Icons pro Tab — nur Lucide-Vektoren. Bewusst sparsam: ein Icon, keine Labels
+ * auf der schwebenden Leiste (das Mobile-Hauptziel dieses Designs).
  */
 const ICONS: Record<string, LucideIcon> = {
   index: Home,
@@ -103,7 +103,7 @@ function FloatingTabBar({ state, navigation, descriptors, colors }: BottomTabBar
         alignItems: 'center',
       }}
     >
-      {/* Schwebende Kapsel: Charcoal (#18191C), Pill-Form, weicher Schatten */}
+      {/* Schwebende dunkle Kapsel: immer Charcoal, nie lila/pastellig. */}
       <View
         style={{
           flexDirection: 'row',
@@ -111,10 +111,10 @@ function FloatingTabBar({ state, navigation, descriptors, colors }: BottomTabBar
           justifyContent: 'space-around',
           backgroundColor: colors.charcoal,
           borderRadius: 36,
-          paddingVertical: 8,
+          paddingVertical: 10,
           paddingHorizontal: 8,
           shadowColor: colors.charcoal,
-          shadowOpacity: 0.35,
+          shadowOpacity: 0.3,
           shadowRadius: 24,
           shadowOffset: { width: 0, height: 14 },
           elevation: 18,
@@ -160,15 +160,10 @@ function AnimatedTabItem({
   const activeVal = useSharedValue(active ? 1 : 0);
 
   useEffect(() => {
-    activeVal.value = withSpring(active ? 1 : 0, { damping: 18, stiffness: 260 });
+    activeVal.value = withSpring(active ? 1 : 0, { damping: 16, stiffness: 240 });
   }, [active, activeVal]);
 
   const bgStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: activeVal.value }],
-    opacity: activeVal.value,
-  }));
-
-  const dotStyle = useAnimatedStyle(() => ({
     transform: [{ scale: activeVal.value }],
     opacity: activeVal.value,
   }));
@@ -180,7 +175,7 @@ function AnimatedTabItem({
       accessibilityLabel={label}
       onPress={onPress}
       scale={0.92}
-      style={{ alignItems: 'center', justifyContent: 'center', width: 56, height: 52 }}
+      style={{ alignItems: 'center', justifyContent: 'center', width: 56, height: 48 }}
     >
       <View
         style={{
@@ -208,31 +203,17 @@ function AnimatedTabItem({
         />
         <Icon
           size={22}
-          strokeWidth={active ? 2.6 : 2}
+          strokeWidth={active ? 2.5 : 2}
           color={active ? colors.on.charcoal : colors.faint}
         />
       </View>
-
-      {/* Farblicher Akzent-Punkt für den aktiven Tab (Redesign-Spezifikation) */}
-      <Animated.View
-        style={[
-          {
-            width: 4,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: colors.accent.amber,
-            marginTop: 2,
-          },
-          dotStyle,
-        ]}
-      />
 
       {item.badge > 0 ? (
         <View
           style={{
             position: 'absolute',
             top: 2,
-            right: 4,
+            right: 2,
             minWidth: 18,
             height: 18,
             paddingHorizontal: 5,
