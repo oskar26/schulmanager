@@ -544,6 +544,7 @@ function PillBase({
   iconSize = 13,
   textClassName = '',
   className = '',
+  style,
 }: {
   label: string;
   color: string;
@@ -552,11 +553,13 @@ function PillBase({
   iconSize?: number;
   textClassName: string;
   className: string;
+  /** Optionaler Zusatz-Style (z. B. Ring, wenn Pill und Fläche dieselbe Farbe haben). */
+  style?: ViewStyle;
 }) {
   const { colors, isDark } = useThemeColors();
   const base = resolveThemeColor(color, isDark);
   const fg = tone === 'solid' ? foregroundOn(base, colors) : base;
-  const style: ViewStyle =
+  const boxStyle: ViewStyle =
     tone === 'solid'
       ? { backgroundColor: base }
       : tone === 'outline'
@@ -565,7 +568,7 @@ function PillBase({
 
   return (
     <View
-      style={style}
+      style={[boxStyle, style]}
       className={`flex-row items-center gap-1 rounded-[20px] self-start px-3 py-1.5 ${className}`}
     >
       {IconComponent ? <IconComponent size={iconSize} strokeWidth={2.6} color={fg} /> : null}
@@ -587,6 +590,7 @@ export function Chip({
   tone = 'tint',
   icon,
   className = '',
+  style,
 }: {
   label: string;
   color?: string;
@@ -594,6 +598,7 @@ export function Chip({
   tone?: 'tint' | 'solid' | 'outline';
   icon?: LucideIcon;
   className?: string;
+  style?: ViewStyle;
 }) {
   const { colors } = useThemeColors();
   return (
@@ -605,6 +610,7 @@ export function Chip({
       iconSize={12}
       textClassName="text-[11.5px]"
       className={`px-2.5 py-1 ${className}`}
+      style={style}
     />
   );
 }
@@ -872,6 +878,7 @@ export function Pill({
   tone = 'tint',
   icon,
   className = '',
+  style,
 }: {
   label: string;
   color?: string;
@@ -879,6 +886,7 @@ export function Pill({
   tone?: 'tint' | 'solid' | 'outline';
   icon?: LucideIcon;
   className?: string;
+  style?: ViewStyle;
 }) {
   const { colors } = useThemeColors();
   return (
@@ -890,6 +898,7 @@ export function Pill({
       iconSize={13}
       textClassName="text-[13px]"
       className={className}
+      style={style}
     />
   );
 }
