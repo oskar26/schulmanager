@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import {
   AlertTriangle,
   Ban,
@@ -8,7 +8,6 @@ import {
   Clock,
   MapPin,
   MoveRight,
-  Sun,
   UserCheck,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -380,8 +379,7 @@ function DayList({
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {lessons.length === 0 ? (
           <EmptyState
-            icon={Sun}
-            iconColor={colors.accent.violet}
+            illustration="free-day"
             title="Kein Unterricht"
             hint={isToday ? 'Heute ist nichts eingetragen. Genieß den Tag.' : 'Für diesen Tag ist nichts eingetragen.'}
           />
@@ -434,25 +432,27 @@ function LessonBlockCard({
         : null;
 
   return (
-    <Pressable onPress={onPress} className="active:opacity-80" accessibilityRole="button">
-      {/* Vollflächige Farbblock-Karte in Fachfarbe — kein Rand, kein linker Streifen.
-          Entfall als Coral-Block, damit der freie Tag auf den ersten Blick klar ist. */}
-      <ColorBlockCard
-        color={blockColor}
-        dim={past && !running && !cancelled}
-        radius={28}
-        style={{ padding: compact ? 12 : 14 }}
-      >
-        <BlockCardContent
-          lesson={lesson}
-          displaySubject={displaySubject}
-          SubjectIcon={SubjectIcon}
-          state={state}
-          running={running}
-          compact={compact}
-        />
-      </ColorBlockCard>
-    </Pressable>
+    /* Vollflächige Farbblock-Karte in Fachfarbe — kein Rand, kein linker Streifen.
+       Entfall als Coral-Block, damit der freie Tag auf den ersten Blick klar ist.
+       Der Press-Scale kommt aus `ColorBlockCard` selbst (Phase 9: eine einzige
+       Press-Interaktion pro Karte statt verschachtelter Pressables). */
+    <ColorBlockCard
+      color={blockColor}
+      onPress={onPress}
+      accessibilityLabel={`${displaySubject}, ${lesson.start} Uhr`}
+      dim={past && !running && !cancelled}
+      radius={28}
+      style={{ padding: compact ? 12 : 14 }}
+    >
+      <BlockCardContent
+        lesson={lesson}
+        displaySubject={displaySubject}
+        SubjectIcon={SubjectIcon}
+        state={state}
+        running={running}
+        compact={compact}
+      />
+    </ColorBlockCard>
   );
 }
 

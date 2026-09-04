@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Search, SearchX, X } from 'lucide-react-native';
+import { ChevronRight, Search, X } from 'lucide-react-native';
 
 import { de } from '@/features/grades/calculator';
 import { useModuleActive, useSnapshot } from '@/data/queries';
@@ -9,7 +9,8 @@ import { subjectStyle, tint } from '@/design/subjects';
 import { formatRelativeDay } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { Card, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
-import { FadeInUp } from '@/ui/motion';
+import { shadow } from '@/design/tokens';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
 import { isMainTabHref, useSafeBack } from '@/ui/navigation';
 
@@ -156,7 +157,7 @@ export default function SearchScreen() {
     <Screen adaptive="narrow">
       <Row className="gap-2 px-4 pb-3 pt-2">
         <IconButton icon={X} onPress={() => dismiss()} size={36} />
-        <View className="flex-1 flex-row items-center rounded-2xl border border-line bg-surface px-3">
+        <View className="flex-1 flex-row items-center rounded-[20px] bg-surface px-3" style={shadow.card}>
           <Search size={17} strokeWidth={2} color={colors.faint} />
           <TextInput
             value={query}
@@ -175,25 +176,25 @@ export default function SearchScreen() {
             <Title className="mb-2 text-[16px]">Vorschläge</Title>
             <Row className="flex-wrap gap-2">
               {suggestions.map((item) => (
-                <Pressable
+                <PressableOpacity
                   key={item}
                   onPress={() => setQuery(item)}
-                  className="rounded-full bg-line/60 px-3 py-2 hover:bg-line active:opacity-70"
+                  className="rounded-full bg-line/60 px-3 py-2 hover:bg-line"
                   hitSlop={8}
                   accessibilityRole="button"
                 >
                   <Text className="text-[13px] font-semibold text-muted">{item}</Text>
-                </Pressable>
+                </PressableOpacity>
               ))}
             </Row>
-            <EmptyState icon={Search} iconColor={colors.accent.violet} title="Alles auf einmal durchsuchen" hint="Stundenplan, Aufgaben, Noten, Briefe, Nachrichten, Termine und Aushänge." />
+            <EmptyState illustration="search" title="Alles auf einmal durchsuchen" hint="Stundenplan, Aufgaben, Noten, Briefe, Nachrichten, Termine und Aushänge." />
           </>
         ) : hits.length === 0 ? (
-          <EmptyState icon={SearchX} iconColor={colors.danger} title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
+          <EmptyState illustration="no-results" title="Nichts gefunden" hint={`Keine Treffer für „${query}".`} />
         ) : (
           hits.map((hit, index) => (
             <FadeInUp key={hit.id} delay={Math.min(index, 8) * 30}>
-              <Pressable
+              <PressableScale
                 onPress={() => {
                   if (!hit.href) return;
                   // Tab-Treffer aktivieren die bereits gemountete Tab-Route;
@@ -201,13 +202,13 @@ export default function SearchScreen() {
                   if (isMainTabHref(hit.href)) router.navigate(hit.href as never);
                   else router.push(hit.href as never);
                 }}
-                className="mb-2 hover:opacity-90 active:opacity-80"
+                className="mb-2"
                 accessibilityRole="button"
               >
               <Card>
                 <Row className="gap-3">
                   <View
-                    className="h-9 w-9 items-center justify-center rounded-xl"
+                    className="h-9 w-9 items-center justify-center rounded-full"
                     style={{ backgroundColor: tint(hit.color, 0.16) }}
                   >
                     <Text className="text-[10px] font-bold" style={{ color: hit.color }}>
@@ -225,7 +226,7 @@ export default function SearchScreen() {
                   <ChevronRight size={15} strokeWidth={2} color={colors.faint} />
                 </Row>
               </Card>
-              </Pressable>
+              </PressableScale>
             </FadeInUp>
           ))
         )}

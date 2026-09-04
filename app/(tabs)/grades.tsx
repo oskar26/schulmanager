@@ -3,7 +3,6 @@ import { ScrollView, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import {
   Calculator,
-  Lock,
   Minus,
   Sparkles,
   TrendingDown,
@@ -144,8 +143,7 @@ export default function GradesScreen() {
           </View>
         ) : subjects.length === 0 ? (
           <EmptyState
-            icon={Lock}
-            iconColor={colors.accent.violet}
+            illustration="locked"
             title="Keine Noten sichtbar"
             hint="Ob Familien Noten sehen dürfen, entscheidet die Schule im Modul „Noten“."
           />
@@ -447,7 +445,6 @@ function SubjectSheet({
   const tone = subjectColor(subject.subject, isDark);
   const ink = foregroundOn(tone, colors);
   const SubjectIcon = subjectIcon(subject.subject);
-  const color = gradeColor(subject.average, subject.gradingSystem);
   const required = requiredGrade(subject, target);
   const preview = simulated != null ? simulate(subject, simulated) : null;
   const targets = subject.gradingSystem === 1 ? [15, 12, 10, 8] : [1, 1.5, 2, 2.5, 3];
@@ -513,7 +510,7 @@ function SubjectSheet({
             Einzelnoten
           </Text>
           {subject.grades.length === 0 ? (
-            <EmptyState icon={Sparkles} iconColor={tone} title="Noch keine Note" />
+            <EmptyState illustration="no-grades" title="Noch keine Note" hint="Sobald eine Note eingetragen ist, erscheint sie hier." />
           ) : (
             subject.grades.map((grade, index) => (
               <View key={grade.id}>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeBack } from '@/ui/navigation';
-import { ChevronDown, ChevronUp, Vote, X } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, X } from 'lucide-react-native';
 
 import type { Elective, Election } from '@/api/types';
 import { useSavePriorities, useSnapshot } from '@/data/queries';
@@ -73,8 +73,7 @@ export default function ElectivesScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {elections.length === 0 ? (
           <EmptyState
-            icon={Vote}
-            iconColor={colors.accent.violet}
+            illustration="nothing-here"
             title="Keine Wahlen offen"
             hint="Wenn deine Schule Wahlfächer anbietet, erscheinen sie hier."
           />
@@ -113,7 +112,7 @@ export default function ElectivesScreen() {
                       {list.map((elective, index) => (
                         <Row key={String(elective.id)} className="gap-2">
                           <View
-                            className={`h-8 w-8 items-center justify-center rounded-xl ${
+                            className={`h-8 w-8 items-center justify-center rounded-full ${
                               index < max ? 'bg-accent-violet' : 'bg-line/50'
                             }`}
                           >

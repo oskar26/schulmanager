@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeBack } from '@/ui/navigation';
-import { ArrowUp, ChevronLeft, ChevronRight, Download, FileText, Folder, FolderOpen } from 'lucide-react-native';
+import { ArrowUp, ChevronLeft, ChevronRight, Download, FileText, Folder } from 'lucide-react-native';
 
 import type { DocumentFolder, SchoolDocument } from '@/api/types';
 import { useSession } from '@/state/session';
@@ -10,7 +10,7 @@ import { formatDay } from '@/lib/date';
 import { htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, Divider, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 
@@ -126,8 +126,7 @@ export default function DocumentsScreen() {
           </View>
         ) : folders.length === 0 && documents.length === 0 ? (
           <EmptyState
-            icon={FolderOpen}
-            iconColor={colors.accent.amber}
+            illustration="empty-folder"
             title="Kein Inhalt"
             hint="Dieser Ordner ist leer — oder das Modul „Dokumente“ ist nicht gebucht."
           />
@@ -195,7 +194,7 @@ function PressableList({
   const { colors } = useThemeColors();
   return (
     <View>
-      <Pressable
+      <PressableOpacity
         onPress={onPress}
         className="hover:bg-line/30"
         android_ripple={{ color: tint(colors.accent.violet, 0.10) }}
@@ -211,7 +210,7 @@ function PressableList({
           </View>
           {right}
         </View>
-      </Pressable>
+      </PressableOpacity>
     </View>
   );
 }

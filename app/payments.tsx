@@ -1,11 +1,25 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeBack } from '@/ui/navigation';
-import { Check, ChevronLeft, Info, Receipt, Tag } from 'lucide-react-native';
+import { Check, ChevronLeft, Info, Tag } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { formatDay } from '@/lib/date';
-import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, SectionHeader, Title } from '@/ui/primitives';
+import {
+  BlockCaption,
+  BlockText,
+  Card,
+  Chip,
+  ColorBlockCard,
+  Divider,
+  EmptyState,
+  IconButton,
+  Muted,
+  Row,
+  Screen,
+  SectionHeader,
+  Title,
+} from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
 
@@ -35,25 +49,30 @@ export default function PaymentsScreen() {
       </Row>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
+        {/* Offener Betrag als Amber-Farbfläche statt weißer Karte mit Warnrand
+            (Kernprinzip 1: Farbflächen statt Umrandungen). */}
         {open.length > 0 ? (
-          <Card className="mb-3 border border-warning/40">
+          <ColorBlockCard color={colors.blocks.amber} className="mb-3" elevated>
             <Row className="justify-between">
               <View>
-                <Text className="text-[13px] font-bold text-ink">Offener Betrag</Text>
-                <Muted className="text-[11px]">{open.length} {open.length === 1 ? 'Rechnung' : 'Rechnungen'}</Muted>
+                <BlockText className="text-[13px] font-extrabold">Offener Betrag</BlockText>
+                <BlockCaption className="text-[11px]">
+                  {open.length} {open.length === 1 ? 'Rechnung' : 'Rechnungen'}
+                </BlockCaption>
               </View>
-              <Text className="text-[24px] font-extrabold text-warning">{eur(openSum)}</Text>
+              <BlockText className="text-[30px] font-extrabold leading-[34px] tracking-[-0.8px]">
+                {eur(openSum)}
+              </BlockText>
             </Row>
-            <Muted className="mt-2 text-[12px]">
+            <BlockCaption className="mt-2 text-[12px]">
               Bezahlt wird direkt bei der Schule (Überweisung mit dem Verwendungszweck der Rechnung).
-            </Muted>
-          </Card>
+            </BlockCaption>
+          </ColorBlockCard>
         ) : null}
 
         {invoices.length === 0 ? (
           <EmptyState
-            icon={Receipt}
-            iconColor={colors.success}
+            illustration="all-done"
             title="Keine Rechnungen"
             hint="Entweder ist alles bezahlt — oder das Modul „Zahlungen“ ist nicht gebucht."
           />
@@ -86,7 +105,9 @@ export default function PaymentsScreen() {
                   </View>
                 </Row>
                 {invoice.number != null || invoice.items.length > 0 ? (
-                  <View className="border-t border-line px-4 py-2.5">
+                  <>
+                  <Divider />
+                  <View className="px-4 py-2.5">
                     {invoice.number != null ? (
                       <Row className="gap-1.5">
                         <Tag size={13} strokeWidth={2} color={colors.faint} />
@@ -110,6 +131,7 @@ export default function PaymentsScreen() {
                       </Row>
                     ))}
                   </View>
+                  </>
                 ) : null}
               </Card>
             </FadeInUp>

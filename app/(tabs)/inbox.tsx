@@ -1,14 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AlertCircle,
   CheckCheck,
   Download,
-  Inbox,
   MailOpen,
   MapPin,
-  MessagesSquare,
   Paperclip,
 } from 'lucide-react-native';
 
@@ -50,14 +48,14 @@ import {
 } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { ErrorBoundary } from '@/ui/error-boundary';
 
 type Tab = 'letters' | 'messages' | 'board';
 
 export default function InboxScreen() {
-  const { colors, isDark } = useThemeColors();
+  const { isDark } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const reserve = useTabNavReserve();
   const [tab, setTab] = useState<Tab>('letters');
@@ -115,14 +113,13 @@ export default function InboxScreen() {
           </View>
         ) : tabs.length === 0 ? (
           <EmptyState
-            icon={Inbox}
-            iconColor={colors.blocks.violet}
+            illustration="locked"
             title="Postfach nicht gebucht"
             hint="Deine Schule hat weder Elternbriefe, Nachrichten noch Aushänge freigeschaltet."
           />
         ) : activeTab === 'letters' ? (
           data.letters.length === 0 ? (
-            <EmptyState icon={MailOpen} iconColor={colors.blocks.lavender} title="Keine Elternbriefe" />
+            <EmptyState illustration="empty-inbox" title="Keine Elternbriefe" hint="Neue Briefe deiner Schule landen hier." />
           ) : (
             data.letters.map((item, index) => (
               <LetterCard
@@ -139,8 +136,7 @@ export default function InboxScreen() {
         ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
             <EmptyState
-              icon={MessagesSquare}
-              iconColor={colors.blocks.violet}
+              illustration="no-messages"
               title="Keine Nachrichten"
               hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht."
             />
@@ -168,7 +164,7 @@ export default function InboxScreen() {
             ))
           )
         ) : data.tiles.length === 0 ? (
-          <EmptyState icon={MapPin} iconColor={colors.blocks.amber} title="Kein Aushang" />
+          <EmptyState illustration="nothing-here" title="Kein Aushang" hint="Am schwarzen Brett hängt gerade nichts." />
         ) : (
           data.tiles.map((item, index) => (
             <BoardCard
@@ -319,11 +315,11 @@ function LetterCard({
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
       <ColorBlockCard color={tone} className="mb-2.5" padded={false}>
-        <Pressable
+        <PressableOpacity
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel={`Brief öffnen: ${letter.subject}`}
-          className="px-4 pb-3.5 pt-4 hover:opacity-90 active:opacity-80"
+          className="px-4 pb-3.5 pt-4"
         >
           <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
             <IconBadge icon={StatusIcon} color={ink} tone="tint" size="lg" />
@@ -350,7 +346,7 @@ function LetterCard({
               </Row>
             </View>
           </Row>
-        </Pressable>
+        </PressableOpacity>
 
         {/* Action-Zeile: Brief direkt bestätigen, ohne ihn zu öffnen */}
         {needsAction ? (
@@ -400,7 +396,6 @@ function ThreadCard({ thread, index, onOpen }: { thread: MessageThread; index: n
 
   if (unread) {
     const tone = resolveThemeColor(colors.blocks.charcoal, isDark);
-    const ink = foregroundOn(tone, colors);
     return (
       <FadeInUp delay={Math.min(index, 8) * 30}>
         <ColorBlockCard
@@ -451,11 +446,13 @@ function ThreadCard({ thread, index, onOpen }: { thread: MessageThread; index: n
 
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
-      <Pressable
+      <PressableScale
         onPress={open}
         accessibilityRole="button"
         accessibilityLabel={`Nachricht von ${thread.sender || 'Schule'} öffnen`}
-        className="mb-2.5 hover:opacity-90 active:opacity-80"
+        scale={0.98}
+        hoverScale={1.008}
+        className="mb-2.5"
       >
         <Card style={{ padding: 16 }} padded={false}>
           <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
@@ -488,7 +485,7 @@ function ThreadCard({ thread, index, onOpen }: { thread: MessageThread; index: n
             </View>
           </Row>
         </Card>
-      </Pressable>
+      </PressableScale>
     </FadeInUp>
   );
 }
@@ -604,7 +601,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                       {question.options?.map((option) => {
                         const active = answers[String(question.id)] === option;
                         return (
-                          <Pressable
+                          <PressableOpacity
                             key={String(option) + qIndex}
                             onPress={() => {
                               hapticLight();
@@ -612,7 +609,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                             }}
                             accessibilityRole="button"
                             accessibilityState={{ selected: active }}
-                            className="min-h-[48px] justify-center rounded-[20px] px-4 py-2.5 hover:opacity-90 active:opacity-80"
+                            className="min-h-[48px] justify-center rounded-[20px] px-4 py-2.5"
                             style={{
                               backgroundColor: active
                                 ? resolveThemeColor(colors.blocks.amber, isDark)
@@ -625,7 +622,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                             >
                               {option}
                             </Text>
-                          </Pressable>
+                          </PressableOpacity>
                         );
                       })}
                     </View>
@@ -644,7 +641,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
             <Card padded={false}>
               {attachments.map((file, index) => (
                 <View key={String(file.id)}>
-                  <Pressable
+                  <PressableOpacity
                     onPress={() => void download(file)}
                     disabled={Boolean(downloading)}
                     accessibilityRole="button"
@@ -663,7 +660,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                         <Download size={18} strokeWidth={2.2} color={colors.faint} />
                       )}
                     </Row>
-                  </Pressable>
+                  </PressableOpacity>
                   {index < attachments.length - 1 ? <Divider className="ml-16" /> : null}
                 </View>
               ))}

@@ -1,7 +1,7 @@
 import '../global.css';
 
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Platform, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { AppState, Platform, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
@@ -25,6 +25,7 @@ import { useIslandState } from '@/features/island/use-island';
 import { useLiveIslandEffects } from '@/features/island/effects';
 import { ErrorBoundary as ScreenErrorBoundary } from '@/ui/error-boundary';
 import { LockGate } from '@/ui/lock-gate';
+import { PressableScale } from '@/ui/motion';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -195,14 +196,15 @@ export function ErrorBoundary(props: { error: Error; retry: () => void }) {
       <ScrollView style={{ maxHeight: 96, marginTop: 14, backgroundColor: colors.surface, borderRadius: 16, padding: 12 }}>
         <Text style={{ fontSize: 11, color: colors.muted }}>{props.error?.message}</Text>
       </ScrollView>
-      <Pressable
+      <PressableScale
         onPress={props.retry}
         accessibilityRole="button"
-        className="hover:opacity-90 active:opacity-80"
+        scale={0.97}
+        hoverScale={1.01}
         style={{ marginTop: 20, backgroundColor: colors.accent.amber, borderRadius: 999, paddingHorizontal: 26, paddingVertical: 13 }}
       >
         <Text style={{ fontSize: 15, fontWeight: '700', color: colors.on.amber }}>Neu versuchen</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

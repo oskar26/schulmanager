@@ -6,12 +6,13 @@
  * liegen darunter unlesbar hinter einer Vollbild-Abdeckung.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { AppState, Platform, Pressable, Text, View } from 'react-native';
+import { AppState, Platform, Text, View } from 'react-native';
 import { Lock as LockIcon } from 'lucide-react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 import { useSettings } from '@/state/settings';
 import { palette } from '@/design/tokens';
+import { PressableScale } from '@/ui/motion';
 
 export function LockGate({ children }: { children: React.ReactNode }) {
   const requireBiometrics = useSettings((state) => state.settings.requireBiometrics);
@@ -69,7 +70,7 @@ export function LockGate({ children }: { children: React.ReactNode }) {
 
   return (
     <View className="flex-1 items-center justify-center bg-canvas px-8">
-      <View className="h-20 w-20 items-center justify-center rounded-[26px] bg-charcoal">
+      <View className="h-20 w-20 items-center justify-center rounded-full bg-charcoal">
         <LockIcon color={palette.on.charcoal} size={32} />
       </View>
       <Text className="mt-4 text-[20px] font-bold tracking-tight text-ink">Gesichert</Text>
@@ -80,9 +81,14 @@ export function LockGate({ children }: { children: React.ReactNode }) {
             : 'Entsperre Schulflow mit Fingerabdruck oder Gesicht.'
           : 'Biometrie ist auf diesem Gerät nicht eingerichtet. Du kannst die Sperre in den Einstellungen deaktivieren.'}
       </Text>
-      <Pressable onPress={() => void authenticate()} className="mt-5 rounded-2xl bg-accent-amber px-6 py-3.5 hover:opacity-90 active:opacity-80">
+      <PressableScale
+        onPress={() => void authenticate()}
+        scale={0.97}
+        hoverScale={1.01}
+        className="mt-5 rounded-full bg-accent-amber px-6 py-3.5"
+      >
         <Text className="text-[15px] font-bold text-on-amber">Entsperren</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

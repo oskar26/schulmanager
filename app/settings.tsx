@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeBack } from '@/ui/navigation';
 import {
   AlertTriangle,
@@ -51,6 +51,7 @@ import { DEFAULT_SETTINGS, WIDGET_META, useSettings, type WidgetId } from '@/sta
 import { useThemeColors } from '@/design/theme';
 import { foregroundOn, resolveThemeColor } from '@/design/tokens';
 import { tint } from '@/design/subjects';
+import { PressableOpacity } from '@/ui/motion';
 
 /* ------------------------------------------------------------------ Bausteine (Phase 8) */
 
@@ -154,9 +155,9 @@ function InfoRow({
   );
   if (!onPress) return content;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" className="hover:bg-line/40 active:bg-line/60">
+    <PressableOpacity onPress={onPress} accessibilityRole="button" className="hover:bg-line/40 active:bg-line/60">
       {content}
-    </Pressable>
+    </PressableOpacity>
   );
 }
 
@@ -335,7 +336,7 @@ export default function SettingsScreen() {
               accessibilityLabel="Passwort"
               className={`${inputClass} pr-14`}
             />
-            <Pressable
+            <PressableOpacity
               onPress={() => setShowPassword((value) => !value)}
               className="absolute right-3 top-2.5"
               hitSlop={12}
@@ -347,7 +348,7 @@ export default function SettingsScreen() {
               ) : (
                 <Eye size={20} strokeWidth={2.2} color={colors.faint} />
               )}
-            </Pressable>
+            </PressableOpacity>
           </View>
 
           {twoFactor ? (
@@ -371,17 +372,17 @@ export default function SettingsScreen() {
             <View className="mt-3 gap-2">
               <Muted className="text-[12px]">Mehrere Konten gefunden — bitte auswählen:</Muted>
               {accountChoices.map((account) => (
-                <Pressable
+                <PressableOpacity
                   key={String(account.userId)}
                   onPress={() => void connect(email, password, { userId: account.userId })}
                   accessibilityRole="button"
-                  className="min-h-[56px] justify-center rounded-[20px] bg-canvas px-4 py-3 hover:opacity-90 active:opacity-80"
+                  className="min-h-[56px] justify-center rounded-[20px] bg-canvas px-4 py-3"
                 >
                   <Text className="text-[14.5px] font-bold text-ink">
                     {account.firstname} {account.lastname}
                   </Text>
                   <Muted className="text-[12px]">{account.institutionName}</Muted>
-                </Pressable>
+                </PressableOpacity>
               ))}
             </View>
           ) : null}

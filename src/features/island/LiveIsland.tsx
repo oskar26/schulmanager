@@ -10,7 +10,7 @@
  * mit Countdown, sobald sie ≤ 60 Minuten weg ist. Antippen klappt Details auf.
  */
 import React, { useEffect, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +22,7 @@ import { useLayout } from '@/lib/breakpoints';
 import { tint } from '@/design/subjects';
 import { foregroundOn } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
-import { LivePulse } from '@/ui/motion';
+import { LivePulse, PressableOpacity, PressableScale } from '@/ui/motion';
 
 
 export function LiveIsland({ state }: { state: IslandState | null }) {
@@ -77,11 +77,12 @@ function IslandPill({
   const urgent = state.kind === 'break' || state.kind === 'before-school';
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onToggle}
       accessibilityRole="button"
       accessibilityLabel={`${state.title}, ${state.statusLabel}`}
-      className="active:opacity-90"
+      scale={0.97}
+      hoverScale={1.01}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -164,7 +165,7 @@ function IslandPill({
         {state.statusLabel.split('·')[0].trim()}
       </Text>
       <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={13} color={islandSub} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -215,9 +216,9 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
             {lesson.hour}. Stunde · {lesson.start}–{lesson.end} Uhr
           </Text>
         </View>
-        <Pressable onPress={onClose} hitSlop={13} accessibilityLabel="Zuklappen">
+        <PressableOpacity onPress={onClose} hitSlop={13} accessibilityLabel="Zuklappen">
           <Ionicons name="close" size={18} color={islandSub} />
-        </Pressable>
+        </PressableOpacity>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
@@ -266,7 +267,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
         />
       </View>
 
-      <Pressable
+      <PressableScale
         onPress={() => {
           hapticLight();
           onClose();
@@ -274,7 +275,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
           // erzeugen: Rückweg und Scrollposition des Stundenplans bleiben intakt.
           router.navigate('/timetable');
         }}
-        className="active:opacity-85"
+        scale={0.97}
         style={{
           marginTop: 14,
           backgroundColor: tint(colors.on.charcoal, 0.10),
@@ -288,7 +289,7 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
       >
         <Ionicons name="calendar-outline" size={14} color={islandText} />
         <Text style={{ color: islandText, fontSize: 12.5, fontWeight: '800' }}>Stundenplan öffnen</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

@@ -6,7 +6,7 @@
  * Store; dieses Modul entscheidet ausschließlich über die Darstellung.
  */
 import React, { useMemo } from 'react';
-import { Pressable, View, type ViewStyle } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AlertTriangle,
@@ -25,7 +25,6 @@ import {
   ListChecks,
   Mail,
   MapPin,
-  PartyPopper,
   Plane,
   Search,
   ShoppingBag,
@@ -35,7 +34,6 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react-native';
-import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 import type { Lesson, Snapshot } from '@/api/types';
 import { useHomeworkDone, useModuleActive } from '@/data/queries';
@@ -50,7 +48,7 @@ import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
 import { Progress } from '@/ui/gluestack/feedback';
 import { isMainTabHref } from '@/ui/navigation';
-import { LivePulse, PressableOpacity } from '@/ui/motion';
+import { LivePulse, PressableOpacity, PressableScale } from '@/ui/motion';
 import {
   Badge,
   BlockCaption,
@@ -137,30 +135,6 @@ function InkPill({ label, icon, className = '' }: { label: string; icon?: Lucide
   return <Pill label={label} color={ink} tone="tint" icon={icon} className={className} />;
 }
 
-/** Kleine, emoji-freie SVG für schulfreie Tage. */
-function NoLessonsIllustration() {
-  const ink = useBlockInk();
-  const soft = tint(ink, 0.13);
-  const softer = tint(ink, 0.08);
-
-  return (
-    <View style={{ width: 126, height: 88, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={126} height={88} viewBox="0 0 126 88" accessible={false}>
-        <Circle cx="21" cy="19" r="11" fill={soft} />
-        <Line x1="21" y1="2" x2="21" y2="7" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Line x1="4" y1="19" x2="9" y2="19" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Line x1="33" y1="7" x2="37" y2="3" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Rect x="39" y="26" width="54" height="43" rx="11" fill={softer} stroke={ink} strokeWidth="2.2" />
-        <Path d="M49 38h34M49 47h25M49 56h18" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
-        <Path d="M95 57c8-1 14 4 16 12-8 3-16 0-19-7" fill={soft} stroke={ink} strokeWidth="2.2" strokeLinejoin="round" />
-        <Path d="M93 68c5-5 10-8 16-10" stroke={ink} strokeWidth="2" strokeLinecap="round" />
-        <Circle cx="105" cy="24" r="3" fill={ink} opacity="0.72" />
-        <Circle cx="114" cy="34" r="2" fill={ink} opacity="0.42" />
-      </Svg>
-    </View>
-  );
-}
-
 /* ------------------------------------------------------------------ Nächste Stunde */
 
 export function NextLessonWidget({ snapshot }: WidgetProps) {
@@ -174,7 +148,7 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
       <ColorBlockCard color={colors.blocks.sky}>
         <WidgetHeader icon={BookOpen} title="Nächste Stunde" />
         <EmptyState
-          illustration={<NoLessonsIllustration />}
+          illustration="free-day"
           title="Kein Unterricht"
           hint={status.label || 'Genieß den freien Tag.'}
         />
@@ -294,19 +268,21 @@ export function InsightsWidget({ snapshot }: WidgetProps) {
           const content = <InsightPreview icon={Icon} tone={tone} title={insight.title} body={insight.body} actionable={Boolean(insight.action)} />;
 
           return insight.action ? (
-            <Pressable
+            <PressableScale
               key={insight.id}
               onPress={() => {
                 const href = insight.action!.href;
                 if (isMainTabHref(href)) router.navigate(href as never);
                 else router.push(href as never);
               }}
-              className="rounded-[20px] active:opacity-75"
+              scale={0.98}
+              hoverScale={1.008}
+              style={{ borderRadius: radius.chip }}
               accessibilityRole="button"
               accessibilityLabel={insight.action.label}
             >
               {content}
-            </Pressable>
+            </PressableScale>
           ) : (
             <View key={insight.id}>{content}</View>
           );
@@ -363,7 +339,7 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
       <ColorBlockCard color={colors.blocks.teal}>
         <WidgetHeader icon={CalendarDays} title="Stundenplan" />
         <EmptyState
-          illustration={<NoLessonsIllustration />}
+          illustration="free-day"
           title="Kein Unterricht"
           hint="Genieß den freien Tag."
         />
@@ -408,12 +384,13 @@ function TimelineLesson({
   const cancelled = lesson.state === 'cancelled';
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      className="rounded-[20px] active:opacity-75"
+      scale={0.98}
+      hoverScale={1.008}
       accessibilityRole="button"
       accessibilityLabel={`${lesson.subject}, ${lesson.start} Uhr`}
-      style={{ opacity: past ? 0.58 : 1 }}
+      style={{ opacity: past ? 0.58 : 1, borderRadius: radius.chip }}
     >
       <BlockInset style={{ backgroundColor: tint(ink, running ? 0.18 : 0.1) }} className="px-3 py-3">
         <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
@@ -446,7 +423,7 @@ function TimelineLesson({
           </View>
         </Row>
       </BlockInset>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -470,7 +447,7 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
         </View>
       ) : null}
       {open.length === 0 ? (
-        <EmptyState icon={PartyPopper} iconColor={colors.blocks.violet} title="Nichts offen" hint="Alle Aufgaben erledigt." />
+        <EmptyState illustration="all-done" title="Nichts offen" hint="Alle Aufgaben erledigt." />
       ) : (
         <View className="gap-2 px-5 pb-5">
           {open.map((item) => (
@@ -498,9 +475,11 @@ function HomeworkPreview({
   const dueTone = days <= 0 ? colors.priority.urgent : days === 1 ? colors.priority.soon : colors.priority.ok;
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onToggle}
-      className="rounded-[20px] active:opacity-75"
+      scale={0.98}
+      hoverScale={1.008}
+      style={{ borderRadius: radius.chip }}
       accessibilityRole="button"
       accessibilityLabel={`${item.subject}: als erledigt markieren`}
     >
@@ -517,7 +496,7 @@ function HomeworkPreview({
           <IconBadge icon={CheckCheck} color={ink} size="lg" tone="tint" />
         </Row>
       </BlockInset>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -627,10 +606,12 @@ export function LettersWidget({ snapshot }: WidgetProps) {
       <WidgetHeader icon={Mail} title="Elternbriefe" badge={pending.length} />
       <View className="gap-2 px-5 pb-5">
         {latest.slice(0, 3).map((letter) => (
-          <Pressable
+          <PressableScale
             key={String(letter.id)}
             onPress={() => router.navigate('/inbox')}
-            className="rounded-[20px] active:opacity-75"
+            scale={0.98}
+            hoverScale={1.008}
+            style={{ borderRadius: radius.chip }}
             accessibilityRole="button"
             accessibilityLabel={`Elternbrief: ${letter.subject}`}
           >
@@ -644,7 +625,7 @@ export function LettersWidget({ snapshot }: WidgetProps) {
                 {letter.requiresConfirmation && !letter.confirmed ? <Pill label="Offen" color={colors.priority.urgent} tone="solid" /> : null}
               </Row>
             </BlockInset>
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
     </ColorBlockCard>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeBack } from '@/ui/navigation';
-import { Clock, Sun, X } from 'lucide-react-native';
+import { Clock, X } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { WEEKDAYS } from '@/lib/date';
@@ -41,8 +41,7 @@ export default function AlldayScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {offers.length === 0 ? (
           <EmptyState
-            icon={Sun}
-            iconColor={colors.accent.violet}
+            illustration="no-events"
             title="Keine Betreuungszeiten"
             hint="Entweder nimmt dein Kind nicht am Ganztag teil — oder das Modul ist nicht gebucht."
           />

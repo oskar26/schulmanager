@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -34,6 +33,7 @@ import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useSession } from '@/state/session';
 import { useSettings } from '@/state/settings';
+import { PressableOpacity, PressableScale } from '@/ui/motion';
 
 type SlideAccent = 'violet' | 'lime' | 'amber';
 
@@ -145,7 +145,7 @@ export default function OnboardingScreen() {
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.ink, letterSpacing: -0.3 }}>Schulflow</Text>
             </View>
           ) : (
-            <Pressable
+            <PressableOpacity
               onPress={goBack}
               hitSlop={10}
               style={{
@@ -160,7 +160,7 @@ export default function OnboardingScreen() {
               }}
             >
               <ChevronLeft color={colors.muted} size={22} />
-            </Pressable>
+            </PressableOpacity>
           )}
           <View style={{ flexDirection: 'row', gap: 5 }}>
             {[0, 1].map((index) => (
@@ -300,10 +300,12 @@ function WelcomeCTA({ colors, onNext }: { colors: ThemePalette; onNext: () => vo
             Verbinde dein Schulmanager-Konto oder erkunde Schulflow erst einmal mit Beispieldaten.
           </Text>
         </View>
-        <Pressable
+        <PressableScale
           onPress={onNext}
           accessibilityRole="button"
-          style={({ pressed }) => ({
+          scale={0.98}
+          hoverScale={1.01}
+          style={{
             backgroundColor: colors.surface,
             borderRadius: 999,
             paddingVertical: 16,
@@ -312,13 +314,11 @@ function WelcomeCTA({ colors, onNext }: { colors: ThemePalette; onNext: () => vo
             alignItems: 'center',
             justifyContent: 'center',
             gap: 8,
-            opacity: pressed ? 0.85 : 1,
-            transform: [{ scale: pressed ? 0.98 : 1 }],
-          })}
+          }}
         >
           <Text style={{ fontSize: 16, fontWeight: '800', color: colors.charcoal }}>Los geht’s</Text>
           <ArrowRight color={colors.charcoal} size={19} strokeWidth={2.5} />
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );
@@ -372,7 +372,7 @@ function ChoiceCards({ colors, onDemo, setMode }: ChoiceProps) {
       </Text>
 
       {/* Option A: klarer Amber-Hauptblock statt lila Pastell */}
-      <Pressable
+      <PressableOpacity
         onPress={() => setMode('login')}
         accessibilityRole="button"
         style={{ marginTop: 26, borderRadius: 28, backgroundColor: colors.accent.amber, padding: 24 }}
@@ -391,10 +391,10 @@ function ChoiceCards({ colors, onDemo, setMode }: ChoiceProps) {
         <Text style={{ marginTop: 8, fontSize: 14, lineHeight: 21, color: colors.on.amber, opacity: 0.76 }}>
           Zeige deinen echten Stundenplan, deine Aufgaben und Noten. Zugangsdaten bleiben verschlüsselt auf dem Gerät.
         </Text>
-      </Pressable>
+      </PressableOpacity>
 
       {/* Option B: ruhiger Charcoal-Block */}
-      <Pressable
+      <PressableOpacity
         onPress={onDemo}
         accessibilityRole="button"
         style={{ marginTop: 16, borderRadius: 28, backgroundColor: colors.charcoal, padding: 24 }}
@@ -413,7 +413,7 @@ function ChoiceCards({ colors, onDemo, setMode }: ChoiceProps) {
         <Text style={{ marginTop: 8, fontSize: 14, lineHeight: 21, color: colors.on.charcoal, opacity: 0.7 }}>
           Kein Konto nötig — Schulflow wird sofort mit realistischen Beispieldaten gefüllt.
         </Text>
-      </Pressable>
+      </PressableOpacity>
     </>
   );
 }
@@ -473,14 +473,14 @@ function LoginContent(props: ChoiceProps & { connecting: boolean }) {
           autoCapitalize="none"
           style={{ flex: 1, fontSize: 15, color: colors.ink, height: '100%' }}
         />
-        <Pressable
+        <PressableOpacity
           onPress={() => props.setShowPassword(!props.showPassword)}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={props.showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
         >
           {props.showPassword ? <EyeOff size={18} color={colors.muted} /> : <Eye size={18} color={colors.muted} />}
-        </Pressable>
+        </PressableOpacity>
       </View>
 
       {props.twoFactor ? (
@@ -503,14 +503,14 @@ function LoginContent(props: ChoiceProps & { connecting: boolean }) {
         <View style={{ marginTop: 14 }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: colors.muted, marginBottom: 8 }}>Mehrere Konten gefunden — wähle eins:</Text>
           {props.accountChoices.map((account) => (
-            <Pressable
+            <PressableOpacity
               key={String(account.userId)}
               onPress={() => props.onLoginUser(account.userId)}
               style={{ ...inputStyle, justifyContent: 'space-between', marginBottom: 8 }}
             >
               <Text style={{ fontSize: 15, fontWeight: '700', color: colors.ink }}>{`${account.firstname ?? ''} ${account.lastname ?? ''}`.trim()}</Text>
               <Text style={{ fontSize: 12, color: colors.muted }}>{account.institutionName ?? ''}</Text>
-            </Pressable>
+            </PressableOpacity>
           ))}
         </View>
       ) : null}
@@ -521,11 +521,13 @@ function LoginContent(props: ChoiceProps & { connecting: boolean }) {
         </View>
       ) : null}
 
-      <Pressable
+      <PressableScale
         onPress={props.onLogin}
         disabled={disabled}
         accessibilityRole="button"
-        style={({ pressed }) => ({
+        scale={0.98}
+        hoverScale={1.008}
+        style={{
           marginTop: 24,
           borderRadius: 999,
           paddingVertical: 16,
@@ -534,15 +536,13 @@ function LoginContent(props: ChoiceProps & { connecting: boolean }) {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 8,
-          opacity: pressed && !disabled ? 0.85 : 1,
-          transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
-        })}
+        }}
       >
         <Text style={{ fontSize: 16, fontWeight: '800', color: disabled ? colors.faint : colors.on.amber }}>
           {props.connecting ? 'Verbinde …' : 'Verbinden'}
         </Text>
         {!props.connecting ? <ArrowRight color={disabled ? colors.faint : colors.on.amber} size={19} /> : null}
-      </Pressable>
+      </PressableScale>
 
       <Text style={{ marginTop: 20, fontSize: 12, lineHeight: 18, color: colors.muted, textAlign: 'center' }}>
         Daten werden ausschließlich an login.schulmanager-online.de gesendet und nur auf diesem Gerät gespeichert.

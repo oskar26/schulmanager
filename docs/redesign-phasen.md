@@ -11,7 +11,7 @@
 > Typografie, riesige Radien, Icon-Badges, Pill-Tags, schwarze Pill-Nav,
 > weiche Schatten.**
 >
-> Stand: 2026-09-04 · Phasen 1–8 **umgesetzt ✅** (siehe Status je Phase)
+> Stand: 2026-09-04 · **Alle 9 Phasen umgesetzt ✅** (siehe Status je Phase)
 
 ---
 
@@ -657,7 +657,53 @@ Benötigt Phase 1 (IconBadge, ColorBlockCard, SegmentedControl).
 
 ## Phase 9 — Politur & Regression
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- **Illustrations-Bibliothek** `src/ui/illustrations.tsx` (neu): 12 kleine,
+  emoji-freie Inline-SVGs (`free-day`, `all-done`, `empty-inbox`,
+  `no-messages`, `no-grades`, `no-results`, `search`, `empty-folder`,
+  `no-events`, `no-absences`, `locked`, `nothing-here`) auf einheitlicher
+  126×88-Bühne. Sie zeichnen ausschließlich in der Vordergrundfarbe ihrer
+  Umgebung (`ink`-Prop aus `useBlockInk()`) und funktionieren dadurch in Light
+  **und** Dark sowie auf allen 13 Blockfarben — ohne eigene Farbtabelle.
+- **`EmptyState` akzeptiert jetzt einen Illustrationsnamen**
+  (`illustration="all-done"`) statt nur einen SVG-Node und fadet über
+  `FadeInUp` ein. **Alle 24 Leerzustände** der App nutzen Illustration + fette
+  Headline + kurzen Hint; kein Leerzustand ist mehr ein nacktes Icon, jeder hat
+  einen Hint bekommen. Die lokale `NoLessonsIllustration` aus den
+  Dashboard-Widgets ist in die Bibliothek gewandert (`free-day`).
+- **Motion-Konsistenz:** Sämtliche rohen `<Pressable>`-Interaktionen in Screens
+  und Shell laufen jetzt über `PressableScale` (Karten, Nav, Buttons) bzw.
+  `PressableOpacity` (Listenzeilen, Chips, Text-Links, Segmente) — inkl.
+  Dashboard-Insets, Postfach-Karten, Kalender, Suche, Einstellungen,
+  Onboarding, Live-Island, Error-Boundaries und Lock-Gate. Handgeschriebene
+  `active:opacity-*`/`hover:opacity-*`-Klassen und `({ pressed }) => …`-Styles
+  wurden dabei entfernt (Log #19). `<Pressable>` bleibt nur noch für
+  unsichtbare Sheet-/Modal-Backdrops in `primitives.tsx`.
+- **Doppelte Press-Ebenen aufgelöst:** Die Stundenplan-Karte war ein Pressable
+  *um* eine `ColorBlockCard`; sie nutzt jetzt deren eigenen Press-Scale
+  (eine Interaktion pro Karte).
+- **Listen-Einblendungen vervollständigt:** Erledigte Hausaufgaben und
+  Lernplan-Blöcke fehlten in der gestaffelten `FadeInUp`-Sequenz.
+- **Cross-Screen-Audit** (siehe Tabelle unten) durchgezogen: Radien,
+  Schatten, Pill-Stile, Icon-Badges und Typografie überall auf die
+  Kernprinzipien gebracht.
+
+### Audit-Liste (Kernprinzipien-Check über alle Screens)
+
+| # | Prinzip | Befund & Behebung |
+|---|---|---|
+| 1 | Farbflächen statt Umrandungen | Letzte Ränder entfernt: Zahlungen-Hero (`border-warning/40`) ist jetzt eine **Amber-Farbfläche**, seine Zeilentrennung ein gruppeninterner `Divider`; randlose Textareas in Krankmeldung/Beurlaubung; Suchfeld ohne Rand, dafür `shadow.card`; Sprechtags-Lehrerauswahl als gefüllte Pille; `Button`-Variante `surface` ohne Rand. **Kein `border-line` mehr in der gesamten App.** |
+| 2 | Große, fette Überschriften | Unverändert: alle Tab-Screens nutzen `ScreenHeader` (28/800). |
+| 3 | Große Eck-Radien | Sämtliche `rounded-xl/2xl/3xl` (28 Fundstellen) durch Skalenwerte ersetzt: 28 px Karten, 24 px Skeletons, 20 px Insets/Felder/Chips, voll rund bei Icon-Kacheln, `IconButton` und Buttons. Tailwind-Kurzformen kommen im UI nicht mehr vor. |
+| 4 | Riesige Zahl + Caption | Bestandsaufnahme ok; Zahlungen-Hero nutzt jetzt ebenfalls eine große fette Betragszahl. |
+| 5 | Icon-Badges | Letzte handgebaute Icon-Kacheln ersetzt: Fehlzeiten-Liste, Krankmeldung (2×), Beurlaubung, Fehler-/Lock-Screens; Rang-Kreise in Wahlfächern und Trefferkacheln der Suche sind rund statt eckig. |
+| 6 | Pill-/Chip-Tags | Sprechtags-Slots und Konto-Auswahl sind Pillen; keine dünnen Text-Chips mehr. |
+| 7 | Schwarze Pill-Bottom-Nav | Unverändert; Rail/Sidebar-Items animieren jetzt zusätzlich mit Press-Scale. |
+| 8 | Weiche Schatten statt Trennlinien | Nur noch gruppeninterne `Divider` (Einstellungen, Listen, Zahlungen-Positionen). |
+| 9 | Verspielte Illustrationen | 24/24 Leerzustände mit Illustration + Headline + Hint. |
 
 ### Ziel
 
@@ -672,15 +718,32 @@ Cross-Screen-Konsistenz-Check, verbleibende Bugs.
 
 ### Akzeptanzkriterien
 
-- [ ] Jede Karte/Interaktion hat konsistente Press-Scale- und
-      Fade-In-Animationen.
-- [ ] Alle Empty States haben Illustrationen + fette Headline + kurzen Hint.
-- [ ] Cross-Screen-Check: Radius, Schatten, Pill-Stile, Icon-Badges,
-      Typografie überall identisch (Audit-Liste im Doc abgehakt).
-- [ ] Dark-Mode-Audit über alle Screens.
-- [ ] Smoke-Test-Matrix (`npm run smoke:matrix`) grün; `typecheck` grün.
-- [ ] Keine bekannten funktionalen Bugs mehr offen (Liste in
+- [x] Jede Karte/Interaktion hat konsistente Press-Scale- und
+      Fade-In-Animationen (`PressableScale`/`PressableOpacity` überall; nur
+      unsichtbare Modal-Backdrops bleiben rohe Pressables).
+- [x] Alle Empty States haben Illustrationen + fette Headline + kurzen Hint
+      (24/24, zentrale Bibliothek `src/ui/illustrations.tsx`).
+- [x] Cross-Screen-Check: Radius, Schatten, Pill-Stile, Icon-Badges,
+      Typografie überall identisch (Audit-Liste oben abgehakt).
+- [x] Dark-Mode-Audit über alle Screens (17 Routen mit `--dark` grün;
+      Illustrationen erben die kontrastsichere Blockfarbe).
+- [x] Smoke-Test-Matrix (`npm run smoke:matrix`, 17 Routen × 3 Formfaktoren
+      = 51 Kombinationen) grün; `typecheck` grün.
+- [x] Keine bekannten funktionalen Bugs mehr offen (Liste in
       PROJECT_STATUS.md abgearbeitet).
+
+### Behobene Bugs (Phase 9)
+
+- Stundenplan-Karte: verschachtelte Press-Flächen (Pressable um
+  `ColorBlockCard`) — Doppel-Feedback und doppelte a11y-Rolle „button“.
+- Erledigte Hausaufgaben und Lernblöcke sprangen ohne Animation in die Liste,
+  während alle Nachbarlisten gestaffelt einblendeten.
+- Onboarding-Buttons animierten über `({ pressed }) => transform`-Styles am
+  JS-Thread statt über den Reanimated-Motion-Layer.
+- Leerzustände ohne Hint („Keine Elternbriefe“, „Kein Aushang“, „Keine
+  Termine“, „Noch keine Note“) ließen offen, warum die Liste leer ist.
+- Toter Code: unbenutzte `gradeColor`-Berechnung im Noten-Sheet und
+  unbenutzte `ink`-Auflösung in der Thread-Karte.
 
 ### Abhängigkeiten
 
@@ -727,4 +790,5 @@ Phase 9 (Politur) — benötigt 1–8
 | 16 | **Ungelesene Threads sind ein Charcoal-Block, gelesene eine weiße Surface-Karte** | Die Chat-App-Referenz nutzt maximalen Kontrast für „neu“. Charcoal ist die einzige Familie, die in Light und Dark gleich stark „vorne“ steht, ohne mit den Prioritätsfarben (Coral/Amber/Lime) zu kollidieren. |
 | 17 | **Brief-Karten wechseln die Familie nach Status** (Lavendel → Coral offen → Mint bestätigt) statt nur einen Akzent zu setzen | Die Vorgabe nennt Lavendel als Grundfamilie und „Bestätigungspflicht = Coral-Akzent“. Auf einer vollflächigen Karte ist ein Akzent zu leise — der Statuswechsel der *ganzen* Fläche macht offene Aufgaben auf Scroll-Distanz sichtbar und folgt der Ampel-Semantik der App. |
 | 18 | **Einstellungs-Sektionen sind Farbkarten *über* weißen Gruppenkarten**, nicht farbige Karten mit Inhalt darin | Toggle-Zeilen brauchen ruhigen Hintergrund für Lesbarkeit und Switch-Kontrast. Der Farbblock trägt Identität und Icon-Badge, die Gruppe darunter den Inhalt — Divider bleiben so sauber gruppenintern (Kernprinzip 8). |
-
+| 19 | **Rohe `<Pressable>` sind in Screens verboten**; Interaktionen laufen über `PressableScale` (Flächen/Karten/Buttons) oder `PressableOpacity` (Zeilen, Chips, Text-Links). Ausnahme: unsichtbare Modal-/Sheet-Backdrops | Press-Feedback lief bisher teils über NativeWind-Klassen (`active:opacity-*`, nicht animiert, auf Web inkonsistent), teils über Reanimated. Ein Layer bedeutet identisches Timing, Hover-Verhalten auf Web und `disabled`-Handling überall. |
+| 20 | **Illustrationen zeichnen in `useBlockInk()`, nicht in einer eigenen Farbpalette** | Ein Leerzustand kann auf Creme-Canvas *oder* mitten in einer von 13 Blockfarben × Light/Dark stehen. Nur die zugehörige Vordergrundfarbe ist überall garantiert lesbar; Tönungen (13 %/8 %) erzeugen die Flächenwirkung. `illustrations.tsx` importiert deshalb bewusst **nicht** aus `primitives.tsx` (Zyklus-frei) und bekommt `ink` als Prop. |
