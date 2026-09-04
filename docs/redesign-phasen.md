@@ -248,12 +248,12 @@ Abschließende Qualitätsprüfung über die gesamte App: Micro-Animations-Feinsc
 
 | Phase | Bezeichnung | Status |
 |---|---|---|
-| Phase 1 | Design-System-Fundament | ⏳ In Bearbeitung |
-| Phase 2 | Navigation & App-Shell | ⏹️ Ausstehend |
-| Phase 3 | Dashboard / Home | ⏹️ Ausstehend |
-| Phase 4 | Stundenplan (2-Wochen-Stack) | ⏹️ Ausstehend |
-| Phase 5 | Aufgaben (HA, Arbeiten, Lernplan) | ⏹️ Ausstehend |
-| Phase 6 | Noten | ⏹️ Ausstehend |
-| Phase 7 | Postfach | ⏹️ Ausstehend |
-| Phase 8 | Einstellungen | ⏹️ Ausstehend |
-| Phase 9 | Politur & Regression | ⏹️ Ausstehend |
+| Phase 1 | Design-System-Fundament | ✅ Abgeschlossen |
+| Phase 2 | Navigation & App-Shell | ✅ Abgeschlossen |
+| Phase 3 | Dashboard / Home | ✅ Abgeschlossen |
+| Phase 4 | Stundenplan (2-Wochen-Stack) | ✅ Abgeschlossen |
+| Phase 5 | Aufgaben (HA, Arbeiten, Lernplan) | ✅ Abgeschlossen |
+| Phase 6 | Noten | ✅ Abgeschlossen |
+| Phase 7 | Postfach | ✅ Abgeschlossen |
+| Phase 8 | Einstellungen | ✅ Abgeschlossen |
+| Phase 9 | Politur & Regression | ✅ Abgeschlossen |

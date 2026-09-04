@@ -1,15 +1,25 @@
+/**
+ * Postfach Screen (Briefe, Nachrichten, Schwarzes Brett) — Redesign mit satten Farbflächen.
+ */
 import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AlertCircle,
+  BookMarked,
   CheckCheck,
   Download,
   Inbox,
+  Landmark,
+  Mail,
   MailOpen,
   MapPin,
   MessagesSquare,
+  Package,
   Paperclip,
+  Sparkles,
+  Users,
+  type LucideIcon,
 } from 'lucide-react-native';
 
 import type { Letter, MessageThread, Tile } from '@/api/types';
@@ -21,17 +31,55 @@ import { downloadStoredFile } from '@/api/downloads';
 import { formatRelativeDay, formatTimeAgo } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
-import { Card, Chip, Divider, EmptyState, Muted, Row, Screen, SectionHeader, SegmentedControl, Sheet, Skeleton, Title } from '@/ui/primitives';
+import {
+  Card,
+  Chip,
+  ColorBlockCard,
+  Divider,
+  EmptyState,
+  IconBadge,
+  Muted,
+  Pill,
+  Row,
+  Screen,
+  SegmentedControl,
+  Sheet,
+  Skeleton,
+  Title,
+} from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Avatar, Spinner } from '@/ui/gluestack/feedback';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { ErrorBoundary } from '@/ui/error-boundary';
+import { foregroundOn, radius, shadow } from '@/design/tokens';
 
 type Tab = 'letters' | 'messages' | 'board';
 
+/** Kategoriestil für Aushänge auf dem Schwarzen Brett */
+function tileCategoryStyle(tile: Tile, colors: ReturnType<typeof useThemeColors>['colors']): {
+  color: string;
+  icon: LucideIcon;
+  categoryLabel: string;
+} {
+  const text = `${tile.title} ${tile.content}`.toLowerCase();
+  if (text.includes('bibliothek') || text.includes('bücherei') || text.includes('buch') || text.includes('lesen')) {
+    return { color: colors.category.green.solid, icon: BookMarked, categoryLabel: 'Bibliothek' };
+  }
+  if (text.includes('ag') || text.includes('anmeldung') || text.includes('kurs') || text.includes('theater') || text.includes('chor') || text.includes('orchester')) {
+    return { color: colors.category.purple.solid, icon: Sparkles, categoryLabel: 'AG & Freizeit' };
+  }
+  if (text.includes('fundsache') || text.includes('fundbüro') || text.includes('verloren') || text.includes('gefunden') || text.includes('jacke')) {
+    return { color: colors.category.orange.solid, icon: Package, categoryLabel: 'Fundsachen' };
+  }
+  if (text.includes('sekretariat') || text.includes('schulleitung') || text.includes('rektor') || text.includes('büro') || text.includes('verwaltung') || text.includes('ordnung')) {
+    return { color: colors.category.blue.solid, icon: Landmark, categoryLabel: 'Sekretariat' };
+  }
+  return { color: colors.category.sky.solid, icon: MapPin, categoryLabel: 'Aushang' };
+}
+
 export default function InboxScreen() {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const reserve = useTabNavReserve();
   const [tab, setTab] = useState<Tab>('letters');
@@ -42,7 +90,6 @@ export default function InboxScreen() {
   const pending = data?.letters.filter((item) => item.requiresConfirmation && !item.confirmed).length ?? 0;
   const unread = data?.threads.reduce((sum, item) => sum + item.unreadCount, 0) ?? 0;
 
-  // Sparten nur bei gebuchtem Modul — wie das offizielle Menü der Schule.
   const lettersOn = useModuleActive('letters');
   const messengerOn = useModuleActive('messenger');
   const boardOn = (data?.tiles.length ?? 1) > 0;
@@ -53,7 +100,6 @@ export default function InboxScreen() {
     ...(boardOn ? [{ value: 'board' as const, label: 'Brett' }] : []),
   ];
 
-  // Aktive Sparte muss immer eine sichtbare sein (z. B. nach Modulwechsel).
   const activeTab = tabs.some((option) => option.value === tab) ? tab : (tabs[0]?.value ?? tab);
 
   return (
@@ -69,8 +115,8 @@ export default function InboxScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+            <Skeleton className="h-24 rounded-[24px]" />
+            <Skeleton className="h-24 rounded-[24px]" />
           </View>
         ) : tabs.length === 0 ? (
           <EmptyState
@@ -83,63 +129,107 @@ export default function InboxScreen() {
           data.letters.length === 0 ? (
             <EmptyState icon={MailOpen} iconColor={colors.accent.violet} title="Keine Elternbriefe" />
           ) : (
-            data.letters.map((item, index) => (
-              <LetterRow
-                key={String(item.id)}
-                letter={item}
-                index={index}
-                onOpen={() => {
-                  hapticLight();
-                  setLetter(item);
-                }}
-              />
-            ))
+            <View className="gap-2.5">
+              {data.letters.map((item, index) => (
+                <LetterRow
+                  key={String(item.id)}
+                  letter={item}
+                  index={index}
+                  onOpen={() => {
+                    hapticLight();
+                    setLetter(item);
+                  }}
+                />
+              ))}
+            </View>
           )
         ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
-            <EmptyState icon={MessagesSquare} iconColor={colors.accent.violet} title="Keine Nachrichten" hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht." />
+            <EmptyState
+              icon={MessagesSquare}
+              iconColor={colors.accent.violet}
+              title="Keine Nachrichten"
+              hint="Aktuell liegen keine Chat-Verläufe vor."
+            />
           ) : (
-            data.threads.map((item, index) => (
-              <ThreadRow key={String(item.subscriptionId)} thread={item} index={index} onOpen={() => {
-                hapticLight();
-                router.push({
-                  pathname: '/thread',
-                  params: {
-                    subscriptionId: String(item.subscriptionId),
-                    threadId: String(item.id),
-                    subject: item.subject,
-                    sender: item.sender,
-                    recipients: item.recipients ?? '',
-                    preview: item.preview ?? '',
-                  },
-                });
-              }} />
-            ))
+            <View className="gap-2.5">
+              {data.threads.map((item, index) => (
+                <ThreadRow
+                  key={String(item.subscriptionId)}
+                  thread={item}
+                  index={index}
+                  onOpen={() => {
+                    hapticLight();
+                    router.push({
+                      pathname: '/thread',
+                      params: {
+                        subscriptionId: String(item.subscriptionId),
+                        threadId: String(item.id),
+                        subject: item.subject,
+                        sender: item.sender,
+                        recipients: item.recipients ?? '',
+                        preview: item.preview ?? '',
+                      },
+                    });
+                  }}
+                />
+              ))}
+            </View>
           )
         ) : data.tiles.length === 0 ? (
-          <EmptyState icon={MapPin} iconColor={colors.warning} title="Kein Aushang" />
+          <EmptyState icon={MapPin} iconColor={colors.warning} title="Keine Aushänge" />
         ) : (
-          data.tiles.map((item, index) => (
-            <FadeInUp key={String(item.id)} delay={Math.min(index, 8) * 30}>
-              <Pressable
-                onPress={() => {
-                  hapticLight();
-                  setTile(item);
-                }}
-                className="mb-2 hover:opacity-90 active:opacity-80"
-              >
-                <Card>
-                  <Row className="gap-2">
-                    {item.pinned ? <MapPin size={15} strokeWidth={2.1} color={colors.warning} /> : null}
-                    <Text className="flex-1 text-[15px] font-bold text-ink">{item.title}</Text>
-                  </Row>
-                  <Muted className="mt-1" numberOfLines={3}>
-                    {htmlToText(item.content)}
-                  </Muted>
-                </Card>
-              </Pressable>
-            </FadeInUp>
-          ))
+          <View className="gap-3">
+            {data.tiles.map((item, index) => {
+              const cat = tileCategoryStyle(item, colors);
+              return (
+                <FadeInUp key={String(item.id)} delay={Math.min(index, 8) * 30}>
+                  <PressableScale
+                    onPress={() => {
+                      hapticLight();
+                      setTile(item);
+                    }}
+                    scale={0.98}
+                    accessibilityRole="button"
+                  >
+                    <View
+                      className="overflow-hidden rounded-[26px] p-4"
+                      style={{
+                        backgroundColor: tint(cat.color, isDark ? 0.22 : 0.12),
+                        ...shadow.card,
+                      }}
+                    >
+                      <Row className="gap-3.5">
+                        <IconBadge
+                          icon={cat.icon}
+                          color={cat.color}
+                          tone="solid"
+                          size={46}
+                          iconSize={22}
+                        />
+                        <View className="flex-1">
+                          <Row className="justify-between gap-2">
+                            <Text className="flex-1 text-[16px] font-extrabold text-ink" numberOfLines={2}>
+                              {item.title}
+                            </Text>
+                            <Pill label={cat.categoryLabel} color={cat.color} tone="solid" />
+                          </Row>
+                          <Text className="mt-2 text-[13px] leading-5 text-ink/80" numberOfLines={3}>
+                            {htmlToText(item.content)}
+                          </Text>
+                          {item.pinned ? (
+                            <Row className="mt-2.5 gap-1.5">
+                              <Pill label="Wichtig / Angepinnt" color={colors.warning} tone="solid" />
+                            </Row>
+                          ) : null}
+                        </View>
+                      </Row>
+                    </View>
+                  </PressableScale>
+                </FadeInUp>
+              );
+            })}
+          </View>
         )}
       </ScrollView>
 
@@ -148,20 +238,18 @@ export default function InboxScreen() {
       </ErrorBoundary>
 
       <Sheet open={Boolean(tile)} onClose={() => setTile(null)} title={tile?.title}>
-        {tile ? <Text className="text-[15px] leading-6 text-ink">{htmlToText(tile.content)}</Text> : null}
+        {tile ? (
+          <View className="gap-3">
+            <Text className="text-[15px] leading-6 text-ink">{htmlToText(tile.content)}</Text>
+          </View>
+        ) : null}
       </Sheet>
     </Screen>
   );
 }
 
-/* ------------------------------------------------------------------ Brief-Zeile (Phase 3) */
+/* ------------------------------------------------------------------ Brief-Zeile (Farbfläche) */
 
-/**
- * Farbcodierte Prioritäts-Karten fürs Postfach:
- * Amber = Aktion nötig (Bestätigung offen) · Lime = erledigt/bestätigt ·
- * Coral = neue Nachrichten (Ungelesen) · Violet = gelesen/neutral.
- * Briefe mit offener Bestätigung haben eine Inline-Action „Bestätigen“.
- */
 function LetterRow({
   letter,
   index,
@@ -171,13 +259,17 @@ function LetterRow({
   index: number;
   onOpen: () => void;
 }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const confirm = useConfirmLetter();
   const [justConfirmed, setJustConfirmed] = useState(false);
 
   const needsAction = letter.requiresConfirmation && !letter.confirmed && !justConfirmed;
   const isConfirmed = Boolean(letter.requiresConfirmation && (letter.confirmed || justConfirmed));
-  const tone = needsAction ? colors.warning : isConfirmed ? colors.success : colors.accent.violet;
+  const tone = needsAction
+    ? colors.accent.amber
+    : isConfirmed
+      ? colors.success
+      : colors.category.lavender.solid;
 
   const quickConfirm = () => {
     confirm.mutate(
@@ -198,65 +290,59 @@ function LetterRow({
     );
   };
 
+  const cardBg = tint(tone, isDark ? 0.22 : 0.12);
+
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
-      <Card
-        padded={false}
-        className="mb-2 overflow-hidden"
+      <View
+        className="overflow-hidden rounded-[26px]"
         style={{
-          backgroundColor: needsAction || isConfirmed ? tint(tone, 0.06) : colors.surface,
-          borderWidth: 1,
-          borderColor: needsAction || isConfirmed ? tint(tone, 0.4) : colors.line,
+          backgroundColor: cardBg,
+          ...shadow.card,
         }}
       >
-        <View className="flex-row">
-          <View style={{ width: 4, backgroundColor: tone }} />
-          <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-4 hover:opacity-90 active:opacity-70">
-            <Row className="gap-3">
-              <View
-                className="h-10 w-10 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: tint(tone, 0.16) }}
-              >
-                {needsAction ? (
-                  <AlertCircle size={19} strokeWidth={2.1} color={tone} />
-                ) : isConfirmed ? (
-                  <CheckCheck size={19} strokeWidth={2.3} color={tone} />
-                ) : (
-                  <MailOpen size={19} strokeWidth={2.1} color={tone} />
-                )}
-              </View>
-              <View className="flex-1">
-                <Row className="justify-between gap-2">
-                  <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={2}>
-                    {letter.subject}
-                  </Text>
-                  <Muted className="self-start text-[11px]">{formatTimeAgo(letter.createdAt)}</Muted>
-                </Row>
-                <Muted className="mt-0.5" numberOfLines={2}>
-                  {letter.content
-                    ? excerpt(htmlToText(letter.content), 90)
-                    : `${letter.sender ?? 'Schule'} · zum Lesen antippen`}
+        <PressableScale onPress={onOpen} scale={0.98} className="p-4" accessibilityRole="button">
+          <Row className="gap-3.5">
+            <IconBadge
+              icon={needsAction ? AlertCircle : isConfirmed ? CheckCheck : Mail}
+              color={tone}
+              tone="solid"
+              size={46}
+              iconSize={22}
+            />
+            <View className="flex-1">
+              <Row className="justify-between gap-2">
+                <Text className="flex-1 text-[16px] font-extrabold leading-[19px] text-ink" numberOfLines={2}>
+                  {letter.subject}
+                </Text>
+                <Muted className="self-start text-[11px] font-bold">
+                  {formatTimeAgo(letter.createdAt)}
                 </Muted>
-                <Row className="mt-2 flex-wrap gap-2">
-                  <Chip label={letter.sender ?? 'Schule'} color={colors.faint} />
-                  {needsAction ? (
-                    <Chip label="Bestätigung nötig" color={colors.warning} tone="solid" />
-                  ) : null}
-                  {isConfirmed ? <Chip label="bestätigt" color={colors.success} tone="solid" /> : null}
-                </Row>
-              </View>
-            </Row>
-          </Pressable>
-        </View>
+              </Row>
+              <Muted className="mt-1 text-[12.5px] leading-[17px] text-ink/75" numberOfLines={2}>
+                {letter.content
+                  ? excerpt(htmlToText(letter.content), 90)
+                  : `${letter.sender ?? 'Schule'} · zum Lesen antippen`}
+              </Muted>
+              <Row className="mt-2.5 flex-wrap gap-2">
+                <Pill label={letter.sender ?? 'Schule'} color={colors.charcoal} tone="tint" />
+                {needsAction ? (
+                  <Pill label="Bestätigung nötig" color={colors.accent.amber} tone="solid" />
+                ) : null}
+                {isConfirmed ? (
+                  <Pill label="Kenntnisnahme bestätigt" color={colors.success} tone="solid" />
+                ) : null}
+              </Row>
+            </View>
+          </Row>
+        </PressableScale>
 
-        {/* Action-Button: Brief direkt bestätigen, ohne ihn zu öffnen */}
         {needsAction ? (
           <View
-            className="flex-row items-center justify-between gap-3 border-t px-4 py-2"
-            style={{ borderColor: tint(tone, 0.3) }}
+            className="flex-row items-center justify-between gap-3 border-t border-black/5 bg-surface/80 px-4 py-2.5"
           >
-            <Muted className="flex-1 text-[11px]">
-              Kenntnisnahme wird direkt an die Schule gesendet.
+            <Muted className="flex-1 text-[11.5px] font-medium">
+              Kenntnisnahme direkt senden:
             </Muted>
             <Button size="sm" action="primary" disabled={confirm.isPending} onPress={quickConfirm}>
               {confirm.isPending ? <Spinner color={colors.on.amber} size="small" /> : null}
@@ -264,7 +350,7 @@ function LetterRow({
             </Button>
           </View>
         ) : null}
-      </Card>
+      </View>
     </FadeInUp>
   );
 }
@@ -272,65 +358,62 @@ function LetterRow({
 /* ------------------------------------------------------------------ Thread-Zeile */
 
 function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: number; onOpen: () => void }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const markRead = useMarkThreadRead();
   const unread = thread.unreadCount > 0;
+  const tone = unread ? colors.accent.coral : colors.accent.violet;
+
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
-      <Card
-        padded={false}
-        className="mb-2 overflow-hidden"
-        style={{
-          backgroundColor: unread ? tint(colors.accent.coral, 0.06) : colors.surface,
-          borderWidth: 1,
-          borderColor: unread ? tint(colors.accent.coral, 0.35) : colors.line,
+      <PressableScale
+        onPress={() => {
+          if (unread) markRead.mutate(String(thread.subscriptionId));
+          onOpen();
         }}
+        scale={0.98}
+        accessibilityRole="button"
       >
-        <View className="flex-row">
-          <View
-            style={{ width: 4, backgroundColor: unread ? colors.accent.coral : 'transparent' }}
-          />
-          <Pressable
-            onPress={() => {
-              if (unread) markRead.mutate(String(thread.subscriptionId));
-              onOpen();
-            }}
-            className="flex-1 py-3 pl-3.5 pr-4 hover:opacity-90 active:opacity-70"
-          >
-            <Row className="gap-3">
-              <Avatar name={thread.sender || 'Schule'} size={40} color={unread ? colors.accent.coral : colors.accent.violet} />
-              <View className="flex-1">
-                <Row className="justify-between">
-                  <Text
-                    className={`flex-1 text-[15px] text-ink ${unread ? 'font-extrabold' : 'font-bold'}`}
-                    numberOfLines={1}
-                  >
-                    {thread.sender || 'Schule'}
-                  </Text>
-                  <Muted className="text-[11px]">{formatTimeAgo(thread.lastMessageAt)}</Muted>
-                </Row>
-                <Text className={`text-[13px] text-muted ${unread ? 'font-semibold' : ''}`} numberOfLines={1}>
-                  {thread.subject}
+        <View
+          className="overflow-hidden rounded-[26px] p-4"
+          style={{
+            backgroundColor: tint(tone, isDark ? 0.22 : 0.12),
+            ...shadow.card,
+          }}
+        >
+          <Row className="gap-3.5">
+            <Avatar
+              name={thread.sender || 'Schule'}
+              size={46}
+              color={unread ? colors.accent.coral : colors.accent.violet}
+            />
+            <View className="flex-1">
+              <Row className="justify-between">
+                <Text
+                  className="flex-1 text-[16px] font-extrabold text-ink"
+                  numberOfLines={1}
+                >
+                  {thread.sender || 'Schule'}
                 </Text>
-                {thread.preview ? (
-                  <Muted className="mt-0.5 text-[12px]" numberOfLines={2}>
-                    {thread.preview}
-                  </Muted>
-                ) : null}
-                <Row className="mt-1.5 gap-2">
-                  {unread ? <Chip label="Neu" color={colors.accent.coral} tone="solid" /> : null}
-                  <Chip label="Nachricht" color={colors.accent.violet} />
-                </Row>
-              </View>
-              {unread ? (
-                <View className="h-6 min-w-[24px] items-center justify-center rounded-full bg-accent-coral px-1.5">
-                  <Text className="text-[11px] font-bold text-on-coral">{thread.unreadCount}</Text>
-                </View>
+                <Muted className="text-[11px] font-bold">{formatTimeAgo(thread.lastMessageAt)}</Muted>
+              </Row>
+              <Text className={`mt-0.5 text-[14px] font-bold text-ink ${unread ? 'font-extrabold' : ''}`} numberOfLines={1}>
+                {thread.subject}
+              </Text>
+              {thread.preview ? (
+                <Muted className="mt-1 text-[12px] leading-4 text-ink/70" numberOfLines={2}>
+                  {thread.preview}
+                </Muted>
               ) : null}
-            </Row>
-          </Pressable>
+              <Row className="mt-2.5 gap-2">
+                {unread ? (
+                  <Pill label={`${thread.unreadCount} neu`} color={colors.accent.coral} tone="solid" />
+                ) : null}
+                <Pill label="Nachricht" color={colors.accent.violet} tone="tint" />
+              </Row>
+            </View>
+          </Row>
         </View>
-      </Card>
+      </PressableScale>
     </FadeInUp>
   );
 }
@@ -351,7 +434,6 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
 
   const open = Boolean(letter);
 
-  // Detail bei jedem Öffnen nachladen (HTML-Text + Anhänge stecken nicht in der Liste).
   React.useEffect(() => {
     if (!letter) return;
     setAnswers({});
@@ -366,7 +448,6 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
         setAttachments(detail?.attachments ?? []);
       })
       .catch(() => setContent(''));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [letter?.id, isDemo]);
 
   const needsAction = letter?.requiresConfirmation && !letter?.confirmed && !localConfirmed;
@@ -395,7 +476,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
       {letter ? (
         <View className="gap-3">
           <Row className="gap-2">
-            <Chip label={letter.sender ?? 'Schule'} color={colors.accent.violet} />
+            <Pill label={letter.sender ?? 'Schule'} color={colors.accent.violet} tone="solid" />
             <Muted className="text-[11px]">{formatTimeAgo(letter.createdAt)}</Muted>
           </Row>
 
@@ -476,7 +557,6 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
               size="lg"
               block
               onPress={() => {
-                // Antworten in `formData` — Schlüssel ist die **Frage-Id als String**.
                 confirm.mutate(
                   { letterId: String(letter.id), studentStatusId: letter.studentStatusId },
                   {
