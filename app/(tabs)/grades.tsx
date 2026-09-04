@@ -1,25 +1,61 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
-import { BookOpen, Calculator, Lock, TrendingDown, TrendingUp } from 'lucide-react-native';
+import {
+  Calculator,
+  Lock,
+  Minus,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react-native';
 
 import type { SubjectGrades } from '@/api/types';
 import { useModuleActive, useSnapshot } from '@/data/queries';
-import { subjectStyle, tint } from '@/design/subjects';
-import { de, deDelta, gradeColor, requiredGrade, simulate } from '@/features/grades/calculator';
+import { subjectColor, subjectIcon, tint } from '@/design/subjects';
+import {
+  de,
+  deDelta,
+  gradeColor,
+  gradeRatio,
+  gradeTrend,
+  requiredGrade,
+  simulate,
+} from '@/features/grades/calculator';
+import { QualityBar, Sparkline } from '@/features/grades/sparkline';
 import { formatRelativeDay } from '@/lib/date';
 import {
-  Card, Chip, Divider, EmptyState, Muted, Row, Screen, ScreenHeader, Sheet, Skeleton,
+  BlockCaption,
+  BlockText,
+  Card,
+  Chip,
+  ColorBlockCard,
+  Divider,
+  EmptyState,
+  IconBadge,
+  Muted,
+  Pill,
+  Row,
+  Screen,
+  ScreenHeader,
+  SectionHeader,
+  Sheet,
+  Skeleton,
+  StatNumber,
+  useBlockInk,
 } from '@/ui/primitives';
-import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
+import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
-import { Progress, Switch } from '@/ui/gluestack/feedback';
+import { Switch } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
-import { shadow } from '@/design/tokens';
+import { foregroundOn, resolveThemeColor } from '@/design/tokens';
+
+/** Platzhalter, solange „Noten verbergen“ aktiv ist. */
+const MASK = '•••';
 
 export default function GradesScreen() {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const gradesOn = useModuleActive('grades');
   const reserve = useTabNavReserve();
@@ -28,34 +64,73 @@ export default function GradesScreen() {
   const [selected, setSelected] = useState<SubjectGrades | null>(null);
 
   const subjects = data?.subjects ?? [];
-  const withAverage = subjects.filter((subject) => subject.average != null);
-  const overall = withAverage.length
-    ? withAverage.reduce((sum, subject) => sum + (subject.average as number), 0) / withAverage.length
-    : null;
 
-  const best = useMemo(
-    () => [...withAverage].sort((a, b) => (a.average ?? 9) - (b.average ?? 9))[0],
-    [withAverage],
+  /**
+   * Bug (Phase 6): Fächer ohne Bewertung liefen als „–“-Karten zwischen den
+   * bewerteten mit und verwässerten die Liste. Sie stehen jetzt als eigene,
+   * ruhige Gruppe unten.
+   */
+  const rated = useMemo(
+    () => subjects.filter((subject) => subject.average != null && subject.grades.length > 0),
+    [subjects],
   );
-  const worst = useMemo(
-    () => [...withAverage].sort((a, b) => (b.average ?? 0) - (a.average ?? 0))[0],
-    [withAverage],
+  const unrated = useMemo(
+    () => subjects.filter((subject) => subject.average == null || subject.grades.length === 0),
+    [subjects],
   );
+
+  const gradeCount = useMemo(
+    () => subjects.reduce((sum, subject) => sum + subject.grades.length, 0),
+    [subjects],
+  );
+
+  /**
+   * Bug (Phase 6): Der Gesamtschnitt wurde als ungewichtetes Mittel der
+   * Fachschnitte gebildet und dabei implizit auf zwei Nachkommastellen
+   * gerundet **angezeigt**, obwohl schon der Zwischenwert gerundet war.
+   * Jetzt: ein Durchgang, Rundung ausschließlich in der Ausgabe (`de`).
+   * Fächer mit Punktesystem werden getrennt gemittelt und nicht mit
+   * 1–6-Noten vermischt (ein Schnitt aus „2,0“ und „12 P“ wäre sinnlos).
+   */
+  const overall = useMemo(() => {
+    const dominantSystem: 0 | 1 =
+      rated.filter((subject) => subject.gradingSystem === 1).length > rated.length / 2 ? 1 : 0;
+    const usable = rated.filter((subject) => subject.gradingSystem === dominantSystem);
+    if (usable.length === 0) return null;
+    const sum = usable.reduce((total, subject) => total + (subject.average as number), 0);
+    return { value: sum / usable.length, system: dominantSystem, count: usable.length };
+  }, [rated]);
+
+  const ranked = useMemo(
+    () =>
+      [...rated].sort((a, b) => gradeRatio(b.average, b.gradingSystem) - gradeRatio(a.average, a.gradingSystem)),
+    [rated],
+  );
+  const best = ranked[0];
+  // Bug: `worst !== best` verglich Objektidentität — bei nur einem bewerteten
+  // Fach stand dasselbe Fach zweimal im Hero. Jetzt über die Fach-Id.
+  const worst = ranked.length > 1 ? ranked[ranked.length - 1] : undefined;
 
   // `href: null` blendet den Tab aus. Ein externer Deep-Link auf /grades
   // bleibt trotzdem möglich; statt einer versteckten, nicht navigierbaren
   // Tab-Route landet er zuverlässig auf dem Start-Tab.
   if (!gradesOn) return <Redirect href="/" />;
 
+  const limeInk = foregroundOn(resolveThemeColor(colors.blocks.lime, isDark), colors);
+
   return (
     <Screen adaptive="content">
       <ScreenHeader
         title="Noten"
-        subtitle={`${withAverage.length} Fächer mit Bewertung`}
+        subtitle={`${rated.length} ${rated.length === 1 ? 'Fach' : 'Fächer'} mit Bewertung`}
         action={(
           <Row className="gap-2">
             <Muted className="text-[11px]">verbergen</Muted>
-            <Switch value={hidden} onValueChange={(value) => update({ hideGrades: value })} />
+            <Switch
+              value={hidden}
+              onValueChange={(value) => update({ hideGrades: value })}
+              accessibilityLabel="Noten verbergen"
+            />
           </Row>
         )}
       />
@@ -63,9 +138,9 @@ export default function GradesScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+            <Skeleton className="h-40" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
           </View>
         ) : subjects.length === 0 ? (
           <EmptyState
@@ -76,220 +151,406 @@ export default function GradesScreen() {
           />
         ) : (
           <>
-            {/* Phase 3: Erfolgs-Hero in Lime mit Schnitt, bestem Fach und größtem Hebel */}
-            <Card
-              className="mb-3 overflow-hidden"
+            {/* Hero: Gesamtschnitt als riesige Zahl auf Lime-Farbfläche */}
+            <ColorBlockCard
+              color={colors.blocks.lime}
+              elevated
               padded={false}
-              style={{
-                backgroundColor: colors.accent.lime,
-                borderWidth: 0,
-                ...shadow.float,
-              }}
+              className="mb-3"
+              radius={32}
             >
-              <View className="flex-row items-center gap-4 p-4">
-                <View
-                  className="h-12 w-12 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: 'rgba(31,42,0,0.10)' }}
-                >
-                  <TrendingUp size={22} strokeWidth={2.2} color={colors.on.lime} />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[10px] font-extrabold uppercase tracking-[1.6px] text-on-lime/65">
+              <View className="flex-row items-center gap-4 px-5 pb-4 pt-5">
+                <IconBadge
+                  icon={TrendingUp}
+                  color={limeInk}
+                  tone="tint"
+                  size="lg"
+                />
+                <View className="min-w-0 flex-1">
+                  <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.6px]">
                     Gesamtschnitt
-                  </Text>
-                  <Text className="text-[40px] font-extrabold leading-[42px] tracking-tight text-on-lime">
-                    {hidden ? '•••' : overall != null ? de(overall) : '–'}
-                  </Text>
+                  </BlockCaption>
+                  <StatNumber
+                    size="lg"
+                    style={{ color: limeInk, fontVariant: ['tabular-nums'] }}
+                    adjustsFontSizeToFit
+                    numberOfLines={1}
+                  >
+                    {hidden
+                      ? MASK
+                      : overall
+                        ? overall.system === 1
+                          ? `${de(overall.value, 1)} P`
+                          : de(overall.value)
+                        : '–'}
+                  </StatNumber>
                 </View>
                 <View className="items-end">
-                  <View
-                    className="rounded-2xl px-3.5 py-2.5"
-                    style={{ backgroundColor: 'rgba(31,42,0,0.12)' }}
+                  <StatNumber
+                    size="md"
+                    style={{ color: limeInk, fontVariant: ['tabular-nums'] }}
+                    adjustsFontSizeToFit
+                    numberOfLines={1}
                   >
-                    <Text className="text-[22px] font-extrabold leading-[24px] text-on-lime">
-                      {hidden ? '••' : String(subjects.reduce((sum, s) => sum + s.grades.length, 0))}
-                    </Text>
-                    <Text className="text-[9px] font-extrabold uppercase tracking-wider text-on-lime/60">
-                      Noten erfasst
-                    </Text>
-                  </View>
+                    {hidden ? '••' : String(gradeCount)}
+                  </StatNumber>
+                  <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.2px]">
+                    Noten
+                  </BlockCaption>
                 </View>
               </View>
 
-              <View className="h-[1px] bg-on-lime/15" />
+              {best ? (
+                <View className="flex-row px-5 pb-5">
+                  <HeroFact
+                    label="Stärkstes Fach"
+                    subject={best}
+                    hidden={hidden}
+                  />
+                  {worst ? (
+                    <>
+                      <View className="w-4" />
+                      <HeroFact label="Größter Hebel" subject={worst} hidden={hidden} />
+                    </>
+                  ) : null}
+                </View>
+              ) : null}
+            </ColorBlockCard>
 
-              <View className="flex-row">
-                {best ? (
-                  <View className="flex-1 gap-0.5 px-4 py-3">
-                    <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-on-lime/60">
-                      Stärkstes Fach
-                    </Text>
-                    <Text className="text-[15px] font-extrabold leading-5 text-on-lime" numberOfLines={1}>
-                      {best.subject}
-                    </Text>
-                    <Text className="text-[13px] font-bold text-on-lime/80">
-                      {hidden ? '' : best.average != null ? de(best.average) : ''}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="flex-1 px-4 py-3" />
-                )}
-                <View className="w-[1px] bg-on-lime/15" />
-                {worst && worst !== best ? (
-                  <View className="flex-1 gap-0.5 px-4 py-3">
-                    <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-on-lime/60">
-                      Größter Hebel
-                    </Text>
-                    <Text className="text-[15px] font-extrabold leading-5 text-on-lime" numberOfLines={1}>
-                      {worst.subject}
-                    </Text>
-                    <Text className="text-[13px] font-bold text-on-lime/80">
-                      {hidden ? '' : worst.average != null ? de(worst.average) : ''}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            </Card>
+            {rated.map((subject, index) => (
+              <FadeInUp key={String(subject.subjectId)} delay={Math.min(index, 8) * 30}>
+                <SubjectCard
+                  subject={subject}
+                  hidden={hidden}
+                  onOpen={() => setSelected(subject)}
+                />
+              </FadeInUp>
+            ))}
 
-            {subjects.map((subject, index) => {
-              const style = subjectStyle(subject.subject);
-              const color = gradeColor(subject.average, subject.gradingSystem);
-              // Balkenlänge: 1,0 = voll, 6,0 = leer
-              const ratio =
-                subject.average == null
-                  ? 0
-                  : subject.gradingSystem === 1
-                    ? (subject.average / 15) * 100
-                    : ((6 - subject.average) / 5) * 100;
-
-              return (
-                <FadeInUp key={String(subject.subjectId)} delay={index * 30}>
-                  <PressableScale onPress={() => setSelected(subject)} className="mb-2" scale={0.98} accessibilityRole="button">
-                    <Card style={{ backgroundColor: tint(style.color, 0.10) }}>
-                      <Row className="gap-3">
-                        <View
-                          className="h-11 w-11 items-center justify-center rounded-2xl"
-                          style={{ backgroundColor: tint(style.color, 0.16) }}
-                        >
-                          <BookOpen size={20} strokeWidth={2.1} color={style.color} />
-                        </View>
-                        <View className="flex-1">
-                          <Row className="justify-between">
-                            <Text className="text-[15px] font-bold text-ink">{subject.subject}</Text>
-                            <Text className="text-[16px] font-extrabold" style={{ color }}>
-                              {hidden ? '•••' : subject.average != null ? de(subject.average) : '–'}
-                            </Text>
-                          </Row>
-                          <Progress value={hidden ? 0 : ratio} color={color} className="mt-2" />
-                          <Row className="mt-1.5 gap-1.5">
-                            {subject.grades.slice(0, 5).map((grade) => (
-                              <View
-                                key={grade.id}
-                                className="rounded-md px-1.5 py-0.5"
-                                style={{ backgroundColor: tint(color, 0.14) }}
-                              >
-                                <Text className="text-[10px] font-bold" style={{ color }}>
-                                  {hidden ? '•' : grade.value}
-                                </Text>
-                              </View>
-                            ))}
-                            {subject.grades.length > 5 ? (
-                              <Muted className="text-[10px]">+{subject.grades.length - 5}</Muted>
-                            ) : null}
-                          </Row>
-                        </View>
-                      </Row>
-                    </Card>
-                  </PressableScale>
-                </FadeInUp>
-              );
-            })}
+            {unrated.length > 0 ? (
+              <>
+                <SectionHeader
+                  title="Noch ohne Note"
+                  icon={Sparkles}
+                  iconColor={colors.blocks.slate}
+                />
+                {unrated.map((subject) => (
+                  <Card key={String(subject.subjectId)} className="mb-2">
+                    <Row className="gap-3">
+                      <IconBadge
+                        icon={subjectIcon(subject.subject)}
+                        color={subjectColor(subject.subject, isDark)}
+                        tone="tint"
+                        size="md"
+                      />
+                      <View className="min-w-0 flex-1">
+                        <Text className="text-[15px] font-bold text-ink" numberOfLines={1}>
+                          {subject.subject}
+                        </Text>
+                        <Muted className="text-[12px]">Noch keine Bewertung eingetragen</Muted>
+                      </View>
+                    </Row>
+                  </Card>
+                ))}
+              </>
+            ) : null}
           </>
         )}
       </ScrollView>
 
-      <SubjectSheet subject={selected} onClose={() => setSelected(null)} />
+      <SubjectSheet subject={selected} hidden={hidden} onClose={() => setSelected(null)} />
     </Screen>
+  );
+}
+
+/** Kleine Kennzahl im Hero („Stärkstes Fach“ / „Größter Hebel“). */
+function HeroFact({
+  label,
+  subject,
+  hidden,
+}: {
+  label: string;
+  subject: SubjectGrades;
+  hidden: boolean;
+}) {
+  const ink = useBlockInk();
+  return (
+    <View className="min-w-0 flex-1 rounded-[20px] px-3.5 py-3" style={{ backgroundColor: tint(ink, 0.12) }}>
+      <BlockCaption className="text-[10px] font-extrabold uppercase tracking-[1.2px]">{label}</BlockCaption>
+      <BlockText className="mt-0.5 text-[15px] font-extrabold leading-5" numberOfLines={1}>
+        {subject.subject}
+      </BlockText>
+      <Text className="mt-0.5 text-[17px] font-extrabold" style={{ color: ink, fontVariant: ['tabular-nums'] }}>
+        {hidden
+          ? MASK
+          : subject.average != null
+            ? subject.gradingSystem === 1
+              ? `${de(subject.average, 1)} P`
+              : de(subject.average)
+            : '–'}
+      </Text>
+    </View>
+  );
+}
+
+/* ------------------------------------------------------------------ Fach-Karte (Phase 6) */
+
+/**
+ * Fach-Karte im Farbflächen-Stil: vollflächig in der gesättigten Fachfarbe
+ * (kein 14-%-Tint mehr), Fach-Icon-Badge, riesige Notenzahl und — ab drei
+ * datierten Noten — eine Mini-Trendlinie. Sonst bleibt die Qualitätsleiste
+ * als Balken-Fallback.
+ */
+function SubjectCard({
+  subject,
+  hidden,
+  onOpen,
+}: {
+  subject: SubjectGrades;
+  hidden: boolean;
+  onOpen: () => void;
+}) {
+  const { colors, isDark } = useThemeColors();
+  const tone = subjectColor(subject.subject, isDark);
+  const ink = foregroundOn(tone, colors);
+  const SubjectIcon = subjectIcon(subject.subject);
+  const trend = gradeTrend(subject);
+  const hasTrend = trend.points.length >= 3;
+
+  const TrendIcon = trend.direction === 'up' ? TrendingUp : trend.direction === 'down' ? TrendingDown : Minus;
+  const trendLabel =
+    trend.direction === 'up' ? 'besser' : trend.direction === 'down' ? 'schlechter' : 'stabil';
+
+  return (
+    <ColorBlockCard
+      color={tone}
+      onPress={onOpen}
+      accessibilityLabel={`${subject.subject}: Noten-Details öffnen`}
+      className="mb-2.5"
+      style={{ padding: 16 }}
+    >
+      <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+        <IconBadge icon={SubjectIcon} color={ink} tone="tint" size="lg" />
+
+        <View className="min-w-0 flex-1">
+          <Row className="gap-2">
+            <BlockText className="min-w-0 flex-1 text-[15.5px] font-extrabold leading-5" numberOfLines={1}>
+              {subject.subject}
+            </BlockText>
+            {hasTrend && !hidden ? (
+              <Pill
+                label={trendLabel}
+                color={ink}
+                tone="tint"
+                icon={TrendIcon}
+                className="px-2.5 py-1"
+              />
+            ) : null}
+          </Row>
+
+          <BlockCaption className="mt-0.5 text-[11.5px]">
+            {subject.grades.length} {subject.grades.length === 1 ? 'Bewertung' : 'Bewertungen'}
+            {subject.teacher ? ` · ${subject.teacher}` : ''}
+          </BlockCaption>
+
+          {/* Riesige Notenzahl — deutlich gewichtiger als die Noten-Chips */}
+          <Row className="mt-1.5 items-end gap-3">
+            <StatNumber
+              size="md"
+              style={{ color: ink, fontVariant: ['tabular-nums'] }}
+              adjustsFontSizeToFit
+              numberOfLines={1}
+            >
+              {hidden
+                ? MASK
+                : subject.average != null
+                  ? subject.gradingSystem === 1
+                    ? `${de(subject.average, 1)}`
+                    : de(subject.average)
+                  : '–'}
+            </StatNumber>
+            {subject.gradingSystem === 1 && !hidden ? (
+              <BlockCaption className="mb-2 text-[12px] font-extrabold uppercase tracking-[1.2px]">
+                Punkte
+              </BlockCaption>
+            ) : null}
+            <View className="flex-1" />
+            {hasTrend ? (
+              <Sparkline
+                values={trend.points}
+                system={subject.gradingSystem}
+                color={ink}
+                hidden={hidden}
+              />
+            ) : null}
+          </Row>
+
+          {hasTrend ? null : (
+            <View className="mt-2.5">
+              <QualityBar
+                ratio={gradeRatio(subject.average, subject.gradingSystem)}
+                color={ink}
+                hidden={hidden}
+              />
+            </View>
+          )}
+
+          <Row className="mt-2.5 flex-wrap gap-1.5">
+            {subject.grades.slice(0, 6).map((grade) => (
+              <View
+                key={grade.id}
+                className="rounded-[20px] px-2 py-0.5"
+                style={{ backgroundColor: tint(ink, 0.16) }}
+              >
+                <Text className="text-[11px] font-extrabold" style={{ color: ink }}>
+                  {hidden ? '•' : grade.value}
+                </Text>
+              </View>
+            ))}
+            {subject.grades.length > 6 ? (
+              <BlockCaption className="self-center text-[11px] font-bold">
+                +{subject.grades.length - 6}
+              </BlockCaption>
+            ) : null}
+          </Row>
+        </View>
+      </Row>
+    </ColorBlockCard>
   );
 }
 
 /* ------------------------------------------------------------------ Detail + Rechner */
 
-function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onClose: () => void }) {
-  const { colors } = useThemeColors();
+function SubjectSheet({
+  subject,
+  hidden,
+  onClose,
+}: {
+  subject: SubjectGrades | null;
+  hidden: boolean;
+  onClose: () => void;
+}) {
+  const { colors, isDark } = useThemeColors();
   const [target, setTarget] = useState(2);
   const [simulated, setSimulated] = useState<number | null>(null);
 
+  // Beim Fachwechsel Rechner-Zustand zurücksetzen — sonst blieb die Simulation
+  // eines anderen Fachs stehen (Bug Phase 6).
+  const subjectKey = subject ? String(subject.subjectId) : null;
+  React.useEffect(() => {
+    setSimulated(null);
+    setTarget(subject?.gradingSystem === 1 ? 12 : 2);
+  }, [subjectKey, subject?.gradingSystem]);
+
   if (!subject) return <Sheet open={false} onClose={onClose}><View /></Sheet>;
 
-  const style = subjectStyle(subject.subject);
+  const tone = subjectColor(subject.subject, isDark);
+  const ink = foregroundOn(tone, colors);
+  const SubjectIcon = subjectIcon(subject.subject);
   const color = gradeColor(subject.average, subject.gradingSystem);
   const required = requiredGrade(subject, target);
   const preview = simulated != null ? simulate(subject, simulated) : null;
   const targets = subject.gradingSystem === 1 ? [15, 12, 10, 8] : [1, 1.5, 2, 2.5, 3];
   const options = subject.gradingSystem === 1 ? [15, 13, 11, 9, 7, 5] : [1, 2, 3, 4, 5, 6];
+  const trend = gradeTrend(subject);
 
   return (
     <Sheet open onClose={onClose} title={subject.subject}>
       <View className="gap-3">
-        <Card style={{ backgroundColor: tint(color, 0.12) }}>
-          <Row className="justify-between">
-            <View>
-              <Muted className="text-[11px]">Aktueller Schnitt</Muted>
-              <Text className="text-[28px] font-extrabold" style={{ color }}>
-                {subject.average != null ? de(subject.average) : '–'}
-              </Text>
+        {/* Kopf im Farbflächen-Stil: Fachfarbe, Icon-Badge, riesige Zahl */}
+        <ColorBlockCard color={tone} radius={28} style={{ padding: 18 }}>
+          <Row className="gap-3">
+            <IconBadge icon={SubjectIcon} color={ink} tone="tint" size="lg" />
+            <View className="min-w-0 flex-1">
+              <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.4px]">
+                Aktueller Schnitt
+              </BlockCaption>
+              <StatNumber
+                size="md"
+                style={{ color: ink, fontVariant: ['tabular-nums'] }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
+              >
+                {hidden ? MASK : subject.average != null ? de(subject.average) : '–'}
+              </StatNumber>
             </View>
-            <View className="items-end">
-              <Muted className="text-[11px]">Bewertungen</Muted>
-              <Text className="text-[28px] font-extrabold text-ink">{subject.grades.length}</Text>
+            <View className="items-end justify-center">
+              <StatNumber
+                size="md"
+                style={{ color: ink, fontVariant: ['tabular-nums'] }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
+              >
+                {subject.grades.length}
+              </StatNumber>
+              <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.2px]">
+                Bewertungen
+              </BlockCaption>
             </View>
           </Row>
-        </Card>
+          {trend.points.length >= 3 ? (
+            <View className="mt-3">
+              <Sparkline
+                values={trend.points}
+                system={subject.gradingSystem}
+                color={ink}
+                width={240}
+                height={46}
+                hidden={hidden}
+              />
+              <BlockCaption className="mt-1 text-[11.5px]">
+                {trend.direction === 'flat'
+                  ? 'Verlauf stabil'
+                  : `Tendenz ${trend.direction === 'up' ? 'aufwärts' : 'abwärts'} · ${deDelta(trend.delta, 1)} gegenüber dem Start`}
+              </BlockCaption>
+            </View>
+          ) : null}
+        </ColorBlockCard>
 
         {/* Einzelnoten */}
         <Card padded={false}>
-          <Text className="px-4 pt-3 text-[13px] font-bold text-ink">Einzelnoten</Text>
-          {subject.grades.map((grade, index) => (
-            <View key={grade.id}>
-              <Row className="gap-3 px-4 py-2.5">
-                <View
-                  className="h-8 w-8 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: tint(gradeColor(grade.numeric, subject.gradingSystem), 0.16) }}
-                >
-                  <Text
-                    className="text-[13px] font-extrabold"
-                    style={{ color: gradeColor(grade.numeric, subject.gradingSystem) }}
+          <Text className="px-4 pt-4 text-[13px] font-extrabold uppercase tracking-[1.2px] text-muted">
+            Einzelnoten
+          </Text>
+          {subject.grades.length === 0 ? (
+            <EmptyState icon={Sparkles} iconColor={tone} title="Noch keine Note" />
+          ) : (
+            subject.grades.map((grade, index) => (
+              <View key={grade.id}>
+                <Row className="gap-3 px-4 py-3">
+                  <View
+                    className="h-9 w-9 items-center justify-center rounded-full"
+                    style={{ backgroundColor: tint(gradeColor(grade.numeric, subject.gradingSystem), 0.18) }}
                   >
-                    {grade.value}
-                  </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[13px] font-semibold text-ink">{grade.type ?? 'Note'}</Text>
-                  <Muted className="text-[11px]">
-                    {grade.date ? formatRelativeDay(grade.date) : ''}
-                    {grade.weight !== 1 ? ` · Gewicht ×${grade.weight}` : ''}
-                  </Muted>
-                </View>
-              </Row>
-              {index < subject.grades.length - 1 ? <Divider className="ml-14" /> : null}
-            </View>
-          ))}
-          <View className="h-2" />
+                    <Text
+                      className="text-[13px] font-extrabold"
+                      style={{ color: gradeColor(grade.numeric, subject.gradingSystem) }}
+                    >
+                      {hidden ? '•' : grade.value}
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-[14px] font-bold text-ink">{grade.type ?? 'Note'}</Text>
+                    <Muted className="text-[11.5px]">
+                      {grade.date ? formatRelativeDay(grade.date) : 'ohne Datum'}
+                      {grade.weight !== 1 ? ` · Gewicht ×${grade.weight}` : ''}
+                    </Muted>
+                  </View>
+                </Row>
+                {index < subject.grades.length - 1 ? <Divider className="ml-16" /> : null}
+              </View>
+            ))
+          )}
+          <View className="h-3" />
         </Card>
 
         {/* Rechner */}
         <Card>
-          <Row className="gap-2">
-            <View
-              className="h-8 w-8 items-center justify-center rounded-[10px]"
-              style={{ backgroundColor: tint(colors.accent.violet, 0.14) }}
-            >
-              <Calculator size={16} strokeWidth={2.1} color={colors.accent.violet} />
-            </View>
-            <Text className="text-[15px] font-bold text-ink">Was brauche ich?</Text>
+          <Row className="gap-2.5">
+            <IconBadge icon={Calculator} color={colors.blocks.violet} tone="tint" size="md" />
+            <Text className="text-[15px] font-extrabold text-ink">Was brauche ich?</Text>
           </Row>
-          <Muted className="mt-1 text-[12px]">
+          <Muted className="mt-1.5 text-[12px]">
             Zielschnitt wählen — Schulflow rechnet, welche Note die nächste Arbeit (Gewicht ×2) haben muss.
           </Muted>
 
@@ -298,20 +559,24 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
               <PressableOpacity
                 key={value}
                 onPress={() => setTarget(value)}
-                className={`min-h-[44px] justify-center rounded-xl px-3.5 ${
-                  target === value ? 'bg-accent-violet' : 'bg-line/60 hover:bg-line'
+                className={`min-h-[44px] justify-center rounded-[20px] px-4 ${
+                  target === value ? '' : 'bg-line/60 hover:bg-line'
                 }`}
+                style={target === value ? { backgroundColor: resolveThemeColor(colors.blocks.violet, isDark) } : undefined}
                 accessibilityRole="button"
                 accessibilityState={{ selected: target === value }}
               >
-                <Text className={`text-[12px] font-bold ${target === value ? 'text-on-violet' : 'text-muted'}`}>
+                <Text
+                  className="text-[13px] font-extrabold"
+                  style={{ color: target === value ? colors.onBlocks.violet : colors.muted }}
+                >
                   {subject.gradingSystem === 1 ? `${value} P` : de(value, 1)}
                 </Text>
               </PressableOpacity>
             ))}
           </Row>
 
-          <View className="mt-3 rounded-2xl bg-line/40 p-3">
+          <View className="mt-3 rounded-[20px] bg-line/40 p-3.5">
             {required.possible ? (
               <Text className="text-[14px] font-bold text-ink">
                 Nötige Note:{' '}
@@ -334,13 +599,17 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
               <PressableOpacity
                 key={value}
                 onPress={() => setSimulated(simulated === value ? null : value)}
-                className={`h-11 w-11 items-center justify-center rounded-xl ${
-                  simulated === value ? 'bg-accent-violet' : 'bg-line/60 hover:bg-line'
+                className={`h-11 w-11 items-center justify-center rounded-full ${
+                  simulated === value ? '' : 'bg-line/60 hover:bg-line'
                 }`}
+                style={simulated === value ? { backgroundColor: resolveThemeColor(colors.blocks.violet, isDark) } : undefined}
                 accessibilityRole="button"
                 accessibilityState={{ selected: simulated === value }}
               >
-                <Text className={`text-[13px] font-bold ${simulated === value ? 'text-on-violet' : 'text-muted'}`}>
+                <Text
+                  className="text-[13.5px] font-extrabold"
+                  style={{ color: simulated === value ? colors.onBlocks.violet : colors.muted }}
+                >
                   {value}
                 </Text>
               </PressableOpacity>
@@ -349,11 +618,11 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
           {preview != null ? (
             <Row className="mt-3 gap-2">
               {preview < (subject.average ?? 9) ? (
-                <TrendingDown size={16} strokeWidth={2.1} color={colors.success} />
+                <TrendingDown size={16} strokeWidth={2.4} color={colors.success} />
               ) : (
-                <TrendingUp size={16} strokeWidth={2.1} color={colors.danger} />
+                <TrendingUp size={16} strokeWidth={2.4} color={colors.danger} />
               )}
-              <Text className="text-[13px] font-semibold text-ink">
+              <Text className="text-[13.5px] font-bold text-ink">
                 Neuer Schnitt: {de(preview)}{' '}
                 <Text className="text-muted">({deDelta(preview - (subject.average ?? 0))})</Text>
               </Text>

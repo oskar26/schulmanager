@@ -128,7 +128,13 @@ interface SettingsStore {
   update: (patch: Partial<Settings>) => void;
   updateNotifications: (patch: Partial<NotificationPrefs>) => void;
   toggleWidget: (id: WidgetId) => void;
-  moveWidget: (id: WidgetId, direction: -1 | 1) => void;
+  /**
+   * Verschiebt ein Widget um eine Position. `visibleIds` (Redesign Phase 8)
+   * begrenzt den Tausch auf die tatsächlich sichtbaren Nachbarn — sonst
+   * tauschte ein Klick mit einem ausgeblendeten Widget (z. B. „Noten“ bei
+   * nicht gebuchtem Modul) und wirkte für Nutzer:innen wie ein Fehlklick.
+   */
+  moveWidget: (id: WidgetId, direction: -1 | 1, visibleIds?: WidgetId[]) => void;
   /** Onboarding abgeschlossen (Welcome gesehen + Demo- oder Login-Wahl). */
   markOnboarded: () => void;
   /** Passwort landet ausschließlich im SecureStore, nie im State. */
@@ -189,11 +195,23 @@ export const useSettings = create<SettingsStore>((set, get) => ({
     persist(next);
   },
 
-  moveWidget: (id, direction) => {
+  moveWidget: (id, direction, visibleIds) => {
     const widgets = [...get().settings.widgets];
     const index = widgets.findIndex((widget) => widget.id === id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= widgets.length) return;
+    if (index < 0) return;
+
+    let target = index + direction;
+    if (visibleIds?.length) {
+      // Nächsten *sichtbaren* Nachbarn suchen statt blind eine Position weit.
+      target = -1;
+      for (let i = index + direction; i >= 0 && i < widgets.length; i += direction) {
+        if (visibleIds.includes(widgets[i].id)) {
+          target = i;
+          break;
+        }
+      }
+    }
+    if (target < 0 || target >= widgets.length) return;
     [widgets[index], widgets[target]] = [widgets[target], widgets[index]];
     const next = { ...get().settings, widgets };
     set({ settings: next });
