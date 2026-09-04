@@ -7,10 +7,11 @@
  * wird dort und als Wrap um Widgets benutzt.
  */
 import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { AlertCircle, ShieldCheck } from 'lucide-react-native';
 
 import { palette } from '@/design/tokens';
+import { PressableOpacity, PressableScale } from '@/ui/motion';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -44,18 +45,18 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
     if (this.props.inline) {
       return (
-        <View className="rounded-3xl bg-surface p-4">
+        <View className="rounded-[28px] bg-surface p-4">
           <Text className="text-[14px] font-semibold text-ink">Diese Karte konnte nicht geladen werden.</Text>
-          <Pressable onPress={this.reset} hitSlop={12} accessibilityRole="button">
+          <PressableOpacity onPress={this.reset} hitSlop={12} accessibilityRole="button">
             <Text className="mt-1 text-[13px] font-semibold text-accent-amber-deep">Erneut versuchen</Text>
-          </Pressable>
+          </PressableOpacity>
         </View>
       );
     }
 
     return (
       <View className="flex-1 items-center justify-center bg-canvas px-8">
-        <View className="h-16 w-16 items-center justify-center rounded-2xl bg-danger/15">
+        <View className="h-16 w-16 items-center justify-center rounded-full bg-danger/15">
           <AlertCircle size={32} strokeWidth={2} color={palette.danger} />
         </View>
         <Text className="mt-4 text-center text-[20px] font-bold tracking-tight text-ink">
@@ -66,16 +67,18 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           unberührt — probiere den Bildschirm neu zu laden.
         </Text>
         {__DEV__ && error?.message ? (
-          <ScrollView className="mt-3 max-h-32 rounded-2xl bg-surface p-3" contentContainerStyle={{ flexGrow: 0 }}>
+          <ScrollView className="mt-3 max-h-32 rounded-[20px] bg-surface p-3" contentContainerStyle={{ flexGrow: 0 }}>
             <Text className="text-[11px] text-muted">{error.message}</Text>
           </ScrollView>
         ) : null}
-        <Pressable
+        <PressableScale
           onPress={this.reset}
-          className="mt-5 rounded-2xl bg-accent-amber px-6 py-3.5 hover:opacity-90 active:opacity-80"
+          scale={0.97}
+          hoverScale={1.01}
+          className="mt-5 rounded-full bg-accent-amber px-6 py-3.5"
         >
           <Text className="text-[15px] font-bold text-on-amber">Neu versuchen</Text>
-        </Pressable>
+        </PressableScale>
         <Row className="mt-3 items-center gap-1.5">
           <ShieldCheck size={13} strokeWidth={2} color={palette.faint} />
           <Text className="text-[11px] text-faint">Der Fehler wurde nur lokal protokolliert.</Text>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useSafeBack } from '@/ui/navigation';
-import { CalendarDays, ChevronLeft, ChevronRight, Link2 } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Link2 } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { useSession } from '@/state/session';
@@ -14,7 +14,7 @@ import { htmlToText } from '@/lib/html';
 import {
   Card, Chip, EmptyState, IconButton, Muted, Row, Screen, SegmentedControl, Sheet, Title,
 } from '@/ui/primitives';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
 
 type Mode = 'list' | 'month';
@@ -133,14 +133,14 @@ export default function CalendarScreen() {
               const inMonth = new Date(iso).getMonth() === monthDate.getMonth();
               const isToday = iso === toISO(new Date());
               return (
-                <Pressable
+                <PressableOpacity
                   key={iso}
                   onPress={() => dayEvents[0] && setSelected(dayEvents[0])}
                   style={{ width: `${100 / 7}%` }}
-                  className="aspect-square items-center justify-center p-0.5 hover:opacity-85 active:opacity-70"
+                  className="aspect-square items-center justify-center p-0.5"
                 >
                   <View
-                    className={`h-full w-full items-center justify-center rounded-xl ${
+                    className={`h-full w-full items-center justify-center rounded-[16px] ${
                       isToday ? 'bg-accent-amber' : dayEvents.length > 0 ? 'bg-line/50' : ''
                     }`}
                   >
@@ -161,7 +161,7 @@ export default function CalendarScreen() {
                       ))}
                     </Row>
                   </View>
-                </Pressable>
+                </PressableOpacity>
               );
             })}
           </View>
@@ -170,15 +170,15 @@ export default function CalendarScreen() {
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 60 }}>
         {merged.length === 0 ? (
-          <EmptyState icon={CalendarDays} iconColor={colors.accent.violet} title="Keine Termine" />
+          <EmptyState illustration="no-events" title="Keine Termine" hint="Für diesen Zeitraum ist nichts eingetragen." />
         ) : (
           merged.map((entry, index) => (
             <FadeInUp key={entry.id} delay={index * 25}>
-              <Pressable onPress={() => setSelected(entry)} className="mb-2 hover:opacity-90 active:opacity-80">
+              <PressableScale onPress={() => setSelected(entry)} className="mb-2">
                 <Card padded={false}>
                   <Row className="gap-3 p-3">
                     <View
-                      className="w-14 items-center rounded-2xl py-2"
+                      className="w-14 items-center rounded-[20px] py-2"
                       style={{ backgroundColor: tint(entry.color, 0.16) }}
                     >
                       <Text className="text-[17px] font-extrabold" style={{ color: entry.color }}>
@@ -203,7 +203,7 @@ export default function CalendarScreen() {
                     </View>
                   </Row>
                 </Card>
-              </Pressable>
+              </PressableScale>
             </FadeInUp>
           ))
         )}

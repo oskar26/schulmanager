@@ -10,7 +10,7 @@
  * nicht die visuelle Sprache.
  */
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import {
@@ -34,6 +34,7 @@ import { useSnapshot } from '@/data/queries';
 import { hapticLight } from '@/lib/haptics';
 import { IconBadge, Pill } from '@/ui/primitives';
 import { formatNavBadge, normaliseBadgeCount } from '@/ui/navigation';
+import { PressableScale } from '@/ui/motion';
 
 function useBadges(): { tasks: number; inbox: number } {
   const { data } = useSnapshot();
@@ -194,13 +195,13 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
           const active = item.key === activeKey;
           const Icon = item.icon;
           return (
-            <Pressable
+            <PressableScale
               key={item.key}
+              scale={0.95}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               accessibilityLabel={item.title}
               onPress={() => goTab(item.name, item.key)}
-              className="active:opacity-80"
               style={{
                 minHeight: full ? 56 : 62,
                 minWidth: full ? undefined : 62,
@@ -240,7 +241,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
                 </Text>
               ) : null}
               {full ? <NavBadge count={item.badge} /> : null}
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>
@@ -255,9 +256,10 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
 
       {/* Konto-Fuß (nur Desktop) */}
       {full ? (
-        <Pressable
+        <PressableScale
           onPress={() => router.push('/settings')}
-          className="active:opacity-80"
+          scale={0.98}
+          hoverScale={1.01}
           style={{
             marginTop: 16,
             marginHorizontal: 12,
@@ -279,7 +281,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
             </Text>
           </View>
           {isDemo ? <DemoPill /> : null}
-        </Pressable>
+        </PressableScale>
       ) : (
         <View style={{ marginTop: 14, alignItems: 'center' }}>{isDemo ? <DemoPill /> : null}</View>
       )}
@@ -305,11 +307,11 @@ function ToolButton({
 }) {
   const { colors } = useThemeColors();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      className="active:opacity-80"
+      scale={0.95}
       style={{
         minHeight: full ? 52 : 58,
         minWidth: full ? undefined : 58,
@@ -324,6 +326,6 @@ function ToolButton({
     >
       <IconBadge icon={Icon} color={colors.muted} size="md" tone="tint" />
       {full ? <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>{label}</Text> : null}
-    </Pressable>
+    </PressableScale>
   );
 }

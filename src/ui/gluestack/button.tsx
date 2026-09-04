@@ -21,13 +21,14 @@ const UIButton = createButton({
 });
 
 const buttonStyle = tva({
-  base: 'flex-row items-center justify-center gap-2 rounded-2xl hover:opacity-90 active:opacity-80',
+  // Buttons sind Pillen (Kernprinzip 3/6) statt abgerundeter Rechtecke.
+  base: 'flex-row items-center justify-center gap-2 rounded-full hover:opacity-90 active:opacity-80',
   variants: {
     action: {
       primary: 'bg-accent-amber',
       secondary: 'bg-accent-amber/15',
       ghost: 'bg-transparent',
-      surface: 'bg-surface border border-line',
+      surface: 'bg-surface',
       danger: 'bg-danger',
       success: 'bg-success',
     },

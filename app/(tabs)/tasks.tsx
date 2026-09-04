@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ScrollView, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -43,7 +43,7 @@ import {
   useBlockInk,
   type IconBadgeSize,
 } from '@/ui/primitives';
-import { FadeInUp, PressableScale } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Progress } from '@/ui/gluestack/feedback';
@@ -234,8 +234,7 @@ export default function TasksScreen() {
           <ExamsTab upcomingExams={upcomingExams} plan={plan} colors={colors} onGoPlan={() => setTab('plan')} />
         ) : planByDay.length === 0 ? (
           <EmptyState
-            icon={Sparkles}
-            iconColor={colors.accent.violet}
+            illustration="nothing-here"
             title="Nichts zu lernen"
             hint="Sobald Arbeiten anstehen, plant Schulflow hier automatisch Lernblöcke."
           />
@@ -279,8 +278,7 @@ function HomeworkTab({
 
       {grouped.length === 0 ? (
         <EmptyState
-          icon={CheckCheck}
-          iconColor={colors.success}
+          illustration="all-done"
           title="Keine offenen Aufgaben"
           hint="Alles abgehakt. Genieß den Nachmittag."
         />
@@ -316,14 +314,15 @@ function HomeworkTab({
       {done.length > 0 ? (
         <>
           <SectionHeader title="Erledigt" icon={CheckCheck} iconColor={colors.success} />
-          {done.map((item) => (
-            <HomeworkTaskCard
-              key={item.id}
-              item={item}
-              done
-              onOpen={() => onOpen(item)}
-              onToggle={() => onToggle(item)}
-            />
+          {done.map((item, index) => (
+            <FadeInUp key={item.id} delay={Math.min(index, 8) * 30}>
+              <HomeworkTaskCard
+                item={item}
+                done
+                onOpen={() => onOpen(item)}
+                onToggle={() => onToggle(item)}
+              />
+            </FadeInUp>
           ))}
         </>
       ) : null}
@@ -423,11 +422,11 @@ function HomeworkTaskCard({
           label={`${item.subject}: ${done ? 'wieder öffnen' : 'als erledigt markieren'}`}
         />
 
-        <Pressable
+        <PressableOpacity
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel={`${item.subject}: Details öffnen`}
-          className="min-w-0 flex-1 hover:opacity-90 active:opacity-75"
+          className="min-w-0 flex-1"
         >
           <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
             <OnBlockBadge icon={SubjectIcon} size="md" className="mt-0.5" />
@@ -463,7 +462,7 @@ function HomeworkTaskCard({
             ) : null}
             {done ? <Undo2 size={13} strokeWidth={2.4} color={ink} style={{ opacity: 0.6 }} /> : null}
           </Row>
-        </Pressable>
+        </PressableOpacity>
       </Row>
     </ColorBlockCard>
   );
@@ -485,8 +484,7 @@ function ExamsTab({
   if (upcomingExams.length === 0) {
     return (
       <EmptyState
-        icon={BarChart3}
-        iconColor={colors.warning}
+        illustration="free-day"
         title="Keine Arbeiten angekündigt"
         hint="Aktuell steht nichts an."
       />
@@ -614,8 +612,10 @@ function PlanTab({ planByDay }: { planByDay: [string, { id: string; date: string
         <View key={date}>
           <SectionHeader title={formatRelativeDay(date)} icon={CalendarDays} iconColor={colors.accent.violet} />
           <View className="gap-2">
-            {blocks.map((block) => (
-              <PlanBlockCard key={block.id} subject={block.subject} focus={block.focus} minutes={block.minutes} />
+            {blocks.map((block, index) => (
+              <FadeInUp key={block.id} delay={Math.min(index, 8) * 30}>
+                <PlanBlockCard subject={block.subject} focus={block.focus} minutes={block.minutes} />
+              </FadeInUp>
             ))}
           </View>
         </View>

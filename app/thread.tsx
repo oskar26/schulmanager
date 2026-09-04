@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeBack } from '@/ui/navigation';
 import { MessageSquare, Send, X } from 'lucide-react-native';
@@ -22,7 +22,7 @@ import {
   Skeleton,
   Title,
 } from '@/ui/primitives';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { Spinner } from '@/ui/gluestack/feedback';
 import { useThemeColors } from '@/design/theme';
 import { foregroundOn, resolveThemeColor, shadow } from '@/design/tokens';
@@ -109,8 +109,7 @@ export default function ThreadScreen() {
             </View>
           ) : !data || data.length === 0 ? (
             <EmptyState
-              icon={MessageSquare}
-              iconColor={colors.accent.violet}
+              illustration="no-messages"
               title="Keine Nachrichten im Verlauf"
               hint={params.preview ? params.preview : 'Hier erscheinen Antworten und alte Nachrichten.'}
             />
@@ -150,12 +149,12 @@ export default function ThreadScreen() {
               className="min-h-[44px] flex-1 rounded-[20px] bg-canvas px-4 py-3 text-[14.5px] text-ink"
               onSubmitEditing={sendDraft}
             />
-            <Pressable
+            <PressableOpacity
               onPress={sendDraft}
               disabled={draft.trim().length === 0 || send.isPending}
               accessibilityRole="button"
               accessibilityLabel="Antwort senden"
-              className="h-11 w-11 items-center justify-center rounded-full hover:opacity-90 active:opacity-80"
+              className="h-11 w-11 items-center justify-center rounded-full"
               style={{
                 backgroundColor:
                   draft.trim().length === 0
@@ -168,7 +167,7 @@ export default function ThreadScreen() {
                 strokeWidth={2.4}
                 color={draft.trim().length === 0 ? colors.faint : colors.onBlocks.amber}
               />
-            </Pressable>
+            </PressableOpacity>
           </Row>
         </View>
       </KeyboardAvoidingView>

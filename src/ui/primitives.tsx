@@ -17,7 +17,8 @@ import { foregroundOn, radius, resolveThemeColor, shadow } from '@/design/tokens
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
-import { PressableOpacity, PressableScale } from '@/ui/motion';
+import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
+import { Illustration, type IllustrationName } from '@/ui/illustrations';
 
 /**
  * Phase 4 · Touch-Targets: Kleine visuelle Flächen bekommen automatisch genug
@@ -633,7 +634,8 @@ export function Badge({ count, className = '' }: { count: number; className?: st
 /* ------------------------------------------------------------------ States */
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <View className={`overflow-hidden rounded-2xl bg-line/70 ${className}`} />;
+  // Skeletons folgen dem Kartenradius des Farbflächen-Stils (Kernprinzip 3).
+  return <View className={`overflow-hidden rounded-[24px] bg-line/70 ${className}`} />;
 }
 
 export function EmptyState({
@@ -643,14 +645,16 @@ export function EmptyState({
   title,
   hint,
 }: {
-  /** Lucide-Icon im runden IconBadge (die App-Oberfläche bleibt emoji-frei). */
+  /** Lucide-Icon im runden IconBadge — nur noch Fallback, wenn keine
+   *  Illustration passt (die App-Oberfläche bleibt emoji-frei). */
   icon?: LucideIcon;
   iconColor?: string;
   /**
-   * Optionaler Illustrations-Node (SVG) statt Icon — Phase 3/9 setzt hier die
-   * verspielten Leerzustand-Illustrationen ein.
+   * Leerzustand-Illustration (Phase 9): entweder der Name einer der
+   * Standard-Illustrationen (`'free-day'`, `'all-done'`, …) oder ein eigener
+   * SVG-Node. Ohne Angabe fällt der Zustand auf das IconBadge zurück.
    */
-  illustration?: React.ReactNode;
+  illustration?: IllustrationName | React.ReactNode;
   title: string;
   hint?: string;
 }) {
@@ -659,13 +663,22 @@ export function EmptyState({
   // ColorBlockCard erbt der Leerzustand dagegen dieselbe kontraststarke Farbe
   // wie die übrigen Block-Texte.
   const ink = useBlockInk();
+  const art =
+    typeof illustration === 'string' ? (
+      <Illustration name={illustration as IllustrationName} ink={ink} />
+    ) : (
+      illustration ?? null
+    );
+
   return (
-    <View className="items-center justify-center gap-2.5 px-8 py-12">
-      {illustration ??
-        (IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="xl" tone="tint" strokeWidth={2} /> : null)}
-      <Text className="text-center text-[17px] font-extrabold tracking-[-0.2px]" style={{ color: ink }}>{title}</Text>
-      {hint ? <Text className="text-center text-[13px] leading-5" style={{ color: ink, opacity: 0.72 }}>{hint}</Text> : null}
-    </View>
+    <FadeInUp>
+      <View className="items-center justify-center gap-2.5 px-8 py-12">
+        {art ??
+          (IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="xl" tone="tint" strokeWidth={2} /> : null)}
+        <Text className="text-center text-[17px] font-extrabold tracking-[-0.2px]" style={{ color: ink }}>{title}</Text>
+        {hint ? <Text className="text-center text-[13px] leading-5" style={{ color: ink, opacity: 0.72 }}>{hint}</Text> : null}
+      </View>
+    </FadeInUp>
   );
 }
 
@@ -685,10 +698,10 @@ export function SegmentedControl<T extends string>({
       {options.map((option) => {
         const active = option.value === value;
         return (
-          <Pressable
+          <PressableOpacity
             key={option.value}
             onPress={() => onChange(option.value)}
-            className={`min-h-[48px] flex-1 flex-row items-center justify-center gap-1.5 rounded-full px-2 py-1.5 active:opacity-80 ${
+            className={`min-h-[48px] flex-1 flex-row items-center justify-center gap-1.5 rounded-full px-2 py-1.5 ${
               active ? 'bg-surface hover:bg-surface' : 'hover:bg-line/60'
             }`}
             style={active ? shadow.card : undefined}
@@ -706,7 +719,7 @@ export function SegmentedControl<T extends string>({
               {option.label}
             </Text>
             {option.badge ? <Badge count={option.badge} className="min-w-[18px]" /> : null}
-          </Pressable>
+          </PressableOpacity>
         );
       })}
     </View>
@@ -745,13 +758,13 @@ export function ListRow({
 
   if (!onPress) return content;
   return (
-    <Pressable
+    <PressableOpacity
       onPress={onPress}
-      className="hover:bg-line/40 active:bg-line/60"
+      className="hover:bg-line/40"
       accessibilityRole="button"
     >
       {content}
-    </Pressable>
+    </PressableOpacity>
   );
 }
 
@@ -782,7 +795,7 @@ export function IconButton({
       hitSlop={touchSlopFor(size)}
       style={{ width: size, height: size }}
       scale={0.92}
-      className={`items-center justify-center rounded-2xl ${background}`}
+      className={`items-center justify-center rounded-full ${background}`}
     >
       {LucideComp ? (
         <LucideComp size={Math.round(size * 0.52)} strokeWidth={2.2} color={resolvedColor} />

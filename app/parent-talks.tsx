@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeBack } from '@/ui/navigation';
-import { CalendarDays, ChevronLeft, User, Users } from 'lucide-react-native';
+import { ChevronLeft, User } from 'lucide-react-native';
 
 import type { ParentTalkRound } from '@/api/types';
 import { useBookProposal, useSnapshot } from '@/data/queries';
@@ -10,7 +10,7 @@ import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
 import { Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
-import { FadeInUp } from '@/ui/motion';
+import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { useSession } from '@/state/session';
 import { useThemeColors } from '@/design/theme';
 
@@ -36,8 +36,7 @@ export default function ParentTalksScreen() {
           <Skeleton className="h-24" />
         ) : rounds.length === 0 ? (
           <EmptyState
-            icon={CalendarDays}
-            iconColor={colors.warning}
+            illustration="no-events"
             title="Keine Sprechtage"
             hint="Aktuell ist keine Runde geplant — oder das Modul ist nicht gebucht."
           />
@@ -64,7 +63,7 @@ export default function ParentTalksScreen() {
                   {booked.length > 0 ? (
                     <View className="mt-3 gap-1.5">
                       {booked.map((appointment) => (
-                        <Row key={String(appointment.id)} className="gap-2 rounded-xl bg-success/10 px-3 py-2">
+                        <Row key={String(appointment.id)} className="gap-2 rounded-[20px] bg-success/10 px-3 py-2">
                           <User size={14} strokeWidth={2} color={colors.success} />
                           <Text className="flex-1 text-[13px] font-semibold text-ink">
                             {[appointment.teacher?.lastname, appointment.teacher?.firstname].filter(Boolean).join(', ') ||
@@ -117,7 +116,6 @@ export default function ParentTalksScreen() {
 /* ------------------------------------------------------------------ Buchung */
 
 function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () => void }) {
-  const { colors } = useThemeColors();
   const { api } = useSession.getState();
   const isDemo = useSession((state) => state.status !== 'connected');
   const book = useBookProposal();
@@ -164,20 +162,20 @@ function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () 
 
       <View className="gap-2">
         {[...teachers.values()].map((teacher) => (
-          <Pressable
+          <PressableOpacity
             key={teacher.id}
             onPress={() => void loadSlots(teacher.id)}
-            className={`rounded-2xl border px-4 py-3 ${
-              teacherId === teacher.id ? 'border-accent-amber bg-accent-amber/15' : 'border-line bg-surface'
+            className={`min-h-[48px] justify-center rounded-[20px] px-4 py-3 ${
+              teacherId === teacher.id ? 'bg-accent-amber' : 'bg-line/50'
             }`}
           >
-            <Text className={`text-[14px] font-semibold ${teacherId === teacher.id ? 'text-on-amber' : 'text-ink'}`}>
+            <Text className={`text-[14px] font-bold ${teacherId === teacher.id ? 'text-on-amber' : 'text-ink'}`}>
               {teacher.name}
             </Text>
-          </Pressable>
+          </PressableOpacity>
         ))}
         {teachers.size === 0 ? (
-          <EmptyState icon={Users} iconColor={colors.warning} title="Keine Angebote" hint="In dieser Runde werden keine Termine angeboten." />
+          <EmptyState illustration="nothing-here" title="Keine Angebote" hint="In dieser Runde werden keine Termine angeboten." />
         ) : null}
       </View>
 
@@ -192,7 +190,7 @@ function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () 
           <Text className="mb-2 text-[13px] font-bold text-ink">Freie Termine</Text>
           <View className="flex-row flex-wrap gap-2">
             {slots.map((slot) => (
-              <Pressable
+              <PressableOpacity
                 key={slot.id}
                 onPress={() => {
                   hapticLight();
@@ -211,12 +209,12 @@ function BookingSheet({ round, onClose }: { round: ParentTalkRound; onClose: () 
                     },
                   );
                 }}
-                className="rounded-xl bg-accent-amber px-3.5 py-2.5 active:opacity-80"
+                className="min-h-[44px] justify-center rounded-full bg-accent-amber px-3.5 py-2.5"
               >
                 <Text className="text-[13px] font-bold text-on-amber">
                   {slot.start ? formatDay(slot.start) : 'Termin'} · {slot.start ? formatTime(slot.start) : ''}
                 </Text>
-              </Pressable>
+              </PressableOpacity>
             ))}
           </View>
           {book.isPending ? (
