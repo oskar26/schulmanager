@@ -10,6 +10,17 @@
 export type AccentName = 'amber' | 'amberDeep' | 'violet' | 'lime' | 'limeDeep' | 'coral';
 export type OnColorName = 'amber' | 'lime' | 'violet' | 'coral' | 'charcoal';
 
+export type CategoryColorName =
+  | 'lavender'
+  | 'mint'
+  | 'apricot'
+  | 'blue'
+  | 'green'
+  | 'purple'
+  | 'orange'
+  | 'rose'
+  | 'sky';
+
 export type ThemePalette = {
   canvas: string;
   surface: string;
@@ -22,12 +33,13 @@ export type ThemePalette = {
   line: string;
   accent: Record<AccentName, string>;
   on: Record<OnColorName, string>;
+  category: Record<CategoryColorName, { solid: string; tint: string; text: string }>;
   success: string;
   warning: string;
   danger: string;
 };
 
-/** Light — warmes Canvas, klare Weißflächen und kräftige Farbblöcke. */
+/** Light — warmes Canvas, klare Weißflächen und satte, vollflächige Farbblöcke. */
 export const palette: ThemePalette = {
   canvas: '#F6F4EE',
   surface: '#FFFFFF',
@@ -53,14 +65,24 @@ export const palette: ThemePalette = {
     coral: '#FFFFFF',
     charcoal: '#FFFFFF',
   },
+  category: {
+    lavender: { solid: '#8B7CF8', tint: '#EDE9FE', text: '#3730A3' },
+    mint: { solid: '#2DD4BF', tint: '#CCFBF1', text: '#115E59' },
+    apricot: { solid: '#FF8C38', tint: '#FFEDD5', text: '#7C2D12' },
+    blue: { solid: '#3B82F6', tint: '#DBEAFE', text: '#1E40AF' },
+    green: { solid: '#10B981', tint: '#D1FAE5', text: '#065F46' },
+    purple: { solid: '#8B5CF6', tint: '#EDE9FE', text: '#4C1D95' },
+    orange: { solid: '#F97316', tint: '#FFEDD5', text: '#7C2D12' },
+    rose: { solid: '#F43F5E', tint: '#FFE4E6', text: '#881337' },
+    sky: { solid: '#0EA5E9', tint: '#E0F2FE', text: '#075985' },
+  },
   success: '#3E9B5A',
   warning: '#E89C1E',
   danger: '#E05353',
 };
 
 /**
- * Dark — dieselben Akzentfamilien, auf dunklen neutralen Flächen leicht heller.
- * So bleibt die visuelle Sprache identisch, ohne ein zweites Pastell-System.
+ * Dark — dieselben Akzent- und Kategorie-Familien, für dunkle neutrale Flächen harmonisch optimiert.
  */
 export const darkPalette: ThemePalette = {
   canvas: '#101114',
@@ -86,6 +108,17 @@ export const darkPalette: ThemePalette = {
     violet: '#FFFFFF',
     coral: '#FFFFFF',
     charcoal: '#FFFFFF',
+  },
+  category: {
+    lavender: { solid: '#9D91FC', tint: '#2E2856', text: '#DDD6FE' },
+    mint: { solid: '#5EEAD4', tint: '#134E4A', text: '#CCFBF1' },
+    apricot: { solid: '#FFA05A', tint: '#54280E', text: '#FFEDD5' },
+    blue: { solid: '#60A5FA', tint: '#1E3A8A', text: '#DBEAFE' },
+    green: { solid: '#34D399', tint: '#064E3B', text: '#D1FAE5' },
+    purple: { solid: '#A78BFA', tint: '#3B1F6E', text: '#EDE9FE' },
+    orange: { solid: '#FB923C', tint: '#54280E', text: '#FFEDD5' },
+    rose: { solid: '#FB7185', tint: '#4C0519', text: '#FFE4E6' },
+    sky: { solid: '#38BDF8', tint: '#0C4A6E', text: '#E0F2FE' },
   },
   success: '#6BC887',
   warning: '#F2B44A',
@@ -115,6 +148,13 @@ const DARK_EQUIVALENTS = new Map<string, string>([
     const key = name as AccentName;
     return [palette.accent[key], darkPalette.accent[key]] as [string, string];
   }),
+  ...Object.keys(palette.category).flatMap((name) => {
+    const key = name as CategoryColorName;
+    return [
+      [palette.category[key].solid, darkPalette.category[key].solid],
+      [palette.category[key].tint, darkPalette.category[key].tint],
+    ] as [string, string][];
+  }),
   [palette.success, darkPalette.success],
   [palette.warning, darkPalette.warning],
   [palette.danger, darkPalette.danger],
@@ -127,7 +167,7 @@ export function resolveThemeColor(color: string, isDark: boolean): string {
 
 /**
  * Textfarbe mit dem höchsten Kontrast auf einer Vollton-Fläche. Die expliziten
- * On-Token werden für unsere sechs Akzente bevorzugt; unbekannte Fachfarben
+ * On-Token werden für unsere Akzente bevorzugt; unbekannte Fachfarben
  * bekommen eine berechnete, robuste Schwarz/Weiß-Antwort.
  */
 export function foregroundOn(color: string, colors: ThemePalette = palette): string {
@@ -150,6 +190,7 @@ export function foregroundOn(color: string, colors: ThemePalette = palette): str
   return darkContrast >= lightContrast ? '#18191C' : '#FFFFFF';
 }
 
+/** Radien: Große Karten 28px, Chips/Pills 20px, Avatare/Buttons voll rund (999px) */
 export const radius = {
   cardSm: 20,
   card: 24,
@@ -172,14 +213,21 @@ export const space = {
   xxl: 28,
 } as const;
 
-/** Dezente, warme Schatten: Flächen trennen sich, ohne grau oder plastisch zu wirken. */
+/** Weiche, warme Schatten ohne harte Ränder */
 export const shadow = {
   card: {
     shadowColor: '#18191C',
-    shadowOpacity: 0.055,
+    shadowOpacity: 0.05,
     shadowRadius: 18,
-    shadowOffset: { width: 0, height: 7 },
+    shadowOffset: { width: 0, height: 6 },
     elevation: 2,
+  },
+  cardHover: {
+    shadowColor: '#18191C',
+    shadowOpacity: 0.09,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
   },
   float: {
     shadowColor: '#18191C',

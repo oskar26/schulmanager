@@ -1,24 +1,39 @@
+/**
+ * Noten Screen — Redesign mit satten Farbflächen & Fach-Icon-Badges.
+ */
 import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { BookOpen, Calculator, Lock, TrendingDown, TrendingUp } from 'lucide-react-native';
 
 import type { SubjectGrades } from '@/api/types';
 import { useSnapshot } from '@/data/queries';
-import { subjectStyle, tint } from '@/design/subjects';
+import { subjectIcon, subjectStyle, tint } from '@/design/subjects';
 import { de, deDelta, gradeColor, requiredGrade, simulate } from '@/features/grades/calculator';
 import { formatRelativeDay } from '@/lib/date';
 import {
-  Card, Chip, Divider, EmptyState, Muted, Row, Screen, Sheet, Skeleton, Title,
+  Card,
+  Chip,
+  ColorBlockCard,
+  Divider,
+  EmptyState,
+  IconBadge,
+  Muted,
+  Pill,
+  Row,
+  Screen,
+  Sheet,
+  Skeleton,
+  Title,
 } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Progress, Switch } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
-import { shadow } from '@/design/tokens';
+import { foregroundOn, radius, shadow } from '@/design/tokens';
 
 export default function GradesScreen() {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const reserve = useTabNavReserve();
   const hidden = useSettings((state) => state.settings.hideGrades);
@@ -45,10 +60,10 @@ export default function GradesScreen() {
       <Row className="justify-between px-4 pb-2 pt-2">
         <View>
           <Title>Noten</Title>
-          <Muted>{withAverage.length} Fächer mit Bewertung</Muted>
+          <Muted className="text-[13px] font-medium">{withAverage.length} Fächer mit Bewertung</Muted>
         </View>
         <Row className="gap-2">
-          <Muted className="text-[11px]">verbergen</Muted>
+          <Muted className="text-[11px] font-bold">Verbergen</Muted>
           <Switch value={hidden} onValueChange={(value) => update({ hideGrades: value })} />
         </Row>
       </Row>
@@ -56,147 +71,182 @@ export default function GradesScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+            <Skeleton className="h-32 rounded-[28px]" />
+            <Skeleton className="h-24 rounded-[24px]" />
+            <Skeleton className="h-24 rounded-[24px]" />
           </View>
         ) : subjects.length === 0 ? (
           <EmptyState
             icon={Lock}
             iconColor={colors.accent.violet}
-            title="Keine Noten sichtbar"
+            title="Keine Noten freigegeben"
             hint="Ob Familien Noten sehen dürfen, entscheidet die Schule im Modul „Noten“."
           />
         ) : (
           <>
-            {/* Phase 3: Erfolgs-Hero in Lime mit Schnitt, bestem Fach und größtem Hebel */}
-            <Card
-              className="mb-3 overflow-hidden"
-              padded={false}
+            {/* Großer grüner / Lime Gesamtschnitt-Hero-Block */}
+            <View
+              className="mb-3.5 overflow-hidden rounded-[28px] p-5"
               style={{
                 backgroundColor: colors.accent.lime,
-                borderWidth: 0,
                 ...shadow.float,
               }}
             >
-              <View className="flex-row items-center gap-4 p-4">
-                <View
-                  className="h-12 w-12 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: 'rgba(31,42,0,0.10)' }}
-                >
-                  <TrendingUp size={22} strokeWidth={2.2} color={colors.on.lime} />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[10px] font-extrabold uppercase tracking-[1.6px] text-on-lime/65">
-                    Gesamtschnitt
-                  </Text>
-                  <Text className="text-[40px] font-extrabold leading-[42px] tracking-tight text-on-lime">
-                    {hidden ? '•••' : overall != null ? de(overall) : '–'}
-                  </Text>
-                </View>
-                <View className="items-end">
-                  <View
-                    className="rounded-2xl px-3.5 py-2.5"
-                    style={{ backgroundColor: 'rgba(31,42,0,0.12)' }}
-                  >
-                    <Text className="text-[22px] font-extrabold leading-[24px] text-on-lime">
-                      {hidden ? '••' : String(subjects.reduce((sum, s) => sum + s.grades.length, 0))}
+              <Row className="items-center justify-between">
+                <Row className="gap-3.5">
+                  <IconBadge
+                    icon={TrendingUp}
+                    color={colors.accent.limeDeep}
+                    tone="solid"
+                    size={48}
+                    iconSize={24}
+                  />
+                  <View>
+                    <Text className="text-[11px] font-extrabold uppercase tracking-[1.4px] text-on-lime/75">
+                      Gesamtschnitt
                     </Text>
-                    <Text className="text-[9px] font-extrabold uppercase tracking-wider text-on-lime/60">
-                      Noten erfasst
+                    <Text className="text-[44px] font-extrabold leading-[46px] tracking-tight text-on-lime">
+                      {hidden ? '•••' : overall != null ? de(overall) : '–'}
                     </Text>
                   </View>
+                </Row>
+                <View
+                  className="items-center justify-center rounded-[20px] px-4 py-2.5"
+                  style={{ backgroundColor: 'rgba(31,42,0,0.12)' }}
+                >
+                  <Text className="text-[24px] font-extrabold text-on-lime">
+                    {hidden ? '••' : String(subjects.reduce((sum, s) => sum + s.grades.length, 0))}
+                  </Text>
+                  <Text className="text-[9.5px] font-extrabold uppercase tracking-wider text-on-lime/70">
+                    Noten
+                  </Text>
                 </View>
-              </View>
+              </Row>
 
-              <View className="h-[1px] bg-on-lime/15" />
+              <View className="my-3.5 h-[1px] bg-on-lime/15" />
 
-              <View className="flex-row">
+              <Row className="justify-between">
                 {best ? (
-                  <View className="flex-1 gap-0.5 px-4 py-3">
-                    <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-on-lime/60">
+                  <View className="flex-1 pr-2">
+                    <Text className="text-[10px] font-extrabold uppercase tracking-[1.2px] text-on-lime/70">
                       Stärkstes Fach
                     </Text>
-                    <Text className="text-[15px] font-extrabold leading-5 text-on-lime" numberOfLines={1}>
+                    <Text className="mt-0.5 text-[16px] font-extrabold text-on-lime" numberOfLines={1}>
                       {best.subject}
                     </Text>
-                    <Text className="text-[13px] font-bold text-on-lime/80">
-                      {hidden ? '' : best.average != null ? de(best.average) : ''}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="flex-1 px-4 py-3" />
-                )}
-                <View className="w-[1px] bg-on-lime/15" />
-                {worst && worst !== best ? (
-                  <View className="flex-1 gap-0.5 px-4 py-3">
-                    <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-on-lime/60">
-                      Größter Hebel
-                    </Text>
-                    <Text className="text-[15px] font-extrabold leading-5 text-on-lime" numberOfLines={1}>
-                      {worst.subject}
-                    </Text>
-                    <Text className="text-[13px] font-bold text-on-lime/80">
-                      {hidden ? '' : worst.average != null ? de(worst.average) : ''}
+                    <Text className="text-[14px] font-bold text-on-lime/90">
+                      {hidden ? '' : best.average != null ? `Ø ${de(best.average)}` : ''}
                     </Text>
                   </View>
                 ) : null}
-              </View>
-            </Card>
 
-            {subjects.map((subject, index) => {
-              const style = subjectStyle(subject.subject);
-              const color = gradeColor(subject.average, subject.gradingSystem);
-              // Balkenlänge: 1,0 = voll, 6,0 = leer
-              const ratio =
-                subject.average == null
-                  ? 0
-                  : subject.gradingSystem === 1
-                    ? (subject.average / 15) * 100
-                    : ((6 - subject.average) / 5) * 100;
+                {worst && worst !== best ? (
+                  <View className="flex-1 pl-2">
+                    <Text className="text-[10px] font-extrabold uppercase tracking-[1.2px] text-on-lime/70">
+                      Größter Hebel
+                    </Text>
+                    <Text className="mt-0.5 text-[16px] font-extrabold text-on-lime" numberOfLines={1}>
+                      {worst.subject}
+                    </Text>
+                    <Text className="text-[14px] font-bold text-on-lime/90">
+                      {hidden ? '' : worst.average != null ? `Ø ${de(worst.average)}` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+              </Row>
+            </View>
 
-              return (
-                <FadeInUp key={String(subject.subjectId)} delay={index * 30}>
-                  <PressableScale onPress={() => setSelected(subject)} className="mb-2" scale={0.98} accessibilityRole="button">
-                    <Card style={{ backgroundColor: tint(style.color, 0.10) }}>
-                      <Row className="gap-3">
-                        <View
-                          className="h-11 w-11 items-center justify-center rounded-2xl"
-                          style={{ backgroundColor: tint(style.color, 0.16) }}
-                        >
-                          <BookOpen size={20} strokeWidth={2.1} color={style.color} />
-                        </View>
-                        <View className="flex-1">
-                          <Row className="justify-between">
-                            <Text className="text-[15px] font-bold text-ink">{subject.subject}</Text>
-                            <Text className="text-[16px] font-extrabold" style={{ color }}>
+            {/* Sattere Fachkarten mit Fach-Icon-Badge & größerer Notenzahl */}
+            <View className="gap-2.5">
+              {subjects.map((subject, index) => {
+                const style = subjectStyle(subject.subject);
+                const SubIcon = subjectIcon(subject.subject);
+                const color = gradeColor(subject.average, subject.gradingSystem);
+
+                const ratio =
+                  subject.average == null
+                    ? 0
+                    : subject.gradingSystem === 1
+                      ? (subject.average / 15) * 100
+                      : ((6 - subject.average) / 5) * 100;
+
+                const cardBg = tint(style.color, isDark ? 0.22 : 0.12);
+
+                return (
+                  <FadeInUp key={String(subject.subjectId)} delay={index * 30}>
+                    <PressableScale
+                      onPress={() => setSelected(subject)}
+                      scale={0.98}
+                      accessibilityRole="button"
+                    >
+                      <View
+                        className="overflow-hidden rounded-[26px] p-4"
+                        style={{
+                          backgroundColor: cardBg,
+                          ...shadow.card,
+                        }}
+                      >
+                        <Row className="items-center justify-between">
+                          <Row className="flex-1 gap-3.5">
+                            <IconBadge
+                              icon={SubIcon}
+                              color={style.color}
+                              tone="solid"
+                              size={48}
+                              iconSize={24}
+                            />
+                            <View className="flex-1">
+                              <Text className="text-[17px] font-extrabold text-ink" numberOfLines={1}>
+                                {subject.subject}
+                              </Text>
+                              <Muted className="mt-0.5 text-[12px] font-semibold">
+                                {subject.grades.length}{' '}
+                                {subject.grades.length === 1 ? 'Note' : 'Noten'} erfasst
+                              </Muted>
+                            </View>
+                          </Row>
+
+                          <View className="items-end">
+                            <Text className="text-[26px] font-extrabold tracking-tight" style={{ color }}>
                               {hidden ? '•••' : subject.average != null ? de(subject.average) : '–'}
                             </Text>
-                          </Row>
-                          <Progress value={hidden ? 0 : ratio} color={color} className="mt-2" />
-                          <Row className="mt-1.5 gap-1.5">
+                            <Text className="text-[10px] font-extrabold uppercase tracking-wider text-muted">
+                              Schnitt
+                            </Text>
+                          </View>
+                        </Row>
+
+                        {/* Trendlinie / Fortschrittsbalken */}
+                        <View className="mt-3">
+                          <Progress value={hidden ? 0 : ratio} color={color} className="h-2" />
+                        </View>
+
+                        {/* Letzte Noten-Pills */}
+                        {subject.grades.length > 0 ? (
+                          <Row className="mt-2.5 gap-1.5">
                             {subject.grades.slice(0, 5).map((grade) => (
-                              <View
+                              <Pill
                                 key={grade.id}
-                                className="rounded-md px-1.5 py-0.5"
-                                style={{ backgroundColor: tint(color, 0.14) }}
-                              >
-                                <Text className="text-[10px] font-bold" style={{ color }}>
-                                  {hidden ? '•' : grade.value}
-                                </Text>
-                              </View>
+                                label={hidden ? '•' : String(grade.value)}
+                                color={style.color}
+                                tone="solid"
+                              />
                             ))}
                             {subject.grades.length > 5 ? (
-                              <Muted className="text-[10px]">+{subject.grades.length - 5}</Muted>
+                              <Pill
+                                label={`+${subject.grades.length - 5}`}
+                                color={colors.charcoal}
+                                tone="tint"
+                              />
                             ) : null}
                           </Row>
-                        </View>
-                      </Row>
-                    </Card>
-                  </PressableScale>
-                </FadeInUp>
-              );
-            })}
+                        ) : null}
+                      </View>
+                    </PressableScale>
+                  </FadeInUp>
+                );
+              })}
+            </View>
           </>
         )}
       </ScrollView>
@@ -216,6 +266,7 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
   if (!subject) return <Sheet open={false} onClose={onClose}><View /></Sheet>;
 
   const style = subjectStyle(subject.subject);
+  const SubIcon = subjectIcon(subject.subject);
   const color = gradeColor(subject.average, subject.gradingSystem);
   const required = requiredGrade(subject, target);
   const preview = simulated != null ? simulate(subject, simulated) : null;
@@ -225,45 +276,51 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
   return (
     <Sheet open onClose={onClose} title={subject.subject}>
       <View className="gap-3">
-        <Card style={{ backgroundColor: tint(color, 0.12) }}>
-          <Row className="justify-between">
-            <View>
-              <Muted className="text-[11px]">Aktueller Schnitt</Muted>
-              <Text className="text-[28px] font-extrabold" style={{ color }}>
-                {subject.average != null ? de(subject.average) : '–'}
-              </Text>
-            </View>
-            <View className="items-end">
-              <Muted className="text-[11px]">Bewertungen</Muted>
-              <Text className="text-[28px] font-extrabold text-ink">{subject.grades.length}</Text>
+        <ColorBlockCard color={style.color} tone="tint">
+          <Row className="gap-3.5">
+            <IconBadge icon={SubIcon} color={style.color} size={48} iconSize={24} tone="solid" />
+            <View className="flex-1">
+              <Row className="justify-between">
+                <View>
+                  <Muted className="text-[11px] font-bold">Aktueller Schnitt</Muted>
+                  <Text className="text-[32px] font-extrabold" style={{ color }}>
+                    {subject.average != null ? de(subject.average) : '–'}
+                  </Text>
+                </View>
+                <View className="items-end">
+                  <Muted className="text-[11px] font-bold">Bewertungen</Muted>
+                  <Text className="text-[32px] font-extrabold text-ink">{subject.grades.length}</Text>
+                </View>
+              </Row>
             </View>
           </Row>
-        </Card>
+        </ColorBlockCard>
 
         {/* Einzelnoten */}
         <Card padded={false}>
-          <Text className="px-4 pt-3 text-[13px] font-bold text-ink">Einzelnoten</Text>
+          <Text className="px-4 pt-3.5 text-[14px] font-extrabold text-ink">Einzelnoten</Text>
           {subject.grades.map((grade, index) => (
             <View key={grade.id}>
               <Row className="gap-3 px-4 py-2.5">
-                <View
-                  className="h-8 w-8 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: tint(gradeColor(grade.numeric, subject.gradingSystem), 0.16) }}
-                >
-                  <Text
-                    className="text-[13px] font-extrabold"
-                    style={{ color: gradeColor(grade.numeric, subject.gradingSystem) }}
-                  >
-                    {grade.value}
-                  </Text>
-                </View>
+                <IconBadge
+                  icon={BookOpen}
+                  color={gradeColor(grade.numeric, subject.gradingSystem)}
+                  tone="solid"
+                  size={36}
+                  iconSize={16}
+                />
                 <View className="flex-1">
-                  <Text className="text-[13px] font-semibold text-ink">{grade.type ?? 'Note'}</Text>
-                  <Muted className="text-[11px]">
+                  <Text className="text-[14px] font-bold text-ink">{grade.type ?? 'Note'}</Text>
+                  <Muted className="text-[11px] font-medium">
                     {grade.date ? formatRelativeDay(grade.date) : ''}
                     {grade.weight !== 1 ? ` · Gewicht ×${grade.weight}` : ''}
                   </Muted>
                 </View>
+                <Pill
+                  label={String(grade.value)}
+                  color={gradeColor(grade.numeric, subject.gradingSystem)}
+                  tone="solid"
+                />
               </Row>
               {index < subject.grades.length - 1 ? <Divider className="ml-14" /> : null}
             </View>
@@ -273,16 +330,11 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
 
         {/* Rechner */}
         <Card>
-          <Row className="gap-2">
-            <View
-              className="h-8 w-8 items-center justify-center rounded-[10px]"
-              style={{ backgroundColor: tint(colors.accent.violet, 0.14) }}
-            >
-              <Calculator size={16} strokeWidth={2.1} color={colors.accent.violet} />
-            </View>
-            <Text className="text-[15px] font-bold text-ink">Was brauche ich?</Text>
+          <Row className="gap-2.5">
+            <IconBadge icon={Calculator} color={colors.accent.violet} size={36} iconSize={18} />
+            <Text className="text-[16px] font-extrabold text-ink">Was brauche ich?</Text>
           </Row>
-          <Muted className="mt-1 text-[12px]">
+          <Muted className="mt-1.5 text-[12px] leading-5">
             Zielschnitt wählen — Schulflow rechnet, welche Note die nächste Arbeit (Gewicht ×2) haben muss.
           </Muted>
 
@@ -291,24 +343,24 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
               <PressableOpacity
                 key={value}
                 onPress={() => setTarget(value)}
-                className={`min-h-[44px] justify-center rounded-xl px-3.5 ${
+                className={`min-h-[44px] justify-center rounded-xl px-4 ${
                   target === value ? 'bg-accent-violet' : 'bg-line/60 hover:bg-line'
                 }`}
                 accessibilityRole="button"
                 accessibilityState={{ selected: target === value }}
               >
-                <Text className={`text-[12px] font-bold ${target === value ? 'text-on-violet' : 'text-muted'}`}>
+                <Text className={`text-[13px] font-extrabold ${target === value ? 'text-on-violet' : 'text-muted'}`}>
                   {subject.gradingSystem === 1 ? `${value} P` : de(value, 1)}
                 </Text>
               </PressableOpacity>
             ))}
           </Row>
 
-          <View className="mt-3 rounded-2xl bg-line/40 p-3">
+          <View className="mt-3 rounded-2xl bg-line/40 p-3.5">
             {required.possible ? (
               <Text className="text-[14px] font-bold text-ink">
                 Nötige Note:{' '}
-                <Text style={{ color: gradeColor(required.needed, subject.gradingSystem) }}>
+                <Text style={{ color: gradeColor(required.needed, subject.gradingSystem), fontWeight: '800' }}>
                   {subject.gradingSystem === 1
                     ? `${Math.ceil(required.needed)} Punkte`
                     : de(required.needed, 1)}
@@ -321,7 +373,7 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
             )}
           </View>
 
-          <Muted className="mt-3 text-[12px]">Wirkung einer Note simulieren:</Muted>
+          <Muted className="mt-3.5 text-[12px] font-bold">Wirkung einer Note simulieren:</Muted>
           <Row className="mt-2 flex-wrap gap-2">
             {options.map((value) => (
               <PressableOpacity
@@ -342,11 +394,11 @@ function SubjectSheet({ subject, onClose }: { subject: SubjectGrades | null; onC
           {preview != null ? (
             <Row className="mt-3 gap-2">
               {preview < (subject.average ?? 9) ? (
-                <TrendingDown size={16} strokeWidth={2.1} color={colors.success} />
+                <TrendingDown size={17} strokeWidth={2.4} color={colors.success} />
               ) : (
-                <TrendingUp size={16} strokeWidth={2.1} color={colors.danger} />
+                <TrendingUp size={17} strokeWidth={2.4} color={colors.danger} />
               )}
-              <Text className="text-[13px] font-semibold text-ink">
+              <Text className="text-[13px] font-bold text-ink">
                 Neuer Schnitt: {de(preview)}{' '}
                 <Text className="text-muted">({deDelta(preview - (subject.average ?? 0))})</Text>
               </Text>

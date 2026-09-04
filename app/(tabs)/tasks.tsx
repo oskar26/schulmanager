@@ -1,3 +1,6 @@
+/**
+ * Aufgaben Screen (Hausaufgaben, Arbeiten, Lernplan) — Redesign mit satten Farbflächen.
+ */
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import {
@@ -15,15 +18,17 @@ import {
 
 import type { Homework } from '@/api/types';
 import { useHomeworkDone, useSnapshot } from '@/data/queries';
-import { subjectStyle, tint } from '@/design/subjects';
+import { subjectIcon, subjectStyle, tint } from '@/design/subjects';
 import { buildStudyPlan } from '@/features/tasks/studyplan';
 import { addDays, daysUntil, formatRelativeDay, toISO } from '@/lib/date';
 import { hapticLight, hapticSuccess } from '@/lib/haptics';
 import {
   Card,
   Chip,
+  ColorBlockCard,
   Divider,
   EmptyState,
+  IconBadge,
   Muted,
   Pill,
   Row,
@@ -39,18 +44,11 @@ import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Progress } from '@/ui/gluestack/feedback';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn } from '@/design/tokens';
+import { foregroundOn, radius, shadow } from '@/design/tokens';
 import type { ThemePalette } from '@/design/tokens';
 
 type Tab = 'homework' | 'exams' | 'plan';
 
-/* ------------------------------------------------------------------ Prioritäts-Farben (Phase 3) */
-
-/**
- * Farbcodierung der Aufgaben-Karten:
- * Coral  = dringend (überfällig / heute)  ·  Amber = bald (morgen / in wenigen Tagen)
- * Lime   = erledigt / ok                 ·  Violet = entspannt (später)
- */
 function priorityMeta(days: number, colors: ThemePalette) {
   if (days < 0) return { color: colors.danger, label: days === -1 ? 'Gestern fällig' : `${-days} Tage überfällig`, urgent: true };
   if (days === 0) return { color: colors.danger, label: 'Heute fällig', urgent: true };
@@ -60,14 +58,14 @@ function priorityMeta(days: number, colors: ThemePalette) {
 }
 
 export default function TasksScreen() {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const toggle = useHomeworkDone((state) => state.toggle);
   const reserve = useTabNavReserve();
   const [tab, setTab] = useState<Tab>('homework');
   const [detail, setDetail] = useState<Homework | null>(null);
 
-  const homework = data?.homework ?? []; // done-Flag ist in useSnapshot bereits eingemischt
+  const homework = data?.homework ?? [];
   const open = homework.filter((item) => !item.done);
   const done = homework.filter((item) => item.done);
   const upcomingExams = (data?.exams ?? []).filter((exam) => daysUntil(exam.date) >= 0);
@@ -120,42 +118,37 @@ export default function TasksScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+            <Skeleton className="h-24 rounded-[24px]" />
+            <Skeleton className="h-24 rounded-[24px]" />
           </View>
         ) : tab === 'homework' ? (
           <>
             {homework.length > 0 ? (
-              <Card className="mb-3" padded={false}>
-                <View className="flex-row items-center gap-3 p-4">
-                  <View className="flex-1">
-                    <Row className="justify-between">
-                      <Text className="text-[13px] font-bold text-ink">
-                        {done.length} von {homework.length} erledigt
-                      </Text>
-                      <Text
-                        className="text-[13px] font-extrabold"
-                        style={{ color: done.length === homework.length ? colors.success : colors.accent.amberDeep }}
-                      >
-                        {Math.round((done.length / homework.length) * 100)} %
-                      </Text>
-                    </Row>
-                    <Progress
-                      value={(done.length / homework.length) * 100}
-                      className="mt-2"
-                      color={done.length === homework.length ? colors.success : undefined}
-                    />
-                  </View>
+              <ColorBlockCard color={colors.accent.amber} tone="tint" className="mb-3" padded={false}>
+                <View className="p-4">
+                  <Row className="justify-between">
+                    <Text className="text-[14px] font-extrabold text-ink">
+                      {done.length} von {homework.length} erledigt
+                    </Text>
+                    <Text className="text-[14px] font-extrabold text-accent-amber-deep">
+                      {Math.round((done.length / homework.length) * 100)} %
+                    </Text>
+                  </Row>
+                  <Progress
+                    value={(done.length / homework.length) * 100}
+                    className="mt-2.5"
+                    color={done.length === homework.length ? colors.success : undefined}
+                  />
                 </View>
-              </Card>
+              </ColorBlockCard>
             ) : null}
 
             {grouped.length === 0 ? (
               <EmptyState
                 icon={CheckCheck}
                 iconColor={colors.success}
-                title="Keine offenen Aufgaben"
-                hint="Alles abgehakt. Genieß den Nachmittag."
+                title="Keine offenen Aufgaben!"
+                hint="Alles erledigt. Genieß den Nachmittag."
               />
             ) : (
               grouped.map(([due, items], groupIndex) => {
@@ -172,30 +165,34 @@ export default function TasksScreen() {
                       iconColor={headerColor}
                       action={days < 0 ? `${-days} Tag(e) überfällig` : undefined}
                     />
-                    {items.map((item, index) => (
-                      <FadeInUp key={item.id} delay={(groupIndex * 3 + index) * 30}>
-                        <OpenHomeworkCard
-                          item={item}
-                          onOpen={() => {
-                            hapticLight();
-                            setDetail(item);
-                          }}
-                          onToggle={() => markDone(item)}
-                        />
-                      </FadeInUp>
-                    ))}
+                    <View className="gap-2.5">
+                      {items.map((item, index) => (
+                        <FadeInUp key={item.id} delay={(groupIndex * 3 + index) * 30}>
+                          <OpenHomeworkCard
+                            item={item}
+                            onOpen={() => {
+                              hapticLight();
+                              setDetail(item);
+                            }}
+                            onToggle={() => markDone(item)}
+                          />
+                        </FadeInUp>
+                      ))}
+                    </View>
                   </View>
                 );
               })
             )}
 
             {done.length > 0 ? (
-              <>
+              <View className="mt-4">
                 <SectionHeader title="Erledigt" icon={CheckCheck} iconColor={colors.success} />
-                {done.map((item) => (
-                  <DoneHomeworkCard key={item.id} item={item} onToggle={() => markDone(item)} />
-                ))}
-              </>
+                <View className="gap-2">
+                  {done.map((item) => (
+                    <DoneHomeworkCard key={item.id} item={item} onToggle={() => markDone(item)} />
+                  ))}
+                </View>
+              </View>
             ) : null}
           </>
         ) : tab === 'exams' ? (
@@ -203,144 +200,131 @@ export default function TasksScreen() {
             <EmptyState
               icon={BarChart3}
               iconColor={colors.warning}
-              title="Keine Arbeiten angekündigt"
-              hint="Aktuell steht nichts an."
+              title="Keine anstehenden Arbeiten"
+              hint="Aktuell stehen keine Prüfungen an."
             />
           ) : (
-            <>
-              <View className="mb-3">
-                <Chip
-                  label="Coral = dringend · Amber = bald · Lime = entspannt"
-                  color={colors.faint}
-                />
-              </View>
+            <View className="gap-3 pt-2">
               {upcomingExams.map((exam, index) => {
                 const style = subjectStyle(exam.subject);
+                const SubIcon = subjectIcon(exam.subject);
                 const days = daysUntil(exam.date);
-                const tone = days <= 1 ? colors.danger : days <= 5 ? colors.warning : colors.success;
+                const tone = days <= 2 ? colors.danger : days <= 5 ? colors.warning : colors.category.mint.solid;
                 const blocks = plan.filter((block) => block.examId === exam.id);
+
                 return (
                   <FadeInUp key={exam.id} delay={index * 40}>
-                    <Card
-                      className="mb-2 overflow-hidden"
+                    <ColorBlockCard
+                      color={tone}
+                      tone="tint"
                       padded={false}
-                      style={{
-                        backgroundColor: tint(tone, 0.07),
-                        borderWidth: 1,
-                        borderColor: tint(tone, 0.3),
-                      }}
+                      className="overflow-hidden"
                     >
-                      <View className="flex-row">
-                        <View style={{ width: 4, backgroundColor: tone }} />
-                        <View className="flex-1 p-4">
-                          <Row className="gap-3">
-                            <View
-                              className="h-14 w-14 items-center justify-center rounded-2xl"
-                              style={{ backgroundColor: tint(tone, 0.16) }}
-                            >
-                              <Text className="text-[18px] font-extrabold" style={{ color: tone }}>
-                                {days === 0 ? '!' : days}
+                      <View className="p-4">
+                        <Row className="gap-3.5">
+                          <IconBadge
+                            icon={SubIcon}
+                            color={tone}
+                            tone="solid"
+                            size={52}
+                            iconSize={24}
+                          />
+
+                          <View className="flex-1">
+                            <Row className="justify-between gap-2">
+                              <Text className="flex-1 text-[18px] font-extrabold text-ink" numberOfLines={1}>
+                                {exam.subject}
                               </Text>
-                              <Text className="text-[9px] font-bold uppercase" style={{ color: tone }}>
-                                {days === 0 ? 'heute' : days === 1 ? 'Tag' : 'Tage'}
-                              </Text>
-                            </View>
-                            <View className="flex-1">
-                              <Row className="justify-between gap-2">
-                                <Text className="flex-1 text-[16px] font-bold text-ink">{exam.subject}</Text>
-                                <Muted className="text-[11px]">
-                                  {exam.start ? `${exam.start} Uhr` : ''}
-                                </Muted>
-                              </Row>
-                              <Muted>
-                                {formatRelativeDay(exam.date)}
-                                {exam.start && exam.end ? ` · ${exam.start}–${exam.end}` : ''}
-                              </Muted>
-                              <Row className="mt-1.5 flex-wrap gap-2">
-                                {exam.type ? <Chip label={exam.type} color={style.color} /> : null}
-                                {blocks.length > 0 ? (
-                                  <Chip label={`${blocks.length} Lernblöcke`} color={colors.accent.violet} />
-                                ) : null}
-                              </Row>
-                            </View>
-                          </Row>
-                          {exam.comment ? (
-                            <Muted className="mt-2 text-[12px]">{exam.comment}</Muted>
-                          ) : null}
-                        </View>
-                        <PressableScale
-                          onPress={() => setTab('plan')}
-                          accessibilityLabel="Zum Lernplan"
-                          className="justify-center pr-4 pl-2"
-                          scale={0.9}
-                        >
-                          <View
-                            className="h-10 w-10 items-center justify-center rounded-full"
-                            style={{ backgroundColor: tint(colors.accent.violet, 0.14) }}
-                          >
-                            <ArrowUpRight size={18} strokeWidth={2.2} color={colors.accent.violet} />
+                              <Pill
+                                label={days === 0 ? 'Heute' : `${days} Tage`}
+                                color={tone}
+                                tone="solid"
+                              />
+                            </Row>
+                            <Muted className="mt-0.5 text-[12px] font-semibold">
+                              {formatRelativeDay(exam.date)}
+                              {exam.start && exam.end ? ` · ${exam.start}–${exam.end} Uhr` : ''}
+                            </Muted>
+                            <Row className="mt-2 flex-wrap gap-2">
+                              {exam.type ? <Pill label={exam.type} color={style.color} tone="tint" /> : null}
+                              {blocks.length > 0 ? (
+                                <Pill label={`${blocks.length} Lernblöcke`} color={colors.accent.violet} tone="tint" />
+                              ) : null}
+                            </Row>
                           </View>
-                        </PressableScale>
+
+                          <PressableScale
+                            onPress={() => setTab('plan')}
+                            accessibilityLabel="Zum Lernplan"
+                            className="justify-center"
+                            scale={0.9}
+                          >
+                            <View
+                              className="h-10 w-10 items-center justify-center rounded-full bg-surface"
+                              style={shadow.card}
+                            >
+                              <ArrowUpRight size={18} strokeWidth={2.4} color={colors.charcoal} />
+                            </View>
+                          </PressableScale>
+                        </Row>
+
+                        {exam.comment ? (
+                          <Muted className="mt-2 text-[12px] font-medium">{exam.comment}</Muted>
+                        ) : null}
                       </View>
-                    </Card>
+                    </ColorBlockCard>
                   </FadeInUp>
                 );
               })}
-            </>
+            </View>
           )
         ) : planByDay.length === 0 ? (
           <EmptyState
             icon={Sparkles}
             iconColor={colors.accent.violet}
-            title="Nichts zu lernen"
-            hint="Sobald Arbeiten anstehen, plant Schulflow hier automatisch Lernblöcke."
+            title="Keine Lernblöcke nötig"
+            hint="Sobald Arbeiten anstehen, plant Schulflow hier automatisch passende Lerneinheiten."
           />
         ) : (
           <>
-            <Card className="mb-3 bg-accent-violet/15">
-              <Row className="gap-2">
-                <Sparkles size={16} strokeWidth={2.1} color={colors.accent.violet} />
-                <Text className="text-[13px] font-bold text-accent-violet">Automatisch geplant</Text>
+            <ColorBlockCard color={colors.accent.violet} tone="tint" className="mb-3">
+              <Row className="gap-2.5">
+                <IconBadge icon={Sparkles} color={colors.accent.violet} size={32} iconSize={16} />
+                <Text className="text-[14px] font-extrabold text-accent-violet">Automatisch geplant</Text>
               </Row>
-              <Muted className="mt-1 text-[12px]">
+              <Muted className="mt-1.5 text-[12px] leading-5 text-ink">
                 Schulflow verteilt Lernblöcke rückwärts ab dem Prüfungstag, entlastet Tage mit langem
-                Unterricht und legt den Vortag immer auf Wiederholung.
+                Unterricht und legt den Vortag immer auf gezielte Wiederholung.
               </Muted>
-            </Card>
+            </ColorBlockCard>
 
             {planByDay.map(([date, blocks]) => (
               <View key={date}>
                 <SectionHeader title={formatRelativeDay(date)} icon={CalendarDays} iconColor={colors.accent.violet} />
-                <Card padded={false}>
-                  {blocks.map((block, index) => {
+                <View className="gap-2.5">
+                  {blocks.map((block) => {
                     const style = subjectStyle(block.subject);
+                    const SubIcon = subjectIcon(block.subject);
                     return (
-                      <View key={block.id}>
-                        <Row className="gap-3 px-4 py-3">
-                          <View
-                            className="h-9 w-9 items-center justify-center rounded-xl"
-                            style={{ backgroundColor: tint(style.color, 0.16) }}
-                          >
-                            <BookOpen size={17} strokeWidth={2.1} color={style.color} />
-                          </View>
+                      <ColorBlockCard key={block.id} color={style.color} tone="tint" padded={false}>
+                        <Row className="gap-3.5 px-4 py-3.5">
+                          <IconBadge icon={SubIcon} color={style.color} size={42} iconSize={20} tone="solid" />
                           <View className="flex-1">
-                            <Text className="text-[14px] font-semibold text-ink">{block.subject}</Text>
-                            <Muted className="text-[12px]">{block.focus}</Muted>
+                            <Text className="text-[15px] font-extrabold text-ink">{block.subject}</Text>
+                            <Muted className="text-[12px] font-medium">{block.focus}</Muted>
                           </View>
-                          <Chip label={`${block.minutes} min`} color={style.color} />
+                          <Pill label={`${block.minutes} min`} color={style.color} tone="solid" />
                         </Row>
-                        {index < blocks.length - 1 ? <Divider className="ml-16" /> : null}
-                      </View>
+                      </ColorBlockCard>
                     );
                   })}
-                </Card>
+                </View>
               </View>
             ))}
           </>
         )}
       </ScrollView>
 
-      {/* Detail-Sheet einer offenen Hausaufgabe */}
       <HomeworkSheet
         item={detail}
         onClose={() => setDetail(null)}
@@ -350,7 +334,7 @@ export default function TasksScreen() {
   );
 }
 
-/* ------------------------------------------------------------------ Karten (Phase 3) */
+/* ------------------------------------------------------------------ Farbblock-Karten */
 
 function OpenHomeworkCard({
   item,
@@ -361,100 +345,100 @@ function OpenHomeworkCard({
   onOpen: () => void;
   onToggle: () => void;
 }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const style = subjectStyle(item.subject);
+  const SubIcon = subjectIcon(item.subject);
   const days = daysUntil(item.due);
   const meta = priorityMeta(days, colors);
 
+  const cardBg = tint(style.color, isDark ? 0.22 : 0.14);
+
   return (
-    <Card
-      className="mb-2 overflow-hidden"
-      padded={false}
-      style={{
-        backgroundColor: meta.urgent ? tint(meta.color, 0.08) : 'transparent',
-        borderWidth: 1,
-        borderColor: meta.urgent ? tint(meta.color, 0.32) : colors.line,
-      }}
-    >
-      <View className="flex-row">
-        <View style={{ width: 4, backgroundColor: meta.urgent ? meta.color : style.color }} />
-        <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-2 hover:opacity-90 active:opacity-70" accessibilityRole="button">
-          <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
-            <Text className="text-[13px] font-extrabold" style={{ color: style.color }}>
-              {item.subject}
-            </Text>
-            <View className="flex-1" />
-            <Pill label={meta.label} color={meta.color} tone={meta.urgent ? 'solid' : 'tint'} />
+    <PressableScale onPress={onOpen} scale={0.98} accessibilityRole="button">
+      <View
+        className="overflow-hidden rounded-[26px] p-4"
+        style={{
+          backgroundColor: cardBg,
+          ...shadow.card,
+        }}
+      >
+        <Row className="justify-between" style={{ alignItems: 'flex-start' }}>
+          <Row className="flex-1 gap-3">
+            <IconBadge icon={SubIcon} color={style.color} tone="solid" size={44} iconSize={22} />
+            <View className="flex-1">
+              <Row className="justify-between gap-2">
+                <Text className="text-[15px] font-extrabold text-ink">{item.subject}</Text>
+                <Pill label={meta.label} color={meta.color} tone="solid" />
+              </Row>
+              <Text className="mt-1.5 text-[15px] font-medium leading-[21px] text-ink">{item.text}</Text>
+              <Muted className="mt-1.5 text-[11px] font-semibold">
+                {[item.teacher, item.assigned ? `Aufgegeben ${formatRelativeDay(item.assigned)}` : '']
+                  .filter(Boolean)
+                  .join(' · ') || '—'}
+              </Muted>
+            </View>
           </Row>
-          <Text className="mt-1.5 text-[15px] leading-[21px] text-ink">{item.text}</Text>
-          <Muted className="mt-1.5 text-[11px]">
-            {[item.teacher, item.assigned ? `aufgegeben am ${formatRelativeDay(item.assigned)}` : '']
-              .filter(Boolean)
-              .join(' · ') || '—'}
-          </Muted>
-        </Pressable>
-        {/* Action-Button: direkt abhaken — 32 px Fläche + hitSlop = 44 px Target (Phase 4) */}
-        <PressableScale
-          onPress={onToggle}
-          accessibilityRole="button"
-          accessibilityLabel={`${item.subject}: als erledigt markieren`}
-          className="justify-center pl-1.5 pr-3.5"
-          hitSlop={{ top: 6, bottom: 6 }}
-          scale={0.85}
-        >
-          <View
-            className="h-8 w-8 items-center justify-center rounded-full"
-            style={{
-              backgroundColor: days < 0 ? meta.color : 'transparent',
-              borderWidth: 2.5,
-              borderColor: meta.urgent ? meta.color : tint(meta.color, 0.6),
-            }}
+
+          {/* Größere, runde Checkbox mit Fülleffekt */}
+          <PressableScale
+            onPress={onToggle}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.subject}: als erledigt markieren`}
+            className="ml-2 mt-1 justify-center"
+            hitSlop={10}
+            scale={0.88}
           >
-            {days < 0 ? (
-              <AlertTriangle size={13} strokeWidth={2.6} color={foregroundOn(meta.color, colors)} />
-            ) : null}
-          </View>
-        </PressableScale>
+            <View
+              className="h-9 w-9 items-center justify-center rounded-full bg-surface"
+              style={{
+                borderWidth: 2.5,
+                borderColor: style.color,
+                ...shadow.card,
+              }}
+            >
+              <View
+                className="h-4 w-4 rounded-full"
+                style={{ backgroundColor: tint(style.color, 0.25) }}
+              />
+            </View>
+          </PressableScale>
+        </Row>
       </View>
-    </Card>
+    </PressableScale>
   );
 }
 
 function DoneHomeworkCard({ item, onToggle }: { item: Homework; onToggle: () => void }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const style = subjectStyle(item.subject);
+
   return (
-    <PressableScale onPress={onToggle} className="mb-2" scale={0.98} accessibilityRole="button">
-      <Card
-        className="overflow-hidden"
-        padded={false}
+    <PressableScale onPress={onToggle} scale={0.98} accessibilityRole="button">
+      <View
+        className="overflow-hidden rounded-[24px] p-3.5"
         style={{
-          backgroundColor: tint(colors.success, 0.06),
-          borderWidth: 1,
-          borderColor: tint(colors.success, 0.28),
+          backgroundColor: tint(colors.success, isDark ? 0.20 : 0.12),
+          ...shadow.card,
         }}
       >
-        <View className="flex-row">
-          <View style={{ width: 4, backgroundColor: colors.success }} />
-          <Row className="flex-1 gap-3 py-3 pl-3.5 pr-2">
-            <View className="h-7 w-7 items-center justify-center rounded-full bg-success">
-              <Check size={14} strokeWidth={3.2} color={foregroundOn(colors.success, colors)} />
-            </View>
-            <View className="flex-1 justify-center">
-              <Text className="text-[13px] font-bold" style={{ color: style.color }}>
-                {item.subject}
-              </Text>
-              <Text
-                className="text-[13px] leading-[17px] text-muted"
-                style={{ textDecorationLine: 'line-through' }}
-              >
-                {item.text}
-              </Text>
-            </View>
-            <Undo2 size={16} strokeWidth={2.2} color={colors.faint} />
-          </Row>
-        </View>
-      </Card>
+        <Row className="gap-3">
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-success">
+            <Check size={16} strokeWidth={3.2} color={foregroundOn(colors.success, colors)} />
+          </View>
+          <View className="flex-1 justify-center">
+            <Text className="text-[14px] font-extrabold" style={{ color: style.color }}>
+              {item.subject}
+            </Text>
+            <Text
+              className="text-[13px] leading-[17px] text-ink/70"
+              style={{ textDecorationLine: 'line-through' }}
+            >
+              {item.text}
+            </Text>
+          </View>
+          <Undo2 size={18} strokeWidth={2.4} color={colors.faint} />
+        </Row>
+      </View>
     </PressableScale>
   );
 }
@@ -472,6 +456,7 @@ function HomeworkSheet({
 }) {
   const { colors } = useThemeColors();
   const style = subjectStyle(item?.subject);
+  const SubIcon = subjectIcon(item?.subject);
   const days = item ? daysUntil(item.due) : 0;
   const meta = item ? priorityMeta(days, colors) : null;
 
@@ -479,28 +464,23 @@ function HomeworkSheet({
     <Sheet open={Boolean(item)} onClose={onClose} title={item?.subject}>
       {item && meta ? (
         <View className="gap-3">
-          <Card style={{ backgroundColor: tint(style.color, 0.12) }}>
-            <Row className="gap-3">
-              <View
-                className="h-12 w-12 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: tint(style.color, 0.16) }}
-              >
-                <BookOpen size={22} strokeWidth={2.1} color={style.color} />
-              </View>
+          <ColorBlockCard color={style.color} tone="tint">
+            <Row className="gap-3.5">
+              <IconBadge icon={SubIcon} color={style.color} size={48} iconSize={24} tone="solid" />
               <View className="flex-1">
                 <Row className="flex-wrap items-center gap-2">
-                  <Text className="text-[17px] font-bold text-ink">{item.subject}</Text>
-                  <Pill label={meta.label} color={meta.color} tone={meta.urgent ? 'solid' : 'tint'} />
+                  <Text className="text-[18px] font-extrabold text-ink">{item.subject}</Text>
+                  <Pill label={meta.label} color={meta.color} tone="solid" />
                 </Row>
-                {item.teacher ? <Muted className="mt-1">{item.teacher}</Muted> : null}
+                {item.teacher ? <Muted className="mt-1 font-bold">{item.teacher}</Muted> : null}
               </View>
             </Row>
-          </Card>
+          </ColorBlockCard>
 
           <Card>
-            <Text className="text-[15px] leading-6 text-ink">{item.text}</Text>
+            <Text className="text-[15px] font-medium leading-6 text-ink">{item.text}</Text>
             <Divider className="my-3" />
-            <Muted>
+            <Muted className="font-semibold">
               Fällig: {formatRelativeDay(item.due)}
               {item.assigned ? ` · Aufgegeben: ${formatRelativeDay(item.assigned)}` : ''}
             </Muted>
