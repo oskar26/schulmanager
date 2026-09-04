@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import {
   AlertTriangle,
   Bell,
@@ -35,7 +35,7 @@ import { useThemeColors } from '@/design/theme';
 
 export default function SettingsScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
   const { settings, update, updateNotifications, toggleWidget, moveWidget, setCredentials, getCredentials, clearCredentials } =
     useSettings();
@@ -106,7 +106,7 @@ export default function SettingsScreen() {
     <Screen adaptive="content">
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
-          <IconButton icon="chevron-back" onPress={() => router.back()} color={colors.muted} size={36} />
+          <IconButton icon="chevron-back" onPress={() => dismiss()} color={colors.muted} size={36} />
           <Title>Einstellungen</Title>
         </Row>
       </Row>

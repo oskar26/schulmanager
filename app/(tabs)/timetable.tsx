@@ -9,7 +9,7 @@ import {
   WEEKDAYS_SHORT, addDays, formatLongDay, minutesOf, nowMinutes, startOfWeek, toISO,
 } from '@/lib/date';
 import { useLayout } from '@/lib/breakpoints';
-import { AdaptiveContent, AvatarStack, Card, Chip, EmptyState, IconButton, Muted, Row, Screen, Sheet, Skeleton, Title } from '@/ui/primitives';
+import { AdaptiveContent, AvatarStack, Card, Chip, EmptyState, IconButton, Muted, Row, Screen, ScreenHeader, Sheet, Skeleton } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
@@ -62,30 +62,27 @@ export default function TimetableScreen() {
 
   const content = (
     <>
-      <View className={`pb-2 pt-2 ${wide ? '' : 'px-4'}`}>
-        <Row className="justify-between">
-          <View>
-            <Title className={layout.isDesktop ? 'text-[26px]' : undefined}>Stundenplan</Title>
-            <Muted>
-              {weekOffset === 0 ? 'Diese Woche' : weekOffset === 1 ? 'Nächste Woche' : weekLabel} · {weekLabel}
-            </Muted>
-          </View>
+      <ScreenHeader
+        title="Stundenplan"
+        subtitle={`${weekOffset === 0 ? 'Diese Woche' : weekOffset === 1 ? 'Nächste Woche' : weekLabel} · ${weekLabel}`}
+        action={(
           <Row className="gap-2">
             <IconButton icon="chevron-back" onPress={() => setWeekOffset((value) => value - 1)} color={colors.muted} size={36} />
-            {/* Phase 4: Spring-Press + 44-px-Touch-Target für „Heute“. */}
             <PressableOpacity
               onPress={() => setWeekOffset(0)}
-              className="min-h-[44px] items-center justify-center rounded-xl bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
+              className="min-h-[44px] items-center justify-center rounded-full bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
               accessibilityRole="button"
               accessibilityLabel="Zur aktuellen Woche"
             >
-              <Text className="text-[12px] font-bold text-on-amber">Heute</Text>
+              <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
             </PressableOpacity>
             <IconButton icon="chevron-forward" onPress={() => setWeekOffset((value) => value + 1)} color={colors.muted} size={36} />
           </Row>
-        </Row>
+        )}
+      />
 
-        <Row className="mt-3 gap-2">
+      <View className="px-4 pb-2">
+        <Row className="gap-2">
           <Chip label={`${stats.total} Stunden`} variant="charcoal" tone="solid" />
           {stats.cancelled > 0 ? <Chip label={`${stats.cancelled} Entfall`} color={colors.danger} /> : null}
           {stats.substitutions > 0 ? <Chip label={`${stats.substitutions} Vertretung`} color={colors.success} /> : null}

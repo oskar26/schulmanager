@@ -1,14 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { Redirect } from 'expo-router';
 import { BookOpen, Calculator, Lock, TrendingDown, TrendingUp } from 'lucide-react-native';
 
 import type { SubjectGrades } from '@/api/types';
-import { useSnapshot } from '@/data/queries';
+import { useModuleActive, useSnapshot } from '@/data/queries';
 import { subjectStyle, tint } from '@/design/subjects';
 import { de, deDelta, gradeColor, requiredGrade, simulate } from '@/features/grades/calculator';
 import { formatRelativeDay } from '@/lib/date';
 import {
-  Card, Chip, Divider, EmptyState, Muted, Row, Screen, Sheet, Skeleton, Title,
+  Card, Chip, Divider, EmptyState, Muted, Row, Screen, ScreenHeader, Sheet, Skeleton,
 } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
@@ -20,6 +21,7 @@ import { shadow } from '@/design/tokens';
 export default function GradesScreen() {
   const { colors } = useThemeColors();
   const { data, isLoading } = useSnapshot();
+  const gradesOn = useModuleActive('grades');
   const reserve = useTabNavReserve();
   const hidden = useSettings((state) => state.settings.hideGrades);
   const update = useSettings((state) => state.update);
@@ -40,18 +42,23 @@ export default function GradesScreen() {
     [withAverage],
   );
 
+  // `href: null` blendet den Tab aus. Ein externer Deep-Link auf /grades
+  // bleibt trotzdem möglich; statt einer versteckten, nicht navigierbaren
+  // Tab-Route landet er zuverlässig auf dem Start-Tab.
+  if (!gradesOn) return <Redirect href="/" />;
+
   return (
     <Screen adaptive="content">
-      <Row className="justify-between px-4 pb-2 pt-2">
-        <View>
-          <Title>Noten</Title>
-          <Muted>{withAverage.length} Fächer mit Bewertung</Muted>
-        </View>
-        <Row className="gap-2">
-          <Muted className="text-[11px]">verbergen</Muted>
-          <Switch value={hidden} onValueChange={(value) => update({ hideGrades: value })} />
-        </Row>
-      </Row>
+      <ScreenHeader
+        title="Noten"
+        subtitle={`${withAverage.length} Fächer mit Bewertung`}
+        action={(
+          <Row className="gap-2">
+            <Muted className="text-[11px]">verbergen</Muted>
+            <Switch value={hidden} onValueChange={(value) => update({ hideGrades: value })} />
+          </Row>
+        )}
+      />
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (

@@ -4,13 +4,14 @@ import { useRouter } from 'expo-router';
 import { ChevronRight, Search, SearchX, X } from 'lucide-react-native';
 
 import { de } from '@/features/grades/calculator';
-import { useSnapshot } from '@/data/queries';
+import { useModuleActive, useSnapshot } from '@/data/queries';
 import { subjectStyle, tint } from '@/design/subjects';
 import { formatRelativeDay } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { Card, EmptyState, IconButton, Muted, Row, Screen, Title } from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
+import { isMainTabHref, useSafeBack } from '@/ui/navigation';
 
 interface Hit {
   id: string;
@@ -24,7 +25,9 @@ interface Hit {
 export default function SearchScreen() {
   const { colors } = useThemeColors();
   const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
+  const gradesOn = useModuleActive('grades');
   const [query, setQuery] = useState('');
 
   const hits = useMemo<Hit[]>(() => {
@@ -75,18 +78,22 @@ export default function SearchScreen() {
         }),
       );
 
-    data.subjects
-      .filter((subject) => match(subject.subject))
-      .forEach((subject) =>
-        out.push({
-          id: `g-${subject.subjectId}`,
-          kind: 'Note',
-          title: `${subject.subject} · Schnitt ${subject.average != null ? de(subject.average) : '–'}`,
-          subtitle: `${subject.grades.length} Bewertungen`,
-          color: subjectStyle(subject.subject).color,
-          href: '/grades',
-        }),
-      );
+    // Ein verstecktes Noten-Modul liefert keine Treffer mit einem nicht
+    // erreichbaren /grades-Ziel. Das ergänzt die href:null-Sicherung der Tabs.
+    if (gradesOn) {
+      data.subjects
+        .filter((subject) => match(subject.subject))
+        .forEach((subject) =>
+          out.push({
+            id: `g-${subject.subjectId}`,
+            kind: 'Note',
+            title: `${subject.subject} · Schnitt ${subject.average != null ? de(subject.average) : '–'}`,
+            subtitle: `${subject.grades.length} Bewertungen`,
+            color: subjectStyle(subject.subject).color,
+            href: '/grades',
+          }),
+        );
+    }
 
     data.letters
       .filter((letter) => match(letter.subject, htmlToText(letter.content), letter.sender))
@@ -141,14 +148,14 @@ export default function SearchScreen() {
       );
 
     return out.slice(0, 40);
-  }, [colors, data, query]);
+  }, [colors, data, gradesOn, query]);
 
   const suggestions = ['Mathe', 'Sport', 'Klassenarbeit', 'Elternabend', 'Hausaufgabe'];
 
   return (
     <Screen adaptive="narrow">
       <Row className="gap-2 px-4 pb-3 pt-2">
-        <IconButton icon={X} onPress={() => router.back()} size={36} />
+        <IconButton icon={X} onPress={() => dismiss()} size={36} />
         <View className="flex-1 flex-row items-center rounded-2xl border border-line bg-surface px-3">
           <Search size={17} strokeWidth={2} color={colors.faint} />
           <TextInput
@@ -187,7 +194,13 @@ export default function SearchScreen() {
           hits.map((hit, index) => (
             <FadeInUp key={hit.id} delay={Math.min(index, 8) * 30}>
               <Pressable
-                onPress={() => hit.href && router.push(hit.href as never)}
+                onPress={() => {
+                  if (!hit.href) return;
+                  // Tab-Treffer aktivieren die bereits gemountete Tab-Route;
+                  // Detailseiten bleiben echte Push-Routen.
+                  if (isMainTabHref(hit.href)) router.navigate(hit.href as never);
+                  else router.push(hit.href as never);
+                }}
                 className="mb-2 hover:opacity-90 active:opacity-80"
                 accessibilityRole="button"
               >

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { Clock, Sun, X } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
@@ -15,7 +15,7 @@ import { useThemeColors } from '@/design/theme';
  */
 export default function AlldayScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
   const offers = data?.alldayOffers ?? [];
 
@@ -31,7 +31,7 @@ export default function AlldayScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={X} onPress={() => router.back()} size={36} />
+        <IconButton icon={X} onPress={() => dismiss()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Ganztag & Betreuung</Title>
           <Muted>Wann dein Kind in der Betreuung ist</Muted>

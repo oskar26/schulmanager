@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { MessageSquare, Send, X } from 'lucide-react-native';
 
 import type { ChatMessage } from '@/api/types';
@@ -14,7 +15,7 @@ import { useThemeColors } from '@/design/theme';
 
 export default function ThreadScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack('/inbox');
   const params = useLocalSearchParams<{
     subscriptionId: string;
     threadId: string;
@@ -49,7 +50,7 @@ export default function ThreadScreen() {
       {/* Kopf */}
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
-          <IconButton icon={X} onPress={() => router.back()} size={36} />
+          <IconButton icon={X} onPress={() => dismiss()} size={36} />
           <View className="flex-1">
             <Title numberOfLines={2}>{params.sender || params.subject || 'Nachricht'}</Title>
             {params.subject && params.sender ? (

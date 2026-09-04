@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { CheckCircle2, Clock, Send, X, XCircle } from 'lucide-react-native';
 
 import { useRequestExemption, useSnapshot } from '@/data/queries';
@@ -13,7 +13,7 @@ import { useThemeColors } from '@/design/theme';
 
 export default function ExemptionScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
   const mutation = useRequestExemption();
 
@@ -37,7 +37,7 @@ export default function ExemptionScreen() {
             Die Schule entscheidet über die Beurlaubung. Du bekommst eine Benachrichtigung, sobald eine
             Antwort da ist.
           </Muted>
-          <Button action="primary" size="lg" className="mt-4" onPress={() => router.back()}>
+          <Button action="primary" size="lg" className="mt-4" onPress={() => dismiss()}>
             <ButtonText>Fertig</ButtonText>
           </Button>
         </View>
@@ -48,7 +48,7 @@ export default function ExemptionScreen() {
   return (
     <Screen adaptive="narrow">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={X} onPress={() => router.back()} size={36} />
+        <IconButton icon={X} onPress={() => dismiss()} size={36} />
         <Title className="ml-2">Beurlaubung</Title>
       </Row>
 

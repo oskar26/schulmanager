@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { Check, ChevronLeft, Info, Receipt, Tag } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
@@ -17,7 +17,7 @@ const eur = (value: number | null | undefined): string =>
 
 export default function PaymentsScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
   const invoices = data?.invoices ?? [];
 
@@ -27,7 +27,7 @@ export default function PaymentsScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => dismiss()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Zahlungen</Title>
           <Muted>Rechnungen der Schule — Beträge sind Angaben der Schule</Muted>

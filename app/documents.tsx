@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { ArrowUp, ChevronLeft, ChevronRight, Download, FileText, Folder, FolderOpen } from 'lucide-react-native';
 
 import type { DocumentFolder, SchoolDocument } from '@/api/types';
@@ -21,7 +21,7 @@ interface Crumb {
 
 export default function DocumentsScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { api } = useSession.getState();
   const isDemo = useSession((state) => state.status !== 'connected');
 
@@ -96,7 +96,7 @@ export default function DocumentsScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => dismiss()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Dokumente</Title>
           <Muted numberOfLines={1}>

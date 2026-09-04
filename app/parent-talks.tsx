@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { CalendarDays, ChevronLeft, User, Users } from 'lucide-react-native';
 
 import type { ParentTalkRound } from '@/api/types';
@@ -16,7 +16,7 @@ import { useThemeColors } from '@/design/theme';
 
 export default function ParentTalksScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data, isLoading } = useSnapshot();
   const rounds = data?.parentTalkRounds ?? [];
   const [selected, setSelected] = useState<ParentTalkRound | null>(null);
@@ -24,7 +24,7 @@ export default function ParentTalksScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => dismiss()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Elternsprechtag</Title>
           <Muted>Gespräche mit den Lehrkräften buchen</Muted>

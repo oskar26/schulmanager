@@ -14,6 +14,7 @@ import { useLayout } from '@/lib/breakpoints';
 import { AdaptiveTabBar } from '@/ui/shell';
 import { PressableScale } from '@/ui/motion';
 import { hapticLight } from '@/lib/haptics';
+import { formatNavBadge, normaliseBadgeCount } from '@/ui/navigation';
 
 /**
  * Icons pro Tab — nur Lucide-Vektoren. Bewusst sparsam: ein Icon, keine Labels
@@ -66,10 +67,11 @@ function FloatingTabBar({ state, navigation, descriptors, colors }: BottomTabBar
   const insets = useSafeAreaInsets();
   const { data } = useSnapshot();
 
-  const inboxBadge =
+  const inboxBadge = normaliseBadgeCount(
     (data?.letters.filter((letter) => letter.requiresConfirmation && !letter.confirmed).length ?? 0) +
-    (data?.threads.reduce((sum, thread) => sum + thread.unreadCount, 0) ?? 0);
-  const openTasks = data?.homework.filter((item) => !item.done).length ?? 0;
+      (data?.threads.reduce((sum, thread) => sum + normaliseBadgeCount(thread.unreadCount), 0) ?? 0),
+  );
+  const openTasks = normaliseBadgeCount(data?.homework.filter((item) => !item.done).length);
 
   const items: TabSpec[] = state.routes
     .filter(
@@ -168,6 +170,20 @@ function AnimatedTabItem({
     opacity: activeVal.value,
   }));
 
+  // Amber bleibt ein Akzent statt eines zweiten Tabs-Hintergrunds: ein weicher
+  // Halo und ein kleiner Punkt machen den aktiven Tab auf der schwarzen Pill
+  // sofort erkennbar, während die übrigen Icons bewusst ruhig bleiben.
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: activeVal.value,
+    transform: [{ scale: 0.82 + activeVal.value * 0.18 }],
+  }));
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: activeVal.value,
+    transform: [{ scale: 0.55 + activeVal.value * 0.45 }],
+  }));
+
+  const badgeLabel = formatNavBadge(item.badge);
+
   return (
     <PressableScale
       accessibilityRole="tab"
@@ -188,6 +204,27 @@ function AnimatedTabItem({
         }}
       >
         <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: 'absolute',
+              top: 2,
+              left: 2,
+              right: 2,
+              bottom: 2,
+              borderRadius: 20,
+              backgroundColor: `${colors.accent.amber}2B`,
+              shadowColor: colors.accent.amber,
+              shadowOpacity: 0.62,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 3 },
+              elevation: 5,
+            },
+            glowStyle,
+          ]}
+        />
+        <Animated.View
+          pointerEvents="none"
           style={[
             {
               position: 'absolute',
@@ -204,27 +241,47 @@ function AnimatedTabItem({
         <Icon
           size={22}
           strokeWidth={active ? 2.5 : 2}
-          color={active ? colors.on.charcoal : colors.faint}
+          color={active ? colors.accent.amber : colors.faint}
+        />
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: 'absolute',
+              bottom: -3,
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.accent.amber,
+              shadowColor: colors.accent.amber,
+              shadowOpacity: 0.85,
+              shadowRadius: 6,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 6,
+            },
+            dotStyle,
+          ]}
         />
       </View>
 
-      {item.badge > 0 ? (
+      {badgeLabel ? (
         <View
+          accessibilityLabel={`${badgeLabel} neue Einträge`}
           style={{
             position: 'absolute',
-            top: 2,
-            right: 2,
-            minWidth: 18,
+            top: 0,
+            right: -1,
+            minWidth: badgeLabel === '99+' ? 30 : 18,
             height: 18,
-            paddingHorizontal: 5,
+            paddingHorizontal: badgeLabel === '99+' ? 5 : 4,
             borderRadius: 9,
             backgroundColor: colors.accent.coral,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800' }}>
-            {item.badge > 99 ? '99+' : item.badge}
+          <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800', lineHeight: 12 }}>
+            {badgeLabel}
           </Text>
         </View>
       ) : null}

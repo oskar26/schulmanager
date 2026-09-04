@@ -8,15 +8,31 @@ import { WIDGET_COMPONENTS } from '@/features/dashboard/widgets';
 import { daysUntil, formatLongDay, formatTimeAgo, greeting, toISO } from '@/lib/date';
 import { useLayout } from '@/lib/breakpoints';
 import { Avatar } from '@/ui/gluestack/feedback';
-import { AdaptiveContent, BentoCard, BentoGrid, Muted, RoundActionButton, Row, Screen, Skeleton } from '@/ui/primitives';
+import {
+  AdaptiveContent,
+  BlockCaption,
+  BlockText,
+  ColorBlockCard,
+  IconBadge,
+  Pill,
+  RoundActionButton,
+  Row,
+  Screen,
+  ScreenHeader,
+  StatCard,
+  useBlockInk,
+} from '@/ui/primitives';
 import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn, shadow } from '@/design/tokens';
-import { tint } from '@/design/subjects';
+import { shadow } from '@/design/tokens';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 
-/** Phase-3 Welcome-Banner: Charcoal-Hero mit Datum, Fortschritt und Heute-Statistik. */
+/**
+ * Charcoal-Hero: Begrüßung, Fortschritt und die drei großen Heute-Zahlen.
+ * Die Stats sind echte StatCards, damit auch die Startseite dem verbindlichen
+ * „Zahl + kleine Caption“-Muster folgt.
+ */
 function WelcomeBanner({
   name,
   weekdayLabel,
@@ -26,7 +42,6 @@ function WelcomeBanner({
   hwTotal,
   stats,
   onOpenTasks,
-  actions,
 }: {
   name: string;
   weekdayLabel: string;
@@ -36,25 +51,23 @@ function WelcomeBanner({
   hwTotal: number;
   stats: { value: string; label: string; color: string }[];
   onOpenTasks: () => void;
-  actions: React.ReactNode;
 }) {
   const { colors } = useThemeColors();
   const hasHomework = hwTotal > 0;
   const whiteDim = 'rgba(255,255,255,0.58)';
 
   return (
-    <View className="overflow-hidden rounded-[28px]" style={{ backgroundColor: colors.charcoal, ...shadow.float }}>
+    <View className="overflow-hidden rounded-[32px]" style={{ backgroundColor: colors.charcoal, ...shadow.float }}>
       <View className="gap-4 px-5 pb-5 pt-5">
-        {/* Kopf: Avatar + Name, rechts Aktionen */}
-        <Row className="justify-between">
+        <Row>
           <Row className="flex-1 gap-3">
-            <Avatar name={name} size={46} color={colors.accent.amber} />
-            <View className="flex-1 justify-center">
-              <Text className="text-[10px] font-bold uppercase tracking-[1.8px]" style={{ color: whiteDim }}>
+            <Avatar name={name} size={48} color={colors.accent.amber} />
+            <View className="min-w-0 flex-1 justify-center">
+              <Text className="text-[10px] font-extrabold uppercase tracking-[1.8px]" style={{ color: whiteDim }}>
                 {greeting()}
               </Text>
               <Text
-                className="text-[23px] font-extrabold leading-[26px] tracking-tight"
+                className="text-[24px] font-extrabold leading-[27px] tracking-tight"
                 style={{ color: colors.on.charcoal }}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -64,13 +77,11 @@ function WelcomeBanner({
               </Text>
             </View>
           </Row>
-          {actions}
         </Row>
 
-        {/* Datum (gestapelt, M3) links — Fortschritt rechts */}
         <Row className="items-end justify-between">
           <View className="flex-1 pr-3">
-            <Text className="text-[13px] font-bold uppercase tracking-[1.8px]" style={{ color: colors.accent.amber }}>
+            <Text className="text-[13px] font-extrabold uppercase tracking-[1.8px]" style={{ color: colors.accent.amber }}>
               {weekdayLabel}
             </Text>
             <Text className="mt-0.5 text-[22px] font-extrabold tracking-tight" style={{ color: colors.on.charcoal }}>
@@ -79,17 +90,16 @@ function WelcomeBanner({
           </View>
           {hasHomework ? (
             <View className="items-end">
-              <Text className="text-[30px] font-extrabold leading-[32px] tracking-tight" style={{ color: colors.accent.amber }}>
+              <Text className="text-[34px] font-extrabold leading-[36px] tracking-tight" style={{ color: colors.accent.amber }}>
                 {progress}%
               </Text>
-              <Text className="text-[10px] font-bold uppercase tracking-[1.2px]" style={{ color: whiteDim }}>
+              <Text className="text-[10px] font-extrabold uppercase tracking-[1.2px]" style={{ color: whiteDim }}>
                 erledigt
               </Text>
             </View>
           ) : null}
         </Row>
 
-        {/* Klare Fortschritts-Anzeige */}
         {hasHomework ? (
           <>
             <View className="h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
@@ -98,12 +108,12 @@ function WelcomeBanner({
                 style={{ backgroundColor: colors.accent.amber, width: `${Math.max(2, progress)}%` }}
               />
             </View>
-            <Row className="justify-between">
-              <Text className="text-[12px] font-semibold" style={{ color: whiteDim }}>
+            <Row className="justify-between gap-3">
+              <Text className="flex-1 text-[12px] font-semibold" style={{ color: whiteDim }}>
                 {hwDone} von {hwTotal} Hausaufgaben erledigt
               </Text>
               <PressableOpacity onPress={onOpenTasks} hitSlop={12} accessibilityRole="link">
-                <Text className="text-[12px] font-bold" style={{ color: 'rgba(255,255,255,0.88)' }}>
+                <Text className="text-[12px] font-extrabold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                   Alle ansehen
                 </Text>
               </PressableOpacity>
@@ -115,27 +125,16 @@ function WelcomeBanner({
           </Text>
         )}
 
-        {/* Heute-Statistik-Kacheln */}
         <Row className="mt-0.5 gap-2.5">
           {stats.map((stat) => (
-            <View
+            <StatCard
               key={stat.label}
-              className="rounded-2xl px-3 py-2.5"
-              style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.07)' }}
-            >
-              <Text
-                className="text-[19px] font-extrabold leading-[22px]"
-                style={{ color: stat.color }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.6}
-              >
-                {stat.value}
-              </Text>
-              <Text className="mt-0.5 text-[10px] font-bold leading-[12px] text-white/55" numberOfLines={2}>
-                {stat.label}
-              </Text>
-            </View>
+              value={stat.value}
+              caption={stat.label}
+              block={stat.color}
+              className="flex-1"
+              style={{ minWidth: 0 }}
+            />
           ))}
         </Row>
       </View>
@@ -143,74 +142,138 @@ function WelcomeBanner({
   );
 }
 
+/** Randlose Schul-/Datenstatus-Pill unter dem Hero. */
+function SchoolStatusPill({
+  name,
+  className,
+  isDemo,
+  fetchedAt,
+}: {
+  name: string;
+  className?: string | null;
+  isDemo: boolean;
+  fetchedAt?: string;
+}) {
+  const { colors } = useThemeColors();
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        borderRadius: 999,
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        alignSelf: 'center',
+        maxWidth: '100%',
+        ...shadow.card,
+      }}
+    >
+      <Text className="flex-shrink text-[12px] font-semibold text-ink" numberOfLines={1}>
+        {name}{className ? ` · Klasse ${className}` : ''}
+      </Text>
+      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.line }} />
+      {isDemo ? (
+        <Pill label="DEMO" color={colors.accent.amber} tone="solid" className="px-2 py-1" />
+      ) : (
+        <Text className="text-[11px] font-medium text-muted" numberOfLines={1}>{formatTimeAgo(fetchedAt)}</Text>
+      )}
+    </View>
+  );
+}
+
+/** Farbige Platzhalter, solange der erste Snapshot noch eintrifft. */
+function DashboardSkeleton({ color, height }: { color: string; height: number }) {
+  return (
+    <ColorBlockCard color={color} dim style={{ height }}>
+      <DashboardSkeletonLines />
+    </ColorBlockCard>
+  );
+}
+
+function DashboardSkeletonLines() {
+  const ink = useBlockInk();
+  return (
+    <View className="gap-3">
+      <View style={{ width: '42%', height: 14, borderRadius: 8, backgroundColor: `${ink}38` }} />
+      <View style={{ width: '78%', height: 28, borderRadius: 12, backgroundColor: `${ink}24` }} />
+      <View style={{ width: '60%', height: 12, borderRadius: 8, backgroundColor: `${ink}1F` }} />
+    </View>
+  );
+}
+
 export default function DashboardScreen() {
   const router = useRouter();
-  const { colors, isDark } = useThemeColors();
+  const { colors } = useThemeColors();
   const { data, isLoading, refetch, isRefetching, isDemo } = useSnapshot();
   const widgets = useSettings((state) => state.settings.widgets);
   const layout = useLayout();
-  const wide = layout.navigation !== 'bottom';
-
   const enabled = React.useMemo(() => widgets.filter((widget) => widget.enabled), [widgets]);
   const name = data?.student?.firstname ?? 'Schulflow';
-
-  const iconColor = colors.muted;
-  const chipBg = colors.surface;
   const reserve = useTabNavReserve();
 
   const isoToday = toISO(new Date());
-  // Datum vertikal gestapelt (Phase 1 · M3): Wochentag groß/fett, Datum darunter.
   const [weekdayLabel, dateLabel] = formatLongDay(isoToday).split(', ');
-
-  // Fortschritt + Heute-Statistik für das Welcome-Banner.
   const homework = data?.homework ?? [];
   const hwDone = homework.filter((h) => h.done).length;
   const progress = homework.length ? Math.round((hwDone / homework.length) * 100) : 0;
   const openCount = homework.length - hwDone;
-
   const lessonsToday = (data?.lessons ?? []).filter((l) => l.date === isoToday && l.state !== 'cancelled').length;
   const nextExam = [...(data?.exams ?? [])]
     .filter((exam) => daysUntil(exam.date) >= 0)
     .sort((a, b) => a.date.localeCompare(b.date))[0];
   const examDays = nextExam ? daysUntil(nextExam.date) : null;
-
   const hasData = Boolean(data);
+
   const heroStats = [
-    { value: hasData ? String(lessonsToday) : '–', label: 'Stunden heute', color: colors.accent.amber },
-    { value: hasData ? String(openCount) : '–', label: 'Aufgaben offen', color: colors.accent.violet },
-    { value: hasData ? (examDays == null ? '–' : String(examDays)) : '–', label: examDays == null ? 'Keine Arbeit' : examDays === 1 ? 'Tag bis Arbeit' : 'Tage bis Arbeit', color: colors.accent.lime },
+    { value: hasData ? String(lessonsToday) : '–', label: 'Stunden heute', color: colors.blocks.amber },
+    { value: hasData ? String(openCount) : '–', label: 'Aufgaben offen', color: colors.blocks.violet },
+    {
+      value: hasData ? (examDays == null ? '–' : String(examDays)) : '–',
+      label: examDays == null ? 'Keine Arbeit' : examDays === 1 ? 'Tag bis Arbeit' : 'Tage bis Arbeit',
+      color: colors.blocks.lime,
+    },
   ];
 
-  const actions = !wide ? (
+  const headerActions = (
     <Row className="gap-2">
       <RoundActionButton
         icon={Search}
         onPress={() => router.push('/search')}
-        color="rgba(255,255,255,0.92)"
-        background={tint('#FFFFFF', 0.12)}
+        color={colors.ink}
+        background={colors.surface}
         accessibilityLabel="Suche"
       />
       <RoundActionButton
         icon={Settings}
         onPress={() => router.push('/settings')}
-        color="rgba(255,255,255,0.92)"
-        background={tint('#FFFFFF', 0.12)}
+        color={colors.ink}
+        background={colors.surface}
         accessibilityLabel="Einstellungen"
       />
     </Row>
-  ) : null;
+  );
 
   return (
     <Screen>
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: wide ? 0 : 18, paddingTop: 6, paddingBottom: reserve }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.accent.amber} />}
-      >
-        <AdaptiveContent dashboard>
-          {/* Fettes Welcome-Banner (Phase 3) */}
-          <View className={wide ? 'px-1' : ''} style={wide ? { width: '100%', maxWidth: 980, alignSelf: 'center' } : undefined}>
+      <AdaptiveContent dashboard className="flex-1">
+        <ScreenHeader title="Start" action={headerActions} />
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: reserve }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={(
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => void refetch()}
+              tintColor={colors.accent.amber}
+              colors={[colors.accent.amber]}
+              progressBackgroundColor={colors.surface}
+            />
+          )}
+        >
+          <View style={{ width: '100%', maxWidth: 980, alignSelf: 'center' }}>
             <WelcomeBanner
               name={name}
               weekdayLabel={weekdayLabel}
@@ -219,52 +282,32 @@ export default function DashboardScreen() {
               hwDone={hwDone}
               hwTotal={homework.length}
               stats={heroStats}
-              onOpenTasks={() => router.push('/tasks')}
-              actions={actions}
+              onOpenTasks={() => router.navigate('/tasks')}
             />
           </View>
 
-          {/* Schul-/Status-Pill */}
-          <View
-            style={{
-              backgroundColor: chipBg,
-              marginTop: 14,
-              marginBottom: 18,
-              borderRadius: 999,
-              paddingHorizontal: 14,
-              paddingVertical: 7,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              alignSelf: 'center',
-              borderWidth: 1,
-              borderColor: isDark ? colors.charcoalElevated : colors.line,
-            }}
-          >
-            <Muted className="text-[12px]" numberOfLines={1}>
-              {data?.institution?.name ?? 'Schule'}
-              {data?.student?.className ? ` · Klasse ${data.student.className}` : ''}
-            </Muted>
-            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: isDark ? colors.charcoalElevated : colors.line }} />
-            {isDemo ? (
-              <View style={{ backgroundColor: tint(colors.accent.amber, 0.18), paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                <Text style={{ fontSize: 10, fontWeight: '800', color: foregroundOn(colors.accent.amber, colors) }}>DEMO</Text>
-              </View>
-            ) : (
-              <Muted className="text-[11px]">{formatTimeAgo(data?.fetchedAt)}</Muted>
-            )}
+          <View className="my-4">
+            <SchoolStatusPill
+              name={data?.institution?.name ?? 'Schule'}
+              className={data?.student?.className}
+              isDemo={isDemo}
+              fetchedAt={data?.fetchedAt}
+            />
           </View>
 
           {isLoading || !data ? (
-            <BentoGrid className="gap-4">
-              <Skeleton className="h-40 w-full rounded-[28px]" />
-              <Skeleton className="h-48 w-full rounded-[28px]" />
-              <Skeleton className="h-56 w-full rounded-[28px]" />
-            </BentoGrid>
+            <View className="gap-4">
+              <DashboardSkeleton color={colors.blocks.sky} height={164} />
+              <DashboardSkeleton color={colors.blocks.lavender} height={192} />
+              <DashboardSkeleton color={colors.blocks.mint} height={224} />
+            </View>
           ) : (
-            <BentoGrid
-              className="gap-4"
-              style={layout.columns > 1 ? undefined : { flexDirection: 'column' as const, flexWrap: 'nowrap' as const }}
+            <View
+              style={{
+                flexDirection: layout.columns > 1 ? 'row' : 'column',
+                flexWrap: layout.columns > 1 ? 'wrap' : 'nowrap',
+                gap: 16,
+              }}
             >
               {enabled.map((widget, index) => {
                 const Component = WIDGET_COMPONENTS[widget.id as keyof typeof WIDGET_COMPONENTS];
@@ -279,9 +322,7 @@ export default function DashboardScreen() {
                         : { width: '100%' }
                     }
                   >
-                    <View className="h-full">
-                      <Component snapshot={data} />
-                    </View>
+                    <View className="h-full"><Component snapshot={data} /></View>
                   </FadeInUp>
                 );
               })}
@@ -293,28 +334,23 @@ export default function DashboardScreen() {
                     : { width: '100%' }
                 }
               >
-                <BentoCard tone={colors.accent.amber} className="items-center py-6">
-                  <Text className="text-center text-[15px] font-extrabold text-on-amber">
-                    Dashboard anpassen
-                  </Text>
-                  <Text className="mt-1 text-center text-[13px] leading-5" style={{ color: foregroundOn(colors.accent.amber, colors), opacity: 0.74 }}>
+                <ColorBlockCard
+                  color={colors.blocks.amber}
+                  onPress={() => router.push('/settings')}
+                  accessibilityLabel="Dashboard anpassen"
+                  className="items-center py-6"
+                >
+                  <IconBadge icon={Settings} color={colors.onBlocks.amber} size="lg" tone="tint" />
+                  <BlockText className="mt-3 text-center text-[17px] font-extrabold">Dashboard anpassen</BlockText>
+                  <BlockCaption className="mt-1 text-center text-[13px] leading-5">
                     Bestimme, welche Karten hier erscheinen und in welcher Reihenfolge.
-                  </Text>
-                  <View className="mt-3">
-                    <RoundActionButton
-                      icon={Settings}
-                      onPress={() => router.push('/settings')}
-                      color={colors.on.amber}
-                      background={colors.surface}
-                      accessibilityLabel="Einstellungen"
-                    />
-                  </View>
-                </BentoCard>
+                  </BlockCaption>
+                </ColorBlockCard>
               </View>
-            </BentoGrid>
+            </View>
           )}
-        </AdaptiveContent>
-      </ScrollView>
+        </ScrollView>
+      </AdaptiveContent>
     </Screen>
   );
 }

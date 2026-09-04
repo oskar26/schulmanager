@@ -28,11 +28,11 @@ import {
   Pill,
   Row,
   Screen,
+  ScreenHeader,
   SectionHeader,
   SegmentedControl,
   Sheet,
   Skeleton,
-  Title,
 } from '@/ui/primitives';
 import { FadeInUp, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
@@ -103,9 +103,8 @@ export default function TasksScreen() {
 
   return (
     <Screen adaptive="content">
-      <View className="px-4 pb-3 pt-2">
-        <Title>Aufgaben</Title>
-        <Muted className="mb-3">Hausaufgaben, Arbeiten und dein Lernplan</Muted>
+      <ScreenHeader title="Aufgaben" subtitle="Hausaufgaben, Arbeiten und dein Lernplan" />
+      <View className="px-4 pb-3">
         <SegmentedControl<Tab>
           value={tab}
           onChange={setTab}
