@@ -11,6 +11,31 @@
  * (Live-Island-Effects). Die In-App-Oberfläche bleibt emoji-frei und trägt
  * die Fach-Identität über die Farbfläche + Lucide-Icons (`subjectIcon`).
  */
+import type { LucideIcon } from 'lucide-react-native';
+import {
+  Atom,
+  BookOpen,
+  BookUser,
+  Brain,
+  Briefcase,
+  Calculator,
+  Church,
+  Compass,
+  Dumbbell,
+  FlaskConical,
+  Globe,
+  Hammer,
+  Languages,
+  Landmark,
+  Laptop,
+  Leaf,
+  Music,
+  Palette,
+  Puzzle,
+  Terminal,
+  Users,
+  Wrench,
+} from 'lucide-react-native';
 import { foregroundOn, palette, resolveThemeColor, type BlockName } from '@/design/tokens';
 
 export type SubjectStyle = { color: string; emoji: string };
@@ -78,6 +103,59 @@ const FALLBACK_BLOCKS: BlockName[] = [
 
 const FALLBACK_EMOJI = ['📘', '✏️', '🧠', '🔬', '🗺️', '🎒', '📎', '🧮'];
 
+/**
+ * Kuratierte Lucide-Icons je Fach — deterministisch wie die Farben, genutzt
+ * für die `IconBadge`s auf Stundenplan-/Aufgaben-/Noten-Karten (Phase 4–6).
+ * Unbekannte Fächer bekommen ein passendes Fallback-Icon.
+ */
+const CURATED_ICONS: Record<string, LucideIcon> = {
+  mathematik: Calculator,
+  mathe: Calculator,
+  deutsch: BookOpen,
+  englisch: Languages,
+  franzosisch: Languages,
+  spanisch: Languages,
+  latein: Landmark,
+  physik: Atom,
+  chemie: FlaskConical,
+  biologie: Leaf,
+  bio: Leaf,
+  informatik: Laptop,
+  info: Laptop,
+  programmieren: Terminal,
+  geschichte: Landmark,
+  gesch: Landmark,
+  politik: Users,
+  sozialkunde: Users,
+  gemeinschaftskunde: Users,
+  wirtschaft: Briefcase,
+  religion: Church,
+  ethik: BookUser,
+  philosophie: BookUser,
+  musik: Music,
+  kunst: Palette,
+  geographie: Globe,
+  geografie: Globe,
+  erdkunde: Globe,
+  sachunterricht: Compass,
+  werken: Hammer,
+  technik: Wrench,
+  sport: Dumbbell,
+  ganztag: Puzzle,
+};
+
+/** Fallback-Icons in derselben Reihenfolge wie die Fallback-Emojis. */
+const FALLBACK_ICONS: LucideIcon[] = [
+  BookOpen,
+  BookUser,
+  Brain,
+  FlaskConical,
+  Globe,
+  Compass,
+  Calculator,
+  Atom,
+];
+
 const normalise = (input: string) =>
   input
     .toLowerCase()
@@ -108,6 +186,17 @@ export function subjectStyle(name?: string | null, overrides?: Record<string, st
   const h = hash(key);
   const block = FALLBACK_BLOCKS[h % FALLBACK_BLOCKS.length];
   return { color: override ?? blocks[block], emoji: FALLBACK_EMOJI[h % FALLBACK_EMOJI.length] };
+}
+
+/** Fach-Icon (Lucide) — deterministisch wie die Fachfarbe. */
+export function subjectIcon(name?: string | null): LucideIcon {
+  const raw = (name ?? '').trim();
+  if (!raw) return BookOpen;
+  const key = normalise(raw);
+  const curated = CURATED_ICONS[key] ?? Object.entries(CURATED_ICONS).find(([k]) => key.startsWith(k))?.[1];
+  if (curated) return curated;
+  const h = hash(key);
+  return FALLBACK_ICONS[h % FALLBACK_ICONS.length];
 }
 
 /**

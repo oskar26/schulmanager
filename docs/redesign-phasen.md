@@ -11,7 +11,7 @@
 > Typografie, riesige Radien, Icon-Badges, Pill-Tags, schwarze Pill-Nav,
 > weiche Schatten.**
 >
-> Stand: 2026-09-04 · Phasen 1–3 **umgesetzt ✅** (siehe Status je Phase)
+> Stand: 2026-09-04 · Phasen 1–5 **umgesetzt ✅** (siehe Status je Phase)
 
 ---
 
@@ -277,7 +277,34 @@ Benötigt Phase 1 (Komponenten) + Phase 2 (Header-Pattern).
 
 ## Phase 4 — Stundenplan (inkl. 2-Wochen-Ansicht) — wichtigste Änderung
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- Zwei **Wochen-Streifen** („Diese Woche“ / „Nächste Woche“) liegen
+  übereinander und sind ohne jede Navigation gleichzeitig sichtbar; jeder Tag
+  beider Streifen ist eine eigene antippbare Pille (Auswahl = volle
+  Amber-Füllung). Der Streifen zeigt die Datums-Range; bei Bedarf läuft die
+  Pille-Reihe horizontal (Scroll statt Umbruch, auch auf Tablet/Desktop).
+- Die **„Heute“-Pille** im Header ersetzt die alten `< Heute >`-Pfeile; die
+  Wochenwahl entfällt. Die Auswahl bleibt beim Tab-Wechsel/App-Wechsel
+  erhalten (`lastSelectedDay`-Modulspeicher) und wird beim Wochenumbruch auf
+  heute zurückgesetzt (Wochengrenzen-Bug).
+- **Tages-Pillen:** gewählter Tag volle Amber-Füllung, „Heute“ unabhängig von
+  der Auswahl als Ring markiert (auch wenn ein Tag der anderen Woche aktiv
+  ist). Status-Punkte in der Pille nach Entscheidungs-Log #6: grün =
+  Vertretung, coral = Entfall einzelner Stunden, grau = kompletter Ausfall-Tag.
+- **Stunden-Karten** sind vollflächige `ColorBlockCard`s in Fachfarbe (Entfall
+  als Coral-Block), ohne Rand und ohne linken Streifen; Zeit/Raum/Stunde als
+  Pillen im Block, Vertretung/Entfall/Raumwechsel als auffällige Solid-Pillen
+  mit Icon, „läuft gerade“ mit Live-Puls. Fächer tragen jetzt deterministische
+  **Lucide-Fach-Icons** (`subjectIcon`, neu in `src/design/subjects.ts`) im
+  `IconBadge`.
+- `WeekGrid`/`TimeGrid`/Ansicht-Toggle wurden durch die einheitliche
+  Zwei-Wochen-Liste ersetzt (Entscheidungs-Log #11) — auf breiten Screens als
+  zentrierte, ~780 dp breite Lesespalte.
+- Detail-Sheet: Kopf als `ColorBlockCard` in Fachfarbe mit Icon-Badge und
+  Status-Pill; Änderungs-/Hausaufgaben-/Arbeiten-Infos als runde Inset-Flächen.
 
 ### Ziel
 
@@ -291,32 +318,33 @@ vollflächige Farbblöcke je Fach.
 - `app/(tabs)/timetable.tsx` — komplette Neustrukturierung:
   - **2-Wochen-Stack:** zwei horizontale Day-Pill-Streifen (Woche 1 / Woche
     2) übereinander; Auswahl eines Tages lädt dessen Stundenliste.
-  - **Tag-Pills:** ausgewählter Tag = volle Amber-Füllung; Tage mit
-    Vertretung/Ausfall bekommen farbigen Punkt in der Pille (grün =
-    Vertretung, grau = Ausfall; Coral bei Entfall nach neuer Ampel-Logik:
-    grün = Vertretung, grau = Ausfall — Entscheidung siehe Log).
+  - **Tag-Pills:** ausgewählter Tag = volle Amber-Füllung; „Heute“-Ring in
+    beiden Streifen; Status-Punkte in der Pille (Regel: Entscheidungs-Log #6).
   - **Stunden-Karten:** vollflächiger Farbblock je Fach (Fachfarbe als
     Hintergrund, `ColorBlockCard`), Zeit/Raum als Pill im Block.
-  - **Vertretung/Ausfall:** auffälliger Badge (Pill mit Icon) statt reiner
-    Textzeile.
-- Wochen-Logik (`src/lib/date.ts`) — korrekte ISO-Wochen-Ausrichtung,
-  Wochenwechsel-Montag, Feiertags-/ferienlogik bleibt.
+  - **Vertretung/Ausfall/Raumwechsel:** auffälliger Badge (Solid-Pill mit
+    Icon) statt reiner Textzeile.
+- `src/design/subjects.ts` — neu: deterministische `subjectIcon()`-Map
+  (Lucide je Fach) für die Icon-Badges auf Stundenplan- und Aufgaben-Karten.
+- Wochen-Logik: nutzt die vorhandene Montag-Verankerung (`startOfWeek` in
+  `src/lib/date.ts`); der alte `weekOffset`-Wechsel (Pfeile) entfällt,
+  Feiertags-/Ferienlogik bleibt unberührt.
 
 ### Akzeptanzkriterien
 
-- [ ] Beide Wochen sind ohne Navigation gleichzeitig sichtbar (gestapelt).
-- [ ] Jeder Tag beider Wochen ist direkt antippbar; Auswahl sofort sichtbar
+- [x] Beide Wochen sind ohne Navigation gleichzeitig sichtbar (gestapelt).
+- [x] Jeder Tag beider Wochen ist direkt antippbar; Auswahl sofort sichtbar
       (volle Orange-Füllung + fetter Wochentagskürzel).
-- [ ] „Heute“ ist in beiden Streifen markiert (Punkt/Ring), auch wenn die
+- [x] „Heute“ ist in beiden Streifen markiert (Punkt/Ring), auch wenn die
       andere Woche ausgewählt ist.
-- [ ] Vertretungs-/Ausfall-Tage zeigen farbige Punkte in der Tages-Pille.
-- [ ] Stunden-Karten sind vollflächige Farbblöcke in Fachfarbe — kein weißer
+- [x] Vertretungs-/Ausfall-Tage zeigen farbige Punkte in der Tages-Pille.
+- [x] Stunden-Karten sind vollflächige Farbblöcke in Fachfarbe — kein weißer
       Kartenumriss, kein linker Farbrand mehr.
-- [ ] Vertretung/Ausfall/Raumwechsel haben auffällige Badges (Pill + Icon).
-- [ ] Pfeil-Navigation (`< Heute >`) ist entfernt bzw. durch
+- [x] Vertretung/Ausfall/Raumwechsel haben auffällige Badges (Pill + Icon).
+- [x] Pfeil-Navigation (`< Heute >`) ist entfernt bzw. durch
       „Heute“-Sprung-Button ersetzt.
-- [ ] Landschaft/Tablet: Streifen bleiben nutzbar (Scroll statt Umbruch).
-- [ ] Stundenplan-Bugs behoben (u. a.: Wochengrenze, Auswahl-Reset beim
+- [x] Landschaft/Tablet: Streifen bleiben nutzbar (Scroll statt Umbruch).
+- [x] Stundenplan-Bugs behoben (u. a.: Wochengrenze, Auswahl-Reset beim
       App-Wechsel, leere Tage).
 
 ### Abhängigkeiten
@@ -328,7 +356,33 @@ gleiches Header-Pattern aus Phase 2.
 
 ## Phase 5 — Aufgaben (Hausaufgaben / Arbeiten / Lernplan)
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- **Hausaufgaben** sind vollflächige `ColorBlockCard`s in Fachfarbe (auch
+  „Erledigt“, dort gedimmt auf 55 % – lesbar, aber klar abgesetzt). Aufbau:
+  große **runde Checkbox (30 px)** links mit animiertem Fülleffekt + Häkchen
+  (Reanimated-Spring; Haptik bleibt), oben **Fälligkeits-Pill** in den
+  `priority`-Tokens (Coral/Amber/Lime, `solid`, mit Icon), Fachname +
+  Fach-Icon-Badge, Aufgaben-Text und Lehrer-/Aufgabe-Metazeile. Wenn die
+  Ampel- und die Fachfarbe dieselbe Familie sind, bekommt die Pille einen
+  weißen Ring (`Pill`/`Chip` akzeptieren dafür jetzt optional `style`).
+- **Fortschritts-Block** als Lime-Fläche mit violettem Fortschrittsbalken,
+  „x von y erledigt“ und großer Prozentzahl (StatCard-Logik).
+- **Arbeiten** sind vollflächige **Ampel-Blöcke** (Coral ≤ 1 Tag, Amber
+  ≤ 5 Tage, Lime sonst): Tagen-Countdown als riesige Zahl (52 px) + Caption,
+  Fach-Icon-Badge im Ink-Tint, Datum/Zeit, Typ-/Lernblock-Pills, Kommentar,
+  Pfeil in den Lernplan. Darüber eine Ampel-Legende mit denselben Tokens.
+- **Lernplan** nutzt dieselbe Farbblock-Logik: violette Erklär-Karte +
+  je Lernblock eine Fachfarben-Karte mit fetter Dauer-Pill („45 min“,
+  `solid`, mit Icon). Gruppierung nach Datum, „Überfällig“-Gruppen oben.
+- **Detail-Sheet** im neuen Stil: Kopf als `ColorBlockCard` in Fachfarbe mit
+  Icon-Badge und Fälligkeits-Pill; Aufgabe + Metadaten als runde Inset-Fläche;
+  Bestätigen-Button bleibt.
+- Bugs adressiert: Überfälliges sortiert zuoberst (Gruppen aufsteigend nach
+  ISO-Datum, innerhalb eines Tags stabil nach Fach), Toggle-Persistenz über
+  den `useHomeworkDone`-Store (AsyncStorage) unverändert robust.
 
 ### Ziel
 
@@ -353,18 +407,18 @@ gesättigter, Lernplan gleiche Logik.
 
 ### Akzeptanzkriterien
 
-- [ ] Alle Aufgaben-Karten (offen **und** erledigt) sind vollflächige
+- [x] Alle Aufgaben-Karten (offen **und** erledigt) sind vollflächige
       Farbblöcke in Fachfarbe; kein Rand, kein linker Streifen.
-- [ ] Checkbox ≥ 28 px, voll rund, mit animiertem Fülleffekt + Häkchen beim
+- [x] Checkbox ≥ 28 px, voll rund, mit animiertem Fülleffekt + Häkchen beim
       Abhaken; erledigte Karten gedimmt aber lesbar.
-- [ ] Fälligkeits-Badge oben rechts, fetter als Fachname-Pill, Farbe aus
+- [x] Fälligkeits-Badge oben rechts, fetter als Fachname-Pill, Farbe aus
       `priority`-Tokens (überfällig/heute = Coral, morgen/bald = Amber,
       entspannt = Lime).
-- [ ] Arbeiten-Tab: Ampel deutlich gesättigt (Coral/Amber/Lime als
+- [x] Arbeiten-Tab: Ampel deutlich gesättigt (Coral/Amber/Lime als
       Blockfarben), Fach-Icon-Badge vorhanden, Tagen-Countdown riesig.
-- [ ] Lernplan-Tab: Farbblock je Fach, Dauer-Pill fett (Icon + „45 min“).
-- [ ] Detail-Sheet im neuen Stil (ColorBlockCard-Kopf mit Fachfarbe).
-- [ ] Aufgaben-Bugs behoben (u. a.: Toggle-Persistenz, Gruppierung nach
+- [x] Lernplan-Tab: Farbblock je Fach, Dauer-Pill fett (Icon + „45 min“).
+- [x] Detail-Sheet im neuen Stil (ColorBlockCard-Kopf mit Fachfarbe).
+- [x] Aufgaben-Bugs behoben (u. a.: Toggle-Persistenz, Gruppierung nach
       Datum, Überfällig-Sortierung oben).
 
 ### Abhängigkeiten
@@ -553,8 +607,10 @@ Phase 9 (Politur) — benötigt 1–8
 | 3 | **Radius-Skala**: `card 28` (statt 24) als Standard, `cardLg 32` für Heroes, `chip 20` | Vorgabe „28 px große Karten, 20 px Chips/Pills, ~24–32 px Karten“ — 28 ist der verbindliche Kartenwert, 32 die obere Kante für Heroes. |
 | 4 | **Charcoal als Fachfarbe** nur für Informatik (kuratiert), **nicht** im Fallback-Zyklus | Dunkler Block auf dunklem Canvas wäre ohne Rand schlecht erkennbar; als bewusste Ausnahme („Code-Editor-Optik“) in Light mode kontrolliert einsetzbar. |
 | 5 | **`Card` behält weiße Surface**, wird aber randlos (28, Schatten) | Nicht jede Karte soll Farbfläche sein (Listen, Sheets); Farbflächen kommen über `ColorBlockCard`. Weiß bleibt eine gültige „Farbe“ des Stils. |
-| 6 | **Vertretungs-Punkt im Stundenplan**: grün = Vertretung, grau = Ausfall — Entfall (eingezogene Stunde ohne Ersatz) wird Coral zeigen | Brief sagt „grün = Vertretung, grau = Ausfall“; Entfall ist im Datenmodell `state: 'cancelled'` und heute Coral/Rot — wir folgen dem Brief für die Punkte, behalten aber Coral für „eingezogen“ (klarerer Warnzustand). Feinabstimmung in Phase 4. |
+| 6 | **Status-Punkt in der Tages-Pille (final, Phase 4):** grün = mind. eine Vertretung, coral = mind. eine entfallene Stunde, grau = kompletter Ausfall-Tag (alle eingetragenen Stunden entfallen). Bei Vertretung **und** Entfall am selben Tag erscheinen beide Punkte | Der Brief nennt „grün = Vertretung, grau = Ausfall“; das Datenmodell kennt nur `substitution`/`cancelled`. Coral behält die Bedeutung der Entfall-Chips (Coral = Warnzustand, überall in der App identisch), grau markiert den ganzen Tag als ausgefallen. In Phase 4 feinabgestimmt und so umgesetzt. |
 | 7 | **Illustrationen** als kleine Inline-SVGs (`react-native-svg`), keine Emoji-Wiederkehr | App bleibt emoji-frei (UI-REBUILD-Leitsatz); „verspielt“ erreichen wir über Formen statt Emojis. |
 | 8 | **Phase-1-Komponenten sind additive APIs** — bestehende Screens laufen unverändert weiter | Jeder Screen wird erst in seiner Phase umgebaut; keine Big-Bang-Migration, Regressionsrisiko minimal. |
 | 9 | **Haupt-Tabs werden per `navigate`, Detail-/Modalziele per `push` geöffnet** | Ein Tabwechsel legt keinen neuen Stack-Eintrag an und lässt die gemountete Scrollposition bestehen; Modals behalten ihren erwarteten Zurückweg. `useSafeBack()` fängt direkt geöffnete Deep-Links auf. |
 | 10 | **Brett-Aushänge erhalten je Eintrag statt nur je Widget eine Kategorie-Fläche** | Ein Widget kann Sekretariat, Bibliothek und Fundsachen gleichzeitig enthalten. Die individuelle Ableitung über `categories.ts` macht die Farbcodierung auch bei gemischten Aushängen wahr. |
+| 11 | **Phase 4 ersetzt Wochen-/Zeitraster (Tablet `WeekGrid`, Desktop `TimeGrid`) durch die einheitliche Zwei-Wochen-Liste** | Die Phase schreibt „beide Wochen ohne Navigation sichtbar“ und „Pfeil-Navigation entfernt“ für den ganzen Screen vor. Ein einziges Interaktionsmuster (2 Streifen + Tagesliste, auf breiten Screens als zentrierte ~780-dp-Spalte) hält Stil und Code konsistent; ein zusätzliches Zeitraster kann Phase 9 als Politur wiederbeleben. |
+| 12 | **Fälligkeits-/Ampel-Pillen sind `solid` in den `priority`-Tokens; bei gleicher Farbfamilie wie die Fachfläche bekommen sie einen weißen Ring** | Auf einem vollflächigen Fachblock darf die Fälligkeit nie in der Fläche verschwinden. `Pill`/`Chip` akzeptieren dafür ein optionales `style` (additive API). |
