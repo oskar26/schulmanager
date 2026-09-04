@@ -11,7 +11,7 @@
 > Typografie, riesige Radien, Icon-Badges, Pill-Tags, schwarze Pill-Nav,
 > weiche Schatten.**
 >
-> Stand: 2026-09-04 · Phase 1 **umgesetzt ✅** (siehe Status je Phase)
+> Stand: 2026-09-04 · Phasen 1–3 **umgesetzt ✅** (siehe Status je Phase)
 
 ---
 
@@ -155,7 +155,18 @@ Tokens + Komponenten).
 
 ## Phase 2 — Navigation & App-Shell
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- `ScreenHeader` als gemeinsames Tab-Pattern ergänzt und auf Start,
+  Stundenplan, Aufgaben, Noten und Postfach angewendet.
+- Mobile Floating-Nav mit animiertem Amber-Halo + Aktivpunkt ergänzt; Rail
+  und Sidebar teilen nun `IconBadge`, Amber-Active-Pill und dieselbe
+  Zählerformatierung.
+- `useSafeBack()` sichert modal geöffnete Deep-Links mit einem Start-/Postfach-
+  Fallback ab; bekannte Haupt-Tabs werden gezielt per `navigate` statt Stack-
+  Push aktiviert.
 
 ### Ziel
 
@@ -176,18 +187,20 @@ identisch aus.
 
 ### Akzeptanzkriterien
 
-- [ ] Active-Tab der schwarzen Pill-Nav hat einen farbigen Punkt und/oder
-      sanften Glow (Amber), inaktive Icons bleiben ruhig.
-- [ ] Badges (Aufgaben/Postfach) korrekt, max. „99+“, berühren nichts.
-- [ ] Einheitlicher Screen-Header: Titel 28/800 links, Kopfaktion (Icon oder
-      Pill) rechts, identischer vertical rhythm auf allen 5 Tabs.
-- [ ] Rail (Tablet) und Sidebar (Desktop) folgen demselben Stil (IconBadge,
-      Active-Pill mit Amber-Tönung, keine dünnen Trennlinien wo Schatten
-      möglich).
-- [ ] Routing-Bugs behoben (u. a.: Tab-Wechsel hält Scrollposition nicht
-      kaputt, Modals schließen korrekt, versteckte Noten-Tab wirft keinen
-      Navigation-Fehler).
-- [ ] Kein Inhalt wird von der schwebenden Nav verdeckt (Reserve prüfen).
+- [x] Active-Tab der schwarzen Pill-Nav hat einen farbigen Punkt und einen
+      sanften Amber-Glow; inaktive Icons bleiben ruhig.
+- [x] Badges (Aufgaben/Postfach) werden zentral bereinigt, zeigen maximal
+      „99+“ und liegen in Bottom-Nav, Rail und Sidebar positionssicher.
+- [x] Einheitlicher `ScreenHeader`: Titel 28/800 links, Kopfaktion (Icon,
+      Pill oder Switch) rechts, identischer vertical rhythm auf allen 5 Tabs.
+- [x] Rail (Tablet) und Sidebar (Desktop) folgen demselben Stil (`IconBadge`,
+      Active-Pill mit Amber-Tönung, Schattenkante statt dünner Trennlinie).
+- [x] Routing-Bugs behoben: Tab-Ziele nutzen `navigate` und erhalten dadurch
+      ihre Scrollposition; `useSafeBack()` schließt modale Deep-Links sicher;
+      `href: null` bei Noten leitet direkte Ziele zurück und wird weder über
+      Suche noch Dashboard-Insights angeboten.
+- [x] Jeder Tab-Scrollbereich einschließlich Dashboard nutzt die bestehende
+      Bottom-Nav-Reserve; kein Inhalt wird von der schwebenden Nav verdeckt.
 
 ### Abhängigkeiten
 
@@ -198,7 +211,18 @@ wird von allen Screens genutzt).
 
 ## Phase 3 — Dashboard / Home
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- Das gesamte Widget-Registry rendert jetzt randlose `ColorBlockCard`-
+  Farbflächen. Elternbriefe sind Lavendel, Klassenarbeiten Mint, die nächste
+  Stunde übernimmt die Fachfarbe und Brett-Aushänge leiten ihre Farbe über
+  `categories.ts` ab.
+- Dashboard-Icons laufen über `IconBadge` in Größe lg/xl; die großen Zahlen
+  im Hero sowie Arbeiten und Fehlzeiten sind `StatCard`s.
+- Die SVG-Illustration `NoLessonsIllustration` ersetzt den alten reinen
+  „Kein Unterricht“-Iconzustand in beiden Stundenplan-Widgets.
 
 ### Ziel
 
@@ -225,21 +249,25 @@ Illustration. Hero-Block (Begrüßung, %, Stats) bleibt im Wesentlichen.
 
 ### Akzeptanzkriterien
 
-- [ ] Jede Sektionskarte ist vollflächig in ihrer Kategoriefarbe eingefärbt
-      (Elternbriefe = Lavendel, Klassenarbeiten = Mint, Postfach/Brett nach
-      Kategorie, …) — keine weißen Listenkarten mit Rand mehr auf dem
-      Dashboard.
-- [ ] Icon-Badges überall auf farbigem Kreis, mindestens Größe lg (44 px).
-- [ ] Stat-Zahlen (Stunden heute, Aufgaben offen, Tage bis Arbeit) als
-      riesige Zahl + kleine Caption (`StatCard`), fetter als vorher.
-- [ ] „Kein Unterricht“-Leerzustand zeigt eine kleine verspielte
-      Illustration.
-- [ ] Dark Mode: alle Blöcke nutzen Dark-Varianten; Text bleibt lesbar
-      (Kontrast ≥ 4.5:1 bzw. groß 3:1).
-- [ ] Widget-Reihenfolge/-Sichtbarkeit aus Einstellungen bleibt erhalten;
-      „Dashboard anpassen“-Karte funktioniert weiter.
-- [ ] Bugs auf dem Dashboard behoben (u. a.: RefreshControl-Farbe, Demo-Pill,
-      Lade-Skeletons im neuen Stil).
+- [x] Jede Sektionskarte ist vollflächig in ihrer Kategoriefarbe eingefärbt
+      (Elternbriefe = Lavendel, Klassenarbeiten = Mint, nächste Stunde =
+      Fachfarbe, Brett nach Kategorie, …) — keine weißen Listenkarten mit
+      Rand mehr auf dem Dashboard.
+- [x] Dashboard-Icon-Badges laufen überall auf einem farbigen Kreis, mindestens
+      Größe lg (44 px; Hero-Subject-Badge xl).
+- [x] Stat-Zahlen (Stunden heute, Aufgaben offen, Tage bis Arbeit) sind riesige
+      Zahl + kleine Caption (`StatCard`); Klassenarbeiten und Fehlzeiten nutzen
+      dasselbe Muster.
+- [x] „Kein Unterricht“-Leerzustand zeigt eine kleine verspielte Inline-SVG-
+      Illustration statt eines reinen Icons.
+- [x] Dark Mode: alle Flächen erhalten über Block-/Fach-/Kategorie-Tokens ihre
+      Dark-Varianten; `ColorBlockCard`/`BlockText` und `StatCard` lösen den
+      kontrastsicheren Vordergrund auf.
+- [x] Widget-Reihenfolge/-Sichtbarkeit aus Einstellungen bleibt unverändert;
+      die farbige „Dashboard anpassen“-Karte führt weiterhin zu Einstellungen.
+- [x] Dashboard-Bugs behoben: iOS- und Android-RefreshControl nutzen Amber,
+      die Demo-Markierung ist eine echte Pill und die Ladeskelette folgen dem
+      Farbflächen-Stil.
 
 ### Abhängigkeiten
 
@@ -528,3 +556,5 @@ Phase 9 (Politur) — benötigt 1–8
 | 6 | **Vertretungs-Punkt im Stundenplan**: grün = Vertretung, grau = Ausfall — Entfall (eingezogene Stunde ohne Ersatz) wird Coral zeigen | Brief sagt „grün = Vertretung, grau = Ausfall“; Entfall ist im Datenmodell `state: 'cancelled'` und heute Coral/Rot — wir folgen dem Brief für die Punkte, behalten aber Coral für „eingezogen“ (klarerer Warnzustand). Feinabstimmung in Phase 4. |
 | 7 | **Illustrationen** als kleine Inline-SVGs (`react-native-svg`), keine Emoji-Wiederkehr | App bleibt emoji-frei (UI-REBUILD-Leitsatz); „verspielt“ erreichen wir über Formen statt Emojis. |
 | 8 | **Phase-1-Komponenten sind additive APIs** — bestehende Screens laufen unverändert weiter | Jeder Screen wird erst in seiner Phase umgebaut; keine Big-Bang-Migration, Regressionsrisiko minimal. |
+| 9 | **Haupt-Tabs werden per `navigate`, Detail-/Modalziele per `push` geöffnet** | Ein Tabwechsel legt keinen neuen Stack-Eintrag an und lässt die gemountete Scrollposition bestehen; Modals behalten ihren erwarteten Zurückweg. `useSafeBack()` fängt direkt geöffnete Deep-Links auf. |
+| 10 | **Brett-Aushänge erhalten je Eintrag statt nur je Widget eine Kategorie-Fläche** | Ein Widget kann Sekretariat, Bibliothek und Fundsachen gleichzeitig enthalten. Die individuelle Ableitung über `categories.ts` macht die Farbcodierung auch bei gemischten Aushängen wahr. |

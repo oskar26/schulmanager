@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { ChevronDown, ChevronUp, Vote, X } from 'lucide-react-native';
 
 import type { Elective, Election } from '@/api/types';
@@ -15,7 +15,7 @@ import { useThemeColors } from '@/design/theme';
 
 export default function ElectivesScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
   const elections = data?.elections ?? [];
   const [ranked, setRanked] = useState<Record<string, Elective[]>>({});
@@ -63,7 +63,7 @@ export default function ElectivesScreen() {
   return (
     <Screen adaptive="narrow">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={X} onPress={() => router.back()} size={36} />
+        <IconButton icon={X} onPress={() => dismiss()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Wahlfächer</Title>
           <Muted>Wünsche sortieren und abgeben</Muted>

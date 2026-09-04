@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { Info, Stethoscope, X } from 'lucide-react-native';
 
 import { useCreateSickNote, useSnapshot } from '@/data/queries';
@@ -14,7 +14,7 @@ import { useThemeColors } from '@/design/theme';
 
 export default function SickNoteScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
   const mutation = useCreateSickNote();
 
@@ -41,7 +41,7 @@ export default function SickNoteScreen() {
           <Muted className="text-center">
             Die Schule wurde informiert{data?.student?.firstname ? ` — gute Besserung, ${data.student.firstname}!` : '.'}
           </Muted>
-          <Button action="primary" size="lg" className="mt-4" onPress={() => router.back()}>
+          <Button action="primary" size="lg" className="mt-4" onPress={() => dismiss()}>
             <ButtonText>Fertig</ButtonText>
           </Button>
         </View>
@@ -53,7 +53,7 @@ export default function SickNoteScreen() {
     <Screen adaptive="narrow">
       <Row className="justify-between px-4 pb-2 pt-2">
         <Row className="gap-2">
-          <IconButton icon={X} onPress={() => router.back()} size={36} />
+          <IconButton icon={X} onPress={() => dismiss()} size={36} />
           <Title>Krankmeldung</Title>
         </Row>
       </Row>

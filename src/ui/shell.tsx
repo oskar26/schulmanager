@@ -2,51 +2,96 @@
  * App-Shell: adaptive Navigation.
  *
  * · Phone    → schwebende Charcoal-Kapsel (in app/(tabs)/_layout.tsx)
- * · Tablet   → schmale Icon-Rail links
- * · Desktop  → volle Sidebar mit Labels, Schnellaktionen und Konto-Fuß
+ * · Tablet   → ruhige Icon-Rail links
+ * · Desktop  → volle Sidebar mit Labels, Werkzeugen und Konto-Fuß
+ *
+ * Rail und Sidebar teilen bewusst dieselben Bausteine: IconBadge, Amber-aktive
+ * Pill und kompakte, begrenzte Zähler. So wechselt nur die Informationsdichte,
+ * nicht die visuelle Sprache.
  */
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import {
+  BarChart3,
+  CalendarDays,
+  GraduationCap,
+  Home,
+  Inbox,
+  ListChecks,
+  Search,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { GraduationCap } from 'lucide-react-native';
 
-import type { ThemePalette } from '@/design/tokens';
-import { foregroundOn } from '@/design/tokens';
+import { radius, shadow } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import type { LayoutInfo } from '@/lib/breakpoints';
 import { useSnapshot } from '@/data/queries';
 import { hapticLight } from '@/lib/haptics';
+import { IconBadge, Pill } from '@/ui/primitives';
+import { formatNavBadge, normaliseBadgeCount } from '@/ui/navigation';
 
 function useBadges(): { tasks: number; inbox: number } {
   const { data } = useSnapshot();
   if (!data) return { tasks: 0, inbox: 0 };
   return {
-    tasks: data.homework.filter((item) => !item.done).length,
-    inbox:
+    tasks: normaliseBadgeCount(data.homework.filter((item) => !item.done).length),
+    inbox: normaliseBadgeCount(
       data.letters.filter((letter) => letter.requiresConfirmation && !letter.confirmed).length +
-      data.threads.reduce((sum, thread) => sum + thread.unreadCount, 0),
+        data.threads.reduce((sum, thread) => sum + normaliseBadgeCount(thread.unreadCount), 0),
+    ),
   };
 }
 
 interface NavItemSpec {
+  key: string;
   name: string;
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconActive: keyof typeof Ionicons.glyphMap;
+  icon: LucideIcon;
   badge: number;
 }
 
-const ICONS: Record<string, { icon: keyof typeof Ionicons.glyphMap; iconActive: keyof typeof Ionicons.glyphMap }> = {
-  index: { icon: 'sparkles-outline', iconActive: 'sparkles' },
-  timetable: { icon: 'calendar-outline', iconActive: 'calendar' },
-  tasks: { icon: 'checkbox-outline', iconActive: 'checkbox' },
-  grades: { icon: 'stats-chart-outline', iconActive: 'stats-chart' },
-  inbox: { icon: 'mail-outline', iconActive: 'mail' },
+const ICONS: Record<string, LucideIcon> = {
+  index: Home,
+  timetable: CalendarDays,
+  tasks: ListChecks,
+  grades: BarChart3,
+  inbox: Inbox,
 };
+
+/** Kleiner, positionssicherer Zähler für Navigationseinträge (max. 99+). */
+function NavBadge({ count, compact = false }: { count: number; compact?: boolean }) {
+  const { colors } = useThemeColors();
+  const label = formatNavBadge(count);
+  if (!label) return null;
+
+  return (
+    <View
+      accessibilityLabel={`${label} neue Einträge`}
+      style={{
+        position: compact ? 'absolute' : 'relative',
+        top: compact ? -7 : undefined,
+        right: compact ? -12 : undefined,
+        minWidth: label === '99+' ? 30 : 20,
+        height: 20,
+        paddingHorizontal: label === '99+' ? 5 : 4,
+        borderRadius: radius.pill,
+        backgroundColor: colors.accent.coral,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: compact ? 0 : 8,
+      }}
+    >
+      <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800', lineHeight: 12 }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
 
 export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }) {
   const { state, navigation, layout } = props;
@@ -57,22 +102,21 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
 
   const full = layout.navigation === 'sidebar';
   const rail = layout.navigation === 'rail';
-  const activeColor = colors.accent.amberDeep;
-  const inactive = colors.faint;
   const badges = useBadges();
 
   const items: NavItemSpec[] = state.routes
-    // href: null versteckt Tabs (z. B. Noten ohne gebuchtes Modul) aus der Leiste.
+    // href: null versteckt Tabs (z. B. Noten ohne gebuchtes Modul) aus der
+    // Navigation. Der Screen selbst leitet Deep-Links sicher zurück (grades.tsx).
     .filter(
       (route) =>
         ICONS[route.name] &&
         (props.descriptors[route.key]?.options as { href?: string | null } | undefined)?.href !== null,
     )
     .map((route) => ({
+      key: route.key,
       name: route.name,
       title: String(props.descriptors[route.key]?.options.title ?? route.name),
-      icon: ICONS[route.name].icon,
-      iconActive: ICONS[route.name].iconActive,
+      icon: ICONS[route.name],
       badge: route.name === 'tasks' ? badges.tasks : route.name === 'inbox' ? badges.inbox : 0,
     }));
 
@@ -80,31 +124,13 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
 
   const goTab = (name: string, key: string) => {
     const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
+    // Tab-Routen werden mit `navigate`, nicht per Stack-Push gewechselt. Dadurch
+    // bleibt die gemountete Scrollposition beim Wechsel zwischen Haupt-Tabs intakt.
     if (state.routes[state.index]?.key !== key && !event.defaultPrevented) {
       hapticLight();
       navigation.navigate(name);
     }
   };
-
-  const BadgePill = ({ count }: { count: number }) =>
-    count > 0 ? (
-      <View
-        style={{
-          minWidth: 22,
-          paddingHorizontal: 7,
-          paddingVertical: 3,
-          borderRadius: 11,
-          backgroundColor: colors.accent.coral,
-          alignItems: 'center',
-          marginLeft: full ? 8 : 0,
-          marginTop: rail ? 2 : 0,
-        }}
-      >
-        <Text style={{ color: colors.on.coral, fontSize: 10.5, fontWeight: '800' }}>
-          {count > 99 ? '99+' : count}
-        </Text>
-      </View>
-    ) : null;
 
   return (
     <View
@@ -115,34 +141,24 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
         bottom: 0,
         width: layout.navigationWidth,
         backgroundColor: colors.surface,
-        borderRightWidth: 1,
-        borderRightColor: colors.line,
         paddingTop: insets.top,
         paddingBottom: Math.max(insets.bottom, 12),
+        // Keine harte Trennlinie: Die weiche Schattenkante hebt die Shell genug
+        // vom Canvas ab und bleibt auch im Dark Mode ruhig.
+        ...shadow.float,
       }}
     >
       {/* Marke */}
       <View
         style={{
           paddingTop: 18,
-          paddingBottom: 14,
+          paddingBottom: 18,
           paddingHorizontal: full ? 20 : 0,
           alignItems: full ? 'flex-start' : 'center',
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 13,
-              backgroundColor: colors.accent.amber,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Ionicons name="sparkles" size={19} color={colors.on.amber} />
-          </View>
+          <IconBadge icon={GraduationCap} color={colors.accent.amber} size="lg" tone="solid" accessibilityLabel="Schulflow" />
           {full ? (
             <View>
               <Text style={{ fontSize: 17, fontWeight: '800', letterSpacing: -0.4, color: colors.ink }}>
@@ -165,7 +181,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
             textTransform: 'uppercase',
             color: colors.faint,
             paddingHorizontal: 22,
-            paddingBottom: 6,
+            paddingBottom: 8,
           }}
         >
           Menü
@@ -173,41 +189,57 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
       ) : null}
 
       {/* Hauptnavigation */}
-      <View style={{ gap: 4, paddingHorizontal: full ? 12 : 10 }}>
+      <View style={{ gap: 8, paddingHorizontal: full ? 12 : 12, alignItems: full ? 'stretch' : 'center' }}>
         {items.map((item) => {
-          const key = state.routes.find((route) => route.name === item.name)?.key ?? item.name;
-          const active = key === activeKey;
+          const active = item.key === activeKey;
+          const Icon = item.icon;
           return (
             <Pressable
-              key={item.name}
+              key={item.key}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               accessibilityLabel={item.title}
-              onPress={() => goTab(item.name, key)}
-              className="hover:bg-line/40 active:bg-line/60"
+              onPress={() => goTab(item.name, item.key)}
+              className="active:opacity-80"
               style={{
+                minHeight: full ? 56 : 62,
+                minWidth: full ? undefined : 62,
+                width: full ? '100%' : 62,
                 flexDirection: full ? 'row' : 'column',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: full ? 12 : 4,
-                paddingVertical: full ? 11 : 9,
-                paddingHorizontal: full ? 12 : 4,
-                borderRadius: 16,
+                paddingVertical: full ? 6 : 7,
+                paddingHorizontal: full ? 10 : 4,
+                borderRadius: radius.pill,
                 backgroundColor: active ? tint(colors.accent.amber, 0.16) : 'transparent',
+                ...(active ? shadow.card : undefined),
               }}
             >
-              <Ionicons name={active ? item.iconActive : item.icon} size={21} color={active ? activeColor : inactive} />
-              <Text
-                style={{
-                  fontSize: full ? 14.5 : 10,
-                  fontWeight: active ? '800' : '600',
-                  color: active ? activeColor : inactive,
-                }}
-                numberOfLines={1}
-              >
-                {item.title}
-              </Text>
-              {full ? <View style={{ flex: 1 }} /> : null}
-              <BadgePill count={item.badge} />
+              <View style={{ position: 'relative' }}>
+                <IconBadge
+                  icon={Icon}
+                  color={active ? colors.accent.amber : colors.muted}
+                  size="md"
+                  tone={active ? 'solid' : 'tint'}
+                  strokeWidth={active ? 2.5 : 2}
+                />
+                {rail ? <NavBadge count={item.badge} compact /> : null}
+              </View>
+              {full ? (
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 14.5,
+                    fontWeight: active ? '800' : '600',
+                    color: active ? colors.accent.amberDeep : colors.muted,
+                  }}
+                  numberOfLines={1}
+                >
+                  {item.title}
+                </Text>
+              ) : null}
+              {full ? <NavBadge count={item.badge} /> : null}
             </Pressable>
           );
         })}
@@ -216,47 +248,29 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
       <View style={{ flex: 1 }} />
 
       {/* Werkzeuge */}
-      <View style={{ gap: 4, paddingHorizontal: full ? 12 : 10 }}>
-        <ToolButton icon="search" label="Suche" full={full} colors={colors} onPress={() => router.push('/search')} />
-        <ToolButton
-          icon="settings-outline"
-          label="Einstellungen"
-          full={full}
-          colors={colors}
-          onPress={() => router.push('/settings')}
-        />
+      <View style={{ gap: 8, paddingHorizontal: full ? 12 : 12, alignItems: full ? 'stretch' : 'center' }}>
+        <ToolButton icon={Search} label="Suche" full={full} onPress={() => router.push('/search')} />
+        <ToolButton icon={Settings} label="Einstellungen" full={full} onPress={() => router.push('/settings')} />
       </View>
 
       {/* Konto-Fuß (nur Desktop) */}
       {full ? (
         <Pressable
           onPress={() => router.push('/settings')}
-          className="hover:bg-line/40 active:bg-line/60"
+          className="active:opacity-80"
           style={{
-            marginTop: 12,
+            marginTop: 16,
             marginHorizontal: 12,
             padding: 12,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: colors.line,
+            borderRadius: radius.cardSm,
+            backgroundColor: tint(colors.accent.amber, 0.11),
             flexDirection: 'row',
             alignItems: 'center',
             gap: 10,
           }}
         >
-          <View
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 12,
-              backgroundColor: tint(colors.accent.amber, 0.16),
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <GraduationCap size={18} strokeWidth={2} color={colors.accent.amberDeep} />
-          </View>
-          <View style={{ flex: 1 }}>
+          <IconBadge icon={GraduationCap} color={colors.accent.amber} size="md" tone="solid" />
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '700', color: colors.ink }}>
               {data?.student ? `${data.student.firstname} ${data.student.lastname}` : 'Nicht verbunden'}
             </Text>
@@ -264,53 +278,52 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
               {isDemo ? 'Demo-Modus' : data?.institution?.name ?? 'Schule verbinden …'}
             </Text>
           </View>
-          {isDemo ? <DemoPill colors={colors} /> : null}
+          {isDemo ? <DemoPill /> : null}
         </Pressable>
       ) : (
-        <View style={{ marginTop: 10, alignItems: 'center' }}>{isDemo ? <DemoPill colors={colors} /> : null}</View>
+        <View style={{ marginTop: 14, alignItems: 'center' }}>{isDemo ? <DemoPill /> : null}</View>
       )}
     </View>
   );
 }
 
-function DemoPill({ colors }: { colors: ThemePalette }) {
-  return (
-    <View style={{ backgroundColor: tint(colors.accent.amber, 0.18), paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 }}>
-      <Text style={{ fontSize: 9.5, fontWeight: '800', color: foregroundOn(colors.accent.amber, colors) }}>DEMO</Text>
-    </View>
-  );
+function DemoPill() {
+  const { colors } = useThemeColors();
+  return <Pill label="DEMO" color={colors.accent.amber} tone="solid" className="px-2 py-1" />;
 }
 
 function ToolButton({
-  icon,
+  icon: Icon,
   label,
   full,
-  colors,
   onPress,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: LucideIcon;
   label: string;
   full: boolean;
-  colors: ThemePalette;
   onPress: () => void;
 }) {
+  const { colors } = useThemeColors();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      className="hover:bg-line/40 active:bg-line/60"
+      className="active:opacity-80"
       style={{
+        minHeight: full ? 52 : 58,
+        minWidth: full ? undefined : 58,
+        width: full ? '100%' : 58,
         flexDirection: full ? 'row' : 'column',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: full ? 12 : 4,
-        paddingVertical: full ? 10 : 8,
-        paddingHorizontal: full ? 12 : 4,
-        borderRadius: 16,
+        paddingHorizontal: full ? 10 : 4,
+        borderRadius: radius.pill,
       }}
     >
-      <Ionicons name={icon} size={20} color={colors.muted} />
-      <Text style={{ fontSize: full ? 14 : 9.5, fontWeight: '600', color: colors.muted }}>{label}</Text>
+      <IconBadge icon={Icon} color={colors.muted} size="md" tone="tint" />
+      {full ? <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>{label}</Text> : null}
     </Pressable>
   );
 }

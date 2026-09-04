@@ -1,15 +1,12 @@
 /**
- * Dashboard-Widgets.
+ * Dashboard-Widgets — Redesign Phase 3.
  *
- * Jedes Widget ist eine eigenständige Karte, die nur den Snapshot bekommt.
- * Reihenfolge und Sichtbarkeit steuern die Einstellungen (`settings.widgets`),
- * dieselbe Liste versorgt später die Home-Screen-Widgets.
- *
- * Phase C — „Bento Grid / Soft Brutalism“: Jede Karte in Bento-Anatomie
- * (Farbblock, Ecken-Pfeil, Status-Pills, Emoji-frei, nur Lucide-Vektor-Icons).
+ * Jede Dashboard-Sektion ist eine echte Farbfläche statt einer weißen
+ * Listenkarte. Reihenfolge und Sichtbarkeit bleiben vollständig im Settings-
+ * Store; dieses Modul entscheidet ausschließlich über die Darstellung.
  */
 import React, { useMemo } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AlertTriangle,
@@ -27,6 +24,7 @@ import {
   Inbox,
   ListChecks,
   Mail,
+  MapPin,
   PartyPopper,
   Plane,
   Search,
@@ -37,30 +35,34 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react-native';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
-import type { Snapshot } from '@/api/types';
+import type { Lesson, Snapshot } from '@/api/types';
+import { useHomeworkDone, useModuleActive } from '@/data/queries';
+import { categoryColor, categoryFromText } from '@/design/categories';
+import { subjectColor, tint } from '@/design/subjects';
+import { radius } from '@/design/tokens';
 import { de } from '@/features/grades/calculator';
-import { subjectStyle, tint } from '@/design/subjects';
 import { computeInsights, computeNow, lessonsOn, packingList } from '@/features/insights/engine';
-import { useHomeworkDone } from '@/data/queries';
 import { addDays, daysUntil, formatRelativeDay, minutesOf, nowMinutes, toISO } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
-import {
-  Badge,
-  Card,
-  Divider,
-  EmptyState,
-  IconBadge,
-  Muted,
-  Pill,
-  RoundActionButton,
-  Row,
-} from '@/ui/primitives';
-import { LivePulse, PressableOpacity, PressableScale } from '@/ui/motion';
-import { Progress } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn } from '@/design/tokens';
+import { Progress } from '@/ui/gluestack/feedback';
+import { isMainTabHref } from '@/ui/navigation';
+import { LivePulse, PressableOpacity } from '@/ui/motion';
+import {
+  Badge,
+  BlockCaption,
+  BlockText,
+  ColorBlockCard,
+  EmptyState,
+  IconBadge,
+  Pill,
+  Row,
+  StatCard,
+  useBlockInk,
+} from '@/ui/primitives';
 
 interface WidgetProps {
   snapshot: Snapshot;
@@ -69,83 +71,152 @@ interface WidgetProps {
 const todayISO = () => toISO(new Date());
 const tomorrowISO = () => toISO(addDays(new Date(), 1));
 
-/* ------------------------------------------------------------------ Widget-Header */
+/* ------------------------------------------------------------------ Gemeinsame Farbflächen-Bausteine */
 
 /**
- * Bento-Kopfzeile einer Karte: einheitliches IconBadge (farbiger Kreis) +
- * Titel, rechts Badge, Text-Link oder runder Ecken-Pfeil.
+ * Der gemeinsame Kopf jeder Farbfläche. Der Badge-Kreis ist absichtlich lg
+ * (44px): Dashboard-Icons sind keine kleinen Listenmarken mehr.
  */
 function WidgetHeader({
   icon: IconComponent,
-  iconColor,
   title,
   action,
   onAction,
   badge,
 }: {
   icon: LucideIcon;
-  iconColor?: string;
   title: string;
   action?: string;
   onAction?: () => void;
   badge?: number;
 }) {
-  const { colors } = useThemeColors();
-  const resolvedIconColor = iconColor ?? colors.accent.violet;
+  const ink = useBlockInk();
+  const actionPill = action ? <Pill label={action} color={ink} tone="tint" /> : null;
+
   return (
-    <Row className="justify-between px-5 pb-1 pt-5">
-      <Row className="flex-1 gap-2.5">
-        <IconBadge icon={IconComponent} color={resolvedIconColor} size="md" />
-        <Text className="flex-1 text-[16px] font-extrabold tracking-[-0.2px] text-ink" numberOfLines={1}>
+    <Row className="justify-between gap-3 px-5 pb-3 pt-5">
+      <Row className="min-w-0 flex-1 gap-3">
+        <IconBadge icon={IconComponent} color={ink} size="lg" tone="tint" />
+        <BlockText className="flex-1 text-[18px] font-extrabold leading-[22px] tracking-[-0.3px]" numberOfLines={2}>
           {title}
-        </Text>
+        </BlockText>
       </Row>
       {typeof badge === 'number' && badge > 0 ? (
         <Badge count={badge} />
-      ) : action ? (
-        <PressableOpacity onPress={onAction} hitSlop={14} accessibilityRole="button">
-          <Text className="text-[12.5px] font-bold text-accent-amber-deep">{action}</Text>
+      ) : actionPill && onAction ? (
+        <PressableOpacity onPress={onAction} hitSlop={8} accessibilityRole="button" accessibilityLabel={action}>
+          {actionPill}
         </PressableOpacity>
+      ) : actionPill ? (
+        actionPill
       ) : onAction ? (
-        <RoundActionButton onPress={onAction} size={34} color={resolvedIconColor} accessibilityLabel={title} />
+        <PressableOpacity onPress={onAction} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${title} öffnen`}>
+          <IconBadge icon={ArrowUpRight} color={ink} size="lg" tone="tint" />
+        </PressableOpacity>
       ) : null}
     </Row>
+  );
+}
+
+/** Dezente Gruppe innerhalb einer Farbkarte — nie eine weiße Ersatzkarte. */
+function BlockInset({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: ViewStyle }) {
+  const ink = useBlockInk();
+  return (
+    <View
+      className={`rounded-[20px] ${className}`}
+      style={[{ backgroundColor: tint(ink, 0.1) }, style]}
+    >
+      {children}
+    </View>
+  );
+}
+
+/** Pill mit der kontraststarken Vordergrundfarbe der umgebenden Farbfläche. */
+function InkPill({ label, icon, className = '' }: { label: string; icon?: LucideIcon; className?: string }) {
+  const ink = useBlockInk();
+  return <Pill label={label} color={ink} tone="tint" icon={icon} className={className} />;
+}
+
+/** Kleine, emoji-freie SVG für schulfreie Tage. */
+function NoLessonsIllustration() {
+  const ink = useBlockInk();
+  const soft = tint(ink, 0.13);
+  const softer = tint(ink, 0.08);
+
+  return (
+    <View style={{ width: 126, height: 88, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={126} height={88} viewBox="0 0 126 88" accessible={false}>
+        <Circle cx="21" cy="19" r="11" fill={soft} />
+        <Line x1="21" y1="2" x2="21" y2="7" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+        <Line x1="4" y1="19" x2="9" y2="19" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+        <Line x1="33" y1="7" x2="37" y2="3" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+        <Rect x="39" y="26" width="54" height="43" rx="11" fill={softer} stroke={ink} strokeWidth="2.2" />
+        <Path d="M49 38h34M49 47h25M49 56h18" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+        <Path d="M95 57c8-1 14 4 16 12-8 3-16 0-19-7" fill={soft} stroke={ink} strokeWidth="2.2" strokeLinejoin="round" />
+        <Path d="M93 68c5-5 10-8 16-10" stroke={ink} strokeWidth="2" strokeLinecap="round" />
+        <Circle cx="105" cy="24" r="3" fill={ink} opacity="0.72" />
+        <Circle cx="114" cy="34" r="2" fill={ink} opacity="0.42" />
+      </Svg>
+    </View>
   );
 }
 
 /* ------------------------------------------------------------------ Nächste Stunde */
 
 export function NextLessonWidget({ snapshot }: WidgetProps) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const router = useRouter();
   const status = computeNow(snapshot);
   const lesson = status.lesson ?? status.next;
-  const style = subjectStyle(lesson?.subject);
 
   if (!lesson) {
     return (
-      <Card className="overflow-hidden">
-        <WidgetHeader icon={BookOpen} iconColor={colors.accent.violet} title="Nächste Stunde" />
-        <View className="px-6 pb-8 pt-2">
-          <EmptyState
-            icon={Sun}
-            iconColor={colors.accent.violet}
-            title="Kein Unterricht"
-            hint={status.label}
-          />
-        </View>
-      </Card>
+      <ColorBlockCard color={colors.blocks.sky}>
+        <WidgetHeader icon={BookOpen} title="Nächste Stunde" />
+        <EmptyState
+          illustration={<NoLessonsIllustration />}
+          title="Kein Unterricht"
+          hint={status.label || 'Genieß den freien Tag.'}
+        />
+      </ColorBlockCard>
     );
   }
 
+  const subjectTone = subjectColor(lesson.subject, isDark);
   return (
-    <PressableScale onPress={() => router.push('/timetable')}>
-      <Card className="overflow-hidden" floating padded={false}>
-        <View style={{ backgroundColor: tint(style.color, 0.16) }} className="px-4 pb-4 pt-4">
-          <Row className="justify-between">
+    <ColorBlockCard
+      color={subjectTone}
+      onPress={() => router.navigate('/timetable')}
+      accessibilityLabel={`Stundenplan: ${lesson.subject}`}
+      elevated
+    >
+      <NextLessonContent lesson={lesson} status={status} />
+    </ColorBlockCard>
+  );
+}
+
+function NextLessonContent({
+  lesson,
+  status,
+}: {
+  lesson: Lesson;
+  status: ReturnType<typeof computeNow>;
+}) {
+  const ink = useBlockInk();
+  const { colors } = useThemeColors();
+  const stateLabel =
+    lesson.state === 'cancelled' ? 'Entfall' : lesson.state === 'substitution' ? 'Vertretung' : 'Raumwechsel';
+
+  return (
+    <>
+      <WidgetHeader icon={BookOpen} title="Nächste Stunde" action={status.label} />
+      <View className="px-5 pb-5">
+        <Row className="gap-3">
+          <IconBadge icon={BookOpen} color={ink} size="xl" tone="tint" />
+          <View className="min-w-0 flex-1 justify-center">
             <Row className="gap-2">
-              {status.kind === 'in-lesson' ? <LivePulse color={style.color} /> : null}
-              <Text className="text-[11px] font-bold uppercase tracking-[1.4px]" style={{ color: style.color }}>
+              {status.kind === 'in-lesson' ? <LivePulse color={ink} /> : null}
+              <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.4px]">
                 {status.kind === 'in-lesson'
                   ? 'Läuft gerade'
                   : status.kind === 'break'
@@ -153,61 +224,38 @@ export function NextLessonWidget({ snapshot }: WidgetProps) {
                     : status.kind === 'before-school'
                       ? 'Schulbeginn'
                       : 'Nächste Stunde'}
-              </Text>
+              </BlockCaption>
             </Row>
-            <Text className="text-[11px] font-bold" style={{ color: style.color }}>
-              {status.label}
-            </Text>
-          </Row>
+            <BlockText className="mt-1 text-[24px] font-extrabold leading-[27px] tracking-[-0.5px]" numberOfLines={2}>
+              {lesson.subject}
+            </BlockText>
+            <BlockCaption className="mt-0.5" numberOfLines={2}>
+              {lesson.start}–{lesson.end} Uhr
+              {lesson.room ? ` · ${lesson.room}` : ''}
+              {lesson.teacher ? ` · ${lesson.teacher}` : ''}
+            </BlockCaption>
+          </View>
+        </Row>
 
-          <Row className="mt-3 gap-3">
-            <View
-              className="h-14 w-14 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: style.color }}
-            >
-              <BookOpen color={foregroundOn(style.color, colors)} size={24} strokeWidth={2.2} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[20px] font-extrabold leading-[22px] tracking-tight text-ink" numberOfLines={2}>
-                {lesson.subject}
-              </Text>
-              <Muted>
-                {lesson.start}–{lesson.end} Uhr
-                {lesson.room ? ` · ${lesson.room}` : ''}
-                {lesson.teacher ? ` · ${lesson.teacher}` : ''}
-              </Muted>
-            </View>
-            <RoundActionButton
-              onPress={() => router.push('/timetable')}
-              size={38}
-              color={style.color}
-              accessibilityLabel="Zum Stundenplan"
-            />
-          </Row>
-
-          {lesson.state !== 'regular' ? (
-            <Row className="mt-3 gap-2">
+        {lesson.state !== 'regular' ? (
+          <BlockInset className="mt-4 px-3 py-3">
+            <Row className="gap-2.5">
               <Pill
-                label={
-                  lesson.state === 'cancelled'
-                    ? 'Entfall'
-                    : lesson.state === 'substitution'
-                      ? 'Vertretung'
-                      : 'Raumwechsel'
-                }
-                color={lesson.state === 'cancelled' ? colors.danger : colors.success}
-                tone="solid"
+                label={stateLabel}
+                color={lesson.state === 'cancelled' ? colors.priority.urgent : ink}
+                tone={lesson.state === 'cancelled' ? 'solid' : 'tint'}
+                icon={lesson.state === 'cancelled' ? AlertTriangle : BookOpen}
               />
-              {lesson.comment ? <Muted className="flex-1">{lesson.comment}</Muted> : null}
+              {lesson.comment ? <BlockCaption className="flex-1" numberOfLines={2}>{lesson.comment}</BlockCaption> : null}
             </Row>
-          ) : null}
-        </View>
-      </Card>
-    </PressableScale>
+          </BlockInset>
+        ) : null}
+      </View>
+    </>
   );
 }
 
-/* ------------------------------------------------------------------ Insights */
+/* ------------------------------------------------------------------ Smart Insights */
 
 const INSIGHT_ICON: Record<string, LucideIcon> = {
   positive: CheckCheck,
@@ -220,60 +268,79 @@ const INSIGHT_ICON: Record<string, LucideIcon> = {
 export function InsightsWidget({ snapshot }: WidgetProps) {
   const { colors } = useThemeColors();
   const router = useRouter();
-  // Bugfix: computeInsights lief einmal pro Render (teils doppelt) — jetzt memoized.
+  const gradesOn = useModuleActive('grades');
   const all = useMemo(() => computeInsights(snapshot), [snapshot]);
-  const insights = all.slice(0, 4);
+  // Insight-Regeln können Noten erwähnen, obwohl das Modul für dieses Konto
+  // nicht gebucht ist. Diese CTA darf dann nicht auf einen href:null-Tab zeigen.
+  const availableInsights = all.filter((insight) => gradesOn || insight.action?.href !== '/grades');
+  const insights = availableInsights.slice(0, 4);
   if (insights.length === 0) return null;
 
   const toneColor: Record<string, string> = {
-    positive: colors.success,
-    warning: colors.warning,
-    critical: colors.danger,
-    fun: colors.accent.violet,
-    neutral: colors.accent.violet,
+    positive: colors.blocks.mint,
+    warning: colors.blocks.amber,
+    critical: colors.blocks.coral,
+    fun: colors.blocks.violet,
+    neutral: colors.blocks.sky,
   };
 
   return (
-    <Card padded={false} className="overflow-hidden">
-      <WidgetHeader
-        icon={Sparkles}
-        iconColor={colors.accent.violet}
-        title="Smart Insights"
-        action={`${insights.length} von ${all.length}`}
-      />
+    <ColorBlockCard color={colors.blocks.sky} padded={false}>
+      <WidgetHeader icon={Sparkles} title="Smart Insights" action={`${insights.length} von ${availableInsights.length}`} />
+      <View className="gap-2 px-5 pb-5">
+        {insights.map((insight) => {
+          const Icon = INSIGHT_ICON[insight.tone] ?? Info;
+          const tone = toneColor[insight.tone] ?? colors.blocks.sky;
+          const content = <InsightPreview icon={Icon} tone={tone} title={insight.title} body={insight.body} actionable={Boolean(insight.action)} />;
 
-      {insights.map((insight, index) => {
-        const Icon = INSIGHT_ICON[insight.tone] ?? Info;
-        const tone = toneColor[insight.tone] ?? colors.accent.violet;
-        return (
-          <Pressable
-            key={insight.id}
-            onPress={() => insight.action && router.push(insight.action.href as never)}
-            className="hover:bg-line/30 active:bg-line/50"
-          >
-            <Row className="gap-3 px-5 py-3">
-              <View
-                className="h-9 w-9 items-center justify-center rounded-xl"
-                style={{ backgroundColor: tint(tone, 0.14) }}
-              >
-                <Icon size={17} strokeWidth={2.1} color={tone} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-[14px] font-semibold leading-5 text-ink">{insight.title}</Text>
-                {insight.body ? (
-                  <Text className="mt-0.5 text-[12px] leading-4 text-muted" numberOfLines={2}>
-                    {insight.body}
-                  </Text>
-                ) : null}
-              </View>
-              {insight.action ? <ArrowUpRight size={15} color={colors.faint} /> : null}
-            </Row>
-            {index < insights.length - 1 ? <Divider className="ml-16" /> : null}
-          </Pressable>
-        );
-      })}
-      <View className="h-2" />
-    </Card>
+          return insight.action ? (
+            <Pressable
+              key={insight.id}
+              onPress={() => {
+                const href = insight.action!.href;
+                if (isMainTabHref(href)) router.navigate(href as never);
+                else router.push(href as never);
+              }}
+              className="rounded-[20px] active:opacity-75"
+              accessibilityRole="button"
+              accessibilityLabel={insight.action.label}
+            >
+              {content}
+            </Pressable>
+          ) : (
+            <View key={insight.id}>{content}</View>
+          );
+        })}
+      </View>
+    </ColorBlockCard>
+  );
+}
+
+function InsightPreview({
+  icon: Icon,
+  tone,
+  title,
+  body,
+  actionable,
+}: {
+  icon: LucideIcon;
+  tone: string;
+  title: string;
+  body?: string;
+  actionable: boolean;
+}) {
+  const ink = useBlockInk();
+  return (
+    <BlockInset className="px-3 py-3">
+      <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+        <IconBadge icon={Icon} color={tone} size="lg" tone="solid" />
+        <View className="min-w-0 flex-1 pt-0.5">
+          <BlockText className="text-[14px] font-extrabold leading-5" numberOfLines={2}>{title}</BlockText>
+          {body ? <BlockCaption className="mt-0.5 text-[12px] leading-4" numberOfLines={2}>{body}</BlockCaption> : null}
+        </View>
+        {actionable ? <IconBadge icon={ArrowUpRight} color={ink} size="lg" tone="tint" /> : null}
+      </Row>
+    </BlockInset>
   );
 }
 
@@ -293,87 +360,100 @@ export function TodayTimelineWidget({ snapshot }: WidgetProps) {
 
   if (lessons.length === 0) {
     return (
-      <Card>
-        <WidgetHeader icon={CalendarDays} iconColor={colors.accent.violet} title="Stundenplan" />
-        <EmptyState icon={Sun} iconColor={colors.accent.violet} title="Kein Unterricht" hint="Genieß den freien Tag." />
-      </Card>
+      <ColorBlockCard color={colors.blocks.teal}>
+        <WidgetHeader icon={CalendarDays} title="Stundenplan" />
+        <EmptyState
+          illustration={<NoLessonsIllustration />}
+          title="Kein Unterricht"
+          hint="Genieß den freien Tag."
+        />
+      </ColorBlockCard>
     );
   }
 
   const now = nowMinutes();
   const isToday = label === 'Heute';
+  return (
+    <ColorBlockCard color={colors.blocks.teal} padded={false}>
+      <WidgetHeader icon={CalendarDays} title={label} action="Ganze Woche" onAction={() => router.navigate('/timetable')} />
+      <View className="gap-2 px-5 pb-5">
+        {lessons.map((lesson) => (
+          <TimelineLesson
+            key={lesson.id}
+            lesson={lesson}
+            running={isToday && now >= minutesOf(lesson.start) && now < minutesOf(lesson.end)}
+            past={isToday && now >= minutesOf(lesson.end)}
+            onPress={() => router.navigate('/timetable')}
+          />
+        ))}
+      </View>
+    </ColorBlockCard>
+  );
+}
+
+function TimelineLesson({
+  lesson,
+  running,
+  past,
+  onPress,
+}: {
+  lesson: Lesson;
+  running: boolean;
+  past: boolean;
+  onPress: () => void;
+}) {
+  const { colors, isDark } = useThemeColors();
+  const ink = useBlockInk();
+  const subjectTone = subjectColor(lesson.subject, isDark);
+  const cancelled = lesson.state === 'cancelled';
 
   return (
-    <Card padded={false} className="overflow-hidden">
-      <WidgetHeader
-        icon={CalendarDays}
-        iconColor={colors.accent.violet}
-        title={label}
-        action="Ganze Woche"
-        onAction={() => router.push('/timetable')}
-      />
-
-      <View className="px-5 pb-5">
-        {lessons.map((lesson) => {
-          const style = subjectStyle(lesson.subject);
-          const running = isToday && now >= minutesOf(lesson.start) && now < minutesOf(lesson.end);
-          const past = isToday && now >= minutesOf(lesson.end);
-          const cancelled = lesson.state === 'cancelled';
-
-          return (
-            <Row key={lesson.id} className="gap-3 py-1.5" style={{ opacity: past ? 0.45 : 1 }}>
-              <View className="w-11">
-                <Text className="text-[12px] font-bold text-muted">{lesson.start}</Text>
-                <Text className="text-[10px] text-faint">{lesson.hour}. Std</Text>
-              </View>
-
-              <View className="items-center">
-                <View
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: cancelled ? colors.danger : style.color }}
-                />
-                <View className="w-[2px] flex-1 bg-line" />
-              </View>
-
-              <View
-                className="flex-1 rounded-2xl px-3 py-2"
-                style={{
-                  backgroundColor: running ? tint(style.color, 0.18) : 'transparent',
-                  borderWidth: running ? 0 : 1,
-                  borderColor: colors.line,
-                }}
+    <Pressable
+      onPress={onPress}
+      className="rounded-[20px] active:opacity-75"
+      accessibilityRole="button"
+      accessibilityLabel={`${lesson.subject}, ${lesson.start} Uhr`}
+      style={{ opacity: past ? 0.58 : 1 }}
+    >
+      <BlockInset style={{ backgroundColor: tint(ink, running ? 0.18 : 0.1) }} className="px-3 py-3">
+        <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+          <View className="w-9 pt-0.5">
+            <BlockText className="text-[12px] font-extrabold">{lesson.start}</BlockText>
+            <BlockCaption className="text-[10px]">{lesson.hour}. Std</BlockCaption>
+          </View>
+          <IconBadge icon={BookOpen} color={cancelled ? colors.blocks.coral : subjectTone} size="lg" tone="solid" />
+          <View className="min-w-0 flex-1 pt-0.5">
+            <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
+              <BlockText
+                className="flex-1 text-[15px] font-extrabold leading-[19px]"
+                style={cancelled ? { textDecorationLine: 'line-through' } : undefined}
+                numberOfLines={2}
               >
-                <Row className="justify-between" style={{ alignItems: 'flex-start' }}>
-                  <Text
-                    className="flex-1 text-[14px] font-semibold leading-[17px] text-ink"
-                    style={cancelled ? { textDecorationLine: 'line-through', color: colors.faint } : undefined}
-                    numberOfLines={2}
-                  >
-                    {cancelled ? (lesson.originalSubject ?? lesson.subject) : lesson.subject}
-                  </Text>
-                  {lesson.room ? <Muted className="ml-2 text-[11px]">{lesson.room}</Muted> : null}
-                </Row>
-                {lesson.state !== 'regular' ? (
-                  <Text
-                    className="mt-0.5 text-[11px] font-semibold"
-                    style={{ color: cancelled ? colors.danger : colors.success }}
-                  >
-                    {lesson.comment ?? (lesson.state === 'substitution' ? 'Vertretung' : 'Raumwechsel')}
-                  </Text>
-                ) : null}
-              </View>
+                {cancelled ? (lesson.originalSubject ?? lesson.subject) : lesson.subject}
+              </BlockText>
+              {lesson.room ? <InkPill label={lesson.room} className="px-2 py-0.5" /> : null}
             </Row>
-          );
-        })}
-      </View>
-    </Card>
+            {lesson.state !== 'regular' ? (
+              <Pill
+                label={lesson.state === 'cancelled' ? 'Entfall' : lesson.state === 'substitution' ? 'Vertretung' : 'Raumwechsel'}
+                color={cancelled ? colors.priority.urgent : ink}
+                tone={cancelled ? 'solid' : 'tint'}
+                icon={cancelled ? AlertTriangle : BookOpen}
+                className="mt-1.5"
+              />
+            ) : null}
+            {lesson.comment ? <BlockCaption className="mt-1 text-[11px]" numberOfLines={1}>{lesson.comment}</BlockCaption> : null}
+          </View>
+        </Row>
+      </BlockInset>
+    </Pressable>
   );
 }
 
 /* ------------------------------------------------------------------ Hausaufgaben */
 
 export function HomeworkWidget({ snapshot }: WidgetProps) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const router = useRouter();
   const toggle = useHomeworkDone((state) => state.toggle);
   const open = snapshot.homework.filter((item) => !item.done).slice(0, 4);
@@ -381,65 +461,70 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
   const done = snapshot.homework.filter((item) => item.done).length;
 
   return (
-    <Card padded={false} className="overflow-hidden">
-      <WidgetHeader
-        icon={ListChecks}
-        iconColor={colors.success}
-        title="Hausaufgaben"
-        action="Alle"
-        onAction={() => router.push('/tasks')}
-      />
-
+    <ColorBlockCard color={colors.blocks.lime} padded={false}>
+      <WidgetHeader icon={ListChecks} title="Hausaufgaben" action="Alle" onAction={() => router.navigate('/tasks')} />
       {total > 0 ? (
-        <View className="px-5 pb-2">
-          <Progress value={(done / total) * 100} />
-          <Muted className="mt-1.5 text-[11px]">
-            {done} von {total} erledigt
-          </Muted>
+        <View className="px-5 pb-3">
+          <Progress value={(done / total) * 100} color={colors.blocks.violet} trackClassName="bg-black/10" />
+          <BlockCaption className="mt-1.5 text-[11px]">{done} von {total} erledigt</BlockCaption>
         </View>
       ) : null}
-
       {open.length === 0 ? (
-        <EmptyState icon={PartyPopper} iconColor={colors.success} title="Nichts offen" hint="Alle Aufgaben erledigt." />
+        <EmptyState icon={PartyPopper} iconColor={colors.blocks.violet} title="Nichts offen" hint="Alle Aufgaben erledigt." />
       ) : (
-        open.map((item) => {
-          const style = subjectStyle(item.subject);
-          const days = daysUntil(item.due);
-          return (
-            <Pressable key={item.id} onPress={() => toggle(item.id)} className="hover:bg-line/30 active:bg-line/50">
-              <Row className="gap-3 px-5 py-2.5">
-                <View
-                  className="h-5 w-5 items-center justify-center rounded-md border-2"
-                  style={{ borderColor: style.color }}
-                />
-                <View className="flex-1">
-                  <Row className="gap-2">
-                    <Text className="text-[13px] font-bold" style={{ color: style.color }}>
-                      {item.subject}
-                    </Text>
-                    <Pill
-                      label={formatRelativeDay(item.due)}
-                      color={days <= 0 ? colors.danger : days === 1 ? colors.warning : colors.faint}
-                    />
-                  </Row>
-                  <Text className="mt-0.5 text-[13px] leading-[18px] text-muted" numberOfLines={2}>
-                    {item.text}
-                  </Text>
-                </View>
-              </Row>
-            </Pressable>
-          );
-        })
+        <View className="gap-2 px-5 pb-5">
+          {open.map((item) => (
+            <HomeworkPreview key={item.id} item={item} isDark={isDark} onToggle={() => toggle(item.id)} />
+          ))}
+        </View>
       )}
-      <View className="h-2" />
-    </Card>
+    </ColorBlockCard>
+  );
+}
+
+function HomeworkPreview({
+  item,
+  isDark,
+  onToggle,
+}: {
+  item: Snapshot['homework'][number];
+  isDark: boolean;
+  onToggle: () => void;
+}) {
+  const { colors } = useThemeColors();
+  const ink = useBlockInk();
+  const subjectTone = subjectColor(item.subject, isDark);
+  const days = daysUntil(item.due);
+  const dueTone = days <= 0 ? colors.priority.urgent : days === 1 ? colors.priority.soon : colors.priority.ok;
+
+  return (
+    <Pressable
+      onPress={onToggle}
+      className="rounded-[20px] active:opacity-75"
+      accessibilityRole="button"
+      accessibilityLabel={`${item.subject}: als erledigt markieren`}
+    >
+      <BlockInset className="px-3 py-3">
+        <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+          <IconBadge icon={BookOpen} color={subjectTone} size="lg" tone="solid" />
+          <View className="min-w-0 flex-1 pt-0.5">
+            <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
+              <BlockText className="flex-1 text-[14px] font-extrabold" numberOfLines={1}>{item.subject}</BlockText>
+              <Pill label={formatRelativeDay(item.due)} color={dueTone} tone="solid" />
+            </Row>
+            <BlockCaption className="mt-1 text-[13px] leading-[18px]" numberOfLines={2}>{item.text}</BlockCaption>
+          </View>
+          <IconBadge icon={CheckCheck} color={ink} size="lg" tone="tint" />
+        </Row>
+      </BlockInset>
+    </Pressable>
   );
 }
 
 /* ------------------------------------------------------------------ Klassenarbeiten */
 
 export function ExamsWidget({ snapshot }: WidgetProps) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const router = useRouter();
   const upcoming = snapshot.exams
     .filter((exam) => daysUntil(exam.date) >= 0)
@@ -449,59 +534,39 @@ export function ExamsWidget({ snapshot }: WidgetProps) {
   if (upcoming.length === 0) return null;
 
   return (
-    <Card padded={false} className="overflow-hidden">
-      <WidgetHeader
-        icon={BarChart3}
-        iconColor={colors.warning}
-        title="Klassenarbeiten"
-        action="Lernplan"
-        onAction={() => router.push('/tasks')}
-      />
-
+    <ColorBlockCard color={colors.blocks.mint} padded={false}>
+      <WidgetHeader icon={BarChart3} title="Klassenarbeiten" action="Lernplan" onAction={() => router.navigate('/tasks')} />
       <Row className="gap-3 px-5 pb-5">
         {upcoming.map((exam) => {
-          const style = subjectStyle(exam.subject);
           const days = daysUntil(exam.date);
           return (
-            <View
-              key={exam.id}
-              className="flex-1 rounded-2xl p-3"
-              style={{ backgroundColor: tint(style.color, 0.14) }}
-            >
-              <Text className="text-[22px] font-extrabold" style={{ color: style.color }}>
-                {days === 0 ? 'heute' : days}
-              </Text>
-              {days > 0 ? (
-                <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: style.color }}>
-                  {days === 1 ? 'Tag' : 'Tage'}
-                </Text>
-              ) : null}
-              <Text className="mt-1.5 text-[13px] font-bold leading-[15px] text-ink" numberOfLines={2}>
-                {exam.subject}
-              </Text>
-              <Muted className="text-[11px]" numberOfLines={1}>
-                {exam.type ?? 'Arbeit'}
-              </Muted>
+            <View key={exam.id} style={{ flex: 1, minWidth: 0 }}>
+              <StatCard
+                value={days === 0 ? 'Heute' : days}
+                caption={`${exam.subject} · ${days === 0 ? 'heute' : days === 1 ? 'Tag bis Arbeit' : 'Tage bis Arbeit'}`}
+                block={subjectColor(exam.subject, isDark)}
+                className="min-h-[116px]"
+                style={{ minWidth: 0 }}
+              />
             </View>
           );
         })}
       </Row>
-    </Card>
+    </ColorBlockCard>
   );
 }
 
 /* ------------------------------------------------------------------ Noten */
 
 export function GradesWidget({ snapshot }: WidgetProps) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const router = useRouter();
   const hidden = useSettings((state) => state.settings.hideGrades);
+  const gradesOn = useModuleActive('grades');
   const withAverage = snapshot.subjects.filter((subject) => subject.average != null);
-  if (withAverage.length === 0) return null;
+  if (!gradesOn || withAverage.length === 0) return null;
 
-  const overall =
-    withAverage.reduce((sum, subject) => sum + (subject.average as number), 0) / withAverage.length;
-
+  const overall = withAverage.reduce((sum, subject) => sum + (subject.average as number), 0) / withAverage.length;
   const recent = snapshot.subjects
     .flatMap((subject) => subject.grades.map((grade) => ({ ...grade, subject: subject.subject })))
     .filter((grade) => grade.date)
@@ -509,40 +574,42 @@ export function GradesWidget({ snapshot }: WidgetProps) {
     .slice(0, 3);
 
   return (
-    <PressableScale onPress={() => router.push('/grades')}>
-      <Card>
-        <WidgetHeader icon={BarChart3} iconColor={colors.accent.violet} title="Noten" action={`${withAverage.length} Fächer`} />
-        <Row className="mt-1 gap-4 px-1">
-          <View className="items-center rounded-2xl bg-accent-lime px-4 py-3">
-            <Text className="text-[26px] font-extrabold text-on-lime">
-              {hidden ? '•••' : de(overall)}
-            </Text>
-            <Text className="text-[10px] font-bold uppercase tracking-wider text-on-lime">Schnitt</Text>
-          </View>
+    <ColorBlockCard
+      color={colors.blocks.violet}
+      onPress={() => router.navigate('/grades')}
+      accessibilityLabel="Noten öffnen"
+      padded={false}
+    >
+      <WidgetHeader icon={BarChart3} title="Noten" action={`${withAverage.length} Fächer`} />
+      <Row className="gap-3 px-5 pb-5" style={{ alignItems: 'stretch' }}>
+        <View style={{ width: 128, maxWidth: '42%' }}>
+          <StatCard
+            value={hidden ? '•••' : de(overall)}
+            caption="Gesamtschnitt"
+            block={colors.blocks.lime}
+            className="h-full min-h-[128px]"
+          />
+        </View>
+        <View className="min-w-0 flex-1 gap-2">
+          {recent.map((grade) => (
+            <GradePreview key={`${grade.subject}-${grade.id}`} subject={grade.subject} value={hidden ? '•' : grade.value} isDark={isDark} />
+          ))}
+        </View>
+      </Row>
+    </ColorBlockCard>
+  );
+}
 
-          <View className="flex-1 gap-1.5">
-            {recent.map((grade) => {
-              const style = subjectStyle(grade.subject);
-              return (
-                <Row key={`${grade.subject}-${grade.id}`} className="justify-between">
-                  <Text className="flex-1 text-[13px] leading-[16px] text-ink" numberOfLines={2}>
-                    {grade.subject}
-                  </Text>
-                  <View
-                    className="min-w-[26px] items-center rounded-lg px-1.5 py-0.5"
-                    style={{ backgroundColor: tint(style.color, 0.18) }}
-                  >
-                    <Text className="text-[12px] font-bold" style={{ color: style.color }}>
-                      {hidden ? '•' : grade.value}
-                    </Text>
-                  </View>
-                </Row>
-              );
-            })}
-          </View>
-        </Row>
-      </Card>
-    </PressableScale>
+function GradePreview({ subject, value, isDark }: { subject: string; value: string; isDark: boolean }) {
+  const tone = subjectColor(subject, isDark);
+  return (
+    <BlockInset className="px-3 py-2.5">
+      <Row className="gap-2">
+        <IconBadge icon={BookOpen} color={tone} size="lg" tone="solid" />
+        <BlockText className="min-w-0 flex-1 text-[13px] font-bold" numberOfLines={2}>{subject}</BlockText>
+        <Pill label={value} color={tone} tone="solid" />
+      </Row>
+    </BlockInset>
   );
 }
 
@@ -556,40 +623,31 @@ export function LettersWidget({ snapshot }: WidgetProps) {
   if (latest.length === 0) return null;
 
   return (
-    <Card padded={false} className="overflow-hidden">
-      <WidgetHeader
-        icon={Mail}
-        iconColor={colors.accent.violet}
-        title="Elternbriefe"
-        badge={pending.length}
-      />
-
-      {latest.slice(0, 3).map((letter) => (
-        <Pressable
-          key={String(letter.id)}
-          onPress={() => router.push('/inbox')}
-          className="hover:bg-line/30 active:bg-line/50"
-        >
-          <Row className="gap-3 px-5 py-2.5">
-            <View className="h-9 w-9 items-center justify-center rounded-xl bg-accent-violet/15">
-              <Mail size={17} strokeWidth={2.1} color={colors.accent.violet} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[14px] font-semibold leading-[17px] text-ink" numberOfLines={2}>
-                {letter.subject}
-              </Text>
-              <Muted className="text-[12px]" numberOfLines={1}>
-                {excerpt(htmlToText(letter.content), 60)}
-              </Muted>
-            </View>
-            {letter.requiresConfirmation && !letter.confirmed ? (
-              <View className="h-2 w-2 rounded-full bg-accent-coral" />
-            ) : null}
-          </Row>
-        </Pressable>
-      ))}
-      <View className="h-2" />
-    </Card>
+    <ColorBlockCard color={colors.blocks.lavender} padded={false}>
+      <WidgetHeader icon={Mail} title="Elternbriefe" badge={pending.length} />
+      <View className="gap-2 px-5 pb-5">
+        {latest.slice(0, 3).map((letter) => (
+          <Pressable
+            key={String(letter.id)}
+            onPress={() => router.navigate('/inbox')}
+            className="rounded-[20px] active:opacity-75"
+            accessibilityRole="button"
+            accessibilityLabel={`Elternbrief: ${letter.subject}`}
+          >
+            <BlockInset className="px-3 py-3">
+              <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+                <IconBadge icon={Mail} color={colors.blocks.apricot} size="lg" tone="solid" />
+                <View className="min-w-0 flex-1 pt-0.5">
+                  <BlockText className="text-[14px] font-extrabold leading-[18px]" numberOfLines={2}>{letter.subject}</BlockText>
+                  <BlockCaption className="mt-0.5 text-[12px]" numberOfLines={2}>{excerpt(htmlToText(letter.content), 80)}</BlockCaption>
+                </View>
+                {letter.requiresConfirmation && !letter.confirmed ? <Pill label="Offen" color={colors.priority.urgent} tone="solid" /> : null}
+              </Row>
+            </BlockInset>
+          </Pressable>
+        ))}
+      </View>
+    </ColorBlockCard>
   );
 }
 
@@ -603,134 +661,166 @@ export function AttendanceWidget({ snapshot }: WidgetProps) {
   const unexcused = snapshot.absences.filter((absence) => !absence.excused).length;
 
   return (
-    <PressableScale onPress={() => router.push('/attendance')}>
-      <Card>
-        <WidgetHeader
-          icon={FileText}
-          iconColor={colors.warning}
-          title="Fehlzeiten"
-          onAction={() => router.push('/attendance')}
+    <ColorBlockCard
+      color={colors.blocks.apricot}
+      onPress={() => router.push('/attendance')}
+      accessibilityLabel="Fehlzeiten öffnen"
+      padded={false}
+    >
+      <WidgetHeader icon={FileText} title="Fehlzeiten" action="Ansehen" />
+      <Row className="gap-3 px-5 pb-5">
+        <StatCard value={total} caption="Fehltage gesamt" block={colors.blocks.sky} className="flex-1" />
+        <StatCard
+          value={unexcused}
+          caption="unentschuldigt"
+          block={unexcused > 0 ? colors.blocks.coral : colors.blocks.mint}
+          className="flex-1"
         />
-        <Row className="mt-1 gap-3 px-1">
-          <View className="flex-1 rounded-2xl bg-line/40 p-3">
-            <Text className="text-[22px] font-extrabold text-ink">{total}</Text>
-            <Muted className="text-[11px]">Fehltage gesamt</Muted>
-          </View>
-          <View
-            className="flex-1 rounded-2xl p-3"
-            style={{ backgroundColor: tint(unexcused > 0 ? colors.danger : colors.success, 0.14) }}
-          >
-            <Text
-              className="text-[22px] font-extrabold"
-              style={{ color: unexcused > 0 ? colors.danger : colors.success }}
-            >
-              {unexcused}
-            </Text>
-            <Muted className="text-[11px]">unentschuldigt</Muted>
-          </View>
-        </Row>
-      </Card>
-    </PressableScale>
+      </Row>
+    </ColorBlockCard>
   );
 }
 
 /* ------------------------------------------------------------------ Schwarzes Brett */
 
 export function BoardWidget({ snapshot }: WidgetProps) {
-  const { colors } = useThemeColors();
+  const { isDark } = useThemeColors();
+  const router = useRouter();
   const tiles = snapshot.tiles.slice(0, 3);
   if (tiles.length === 0) return null;
 
+  // Aushänge können unterschiedlichen Bereichen zugeordnet sein. Jede Anzeige
+  // bekommt deshalb ihre eigene Kategorien-Fläche (Sekretariat, Bibliothek,
+  // AG, Fundsachen …) statt eines neutralen, weißen Sammelcontainers.
   return (
-    <Card padded={false} className="overflow-hidden">
-      <WidgetHeader icon={Inbox} iconColor={colors.accent.violet} title="Schwarzes Brett" />
-      {tiles.map((tile, index) => (
-        <View key={String(tile.id)}>
-          <View className="px-5 py-2.5">
-            <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
-              {tile.pinned ? <Sun size={12} color={colors.warning} /> : null}
-              <Text className="flex-1 text-[14px] font-semibold leading-[17px] text-ink" numberOfLines={2}>
-                {tile.title}
-              </Text>
-            </Row>
-            <Text className="mt-0.5 text-[12px] leading-[17px] text-muted" numberOfLines={3}>
-              {htmlToText(tile.content)}
-            </Text>
-          </View>
-          {index < tiles.length - 1 ? <Divider className="ml-4" /> : null}
+    <View className="gap-3">
+      {tiles.map((tile, index) => {
+        const category = categoryFromText(`${tile.title} ${htmlToText(tile.content)}`);
+        return (
+          <ColorBlockCard
+            key={String(tile.id)}
+            color={categoryColor(category, isDark)}
+            onPress={() => router.navigate('/inbox')}
+            accessibilityLabel={`Aushang: ${tile.title}`}
+            padded={false}
+          >
+            {index === 0 ? <WidgetHeader icon={Inbox} title="Schwarzes Brett" /> : null}
+            <BoardTileContent title={tile.title} content={tile.content} pinned={tile.pinned} />
+          </ColorBlockCard>
+        );
+      })}
+    </View>
+  );
+}
+
+function BoardTileContent({ title, content, pinned }: { title: string; content: string; pinned?: boolean }) {
+  const ink = useBlockInk();
+  return (
+    <View className="px-5 pb-5">
+      <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+        <IconBadge icon={pinned ? MapPin : Inbox} color={ink} size="lg" tone="tint" />
+        <View className="min-w-0 flex-1 pt-0.5">
+          <BlockText className="text-[15px] font-extrabold leading-[19px]" numberOfLines={2}>{title}</BlockText>
+          <BlockCaption className="mt-1 text-[12px] leading-[17px]" numberOfLines={3}>{htmlToText(content)}</BlockCaption>
+          {pinned ? <InkPill label="Angeheftet" icon={MapPin} className="mt-2" /> : null}
         </View>
-      ))}
-      <View className="h-2" />
-    </Card>
+      </Row>
+    </View>
   );
 }
 
 /* ------------------------------------------------------------------ Schnellaktionen */
+
+type QuickAction = { id?: string; icon: LucideIcon; label: string; color: string; href: string };
 
 export function QuickActionsWidget({ snapshot }: WidgetProps) {
   const { colors } = useThemeColors();
   const router = useRouter();
   const items = packingList(snapshot, tomorrowISO());
 
-  const actions: { icon: LucideIcon; label: string; color: string; href: string }[] = [
-    { icon: Stethoscope, label: 'Krankmeldung', color: colors.danger, href: '/sick-note' },
-    { icon: Plane, label: 'Beurlaubung', color: colors.accent.violet, href: '/exemption' },
-    { icon: CalendarDays, label: 'Kalender', color: colors.accent.violet, href: '/calendar' },
-    { icon: Search, label: 'Suche', color: colors.success, href: '/search' },
+  const actions: QuickAction[] = [
+    { icon: Stethoscope, label: 'Krankmeldung', color: colors.blocks.coral, href: '/sick-note' },
+    { icon: Plane, label: 'Beurlaubung', color: colors.blocks.violet, href: '/exemption' },
+    { icon: CalendarDays, label: 'Kalender', color: colors.blocks.sky, href: '/calendar' },
+    { icon: Search, label: 'Suche', color: colors.blocks.mint, href: '/search' },
   ];
 
-  // Gebuchte Zusatzmodule (im Demo-Modus alle) als zweite Reihe.
-  const moduleActions: { id: string; icon: LucideIcon; label: string; color: string; href: string }[] = [
-    { id: 'invoicing', icon: CreditCard, label: 'Zahlungen', color: colors.success, href: '/payments' },
-    { id: 'documents', icon: FolderOpen, label: 'Dokumente', color: colors.accent.amber, href: '/documents' },
-    { id: 'parenttalks', icon: Users, label: 'Sprechtag', color: colors.warning, href: '/parent-talks' },
-    { id: 'electives', icon: GitBranch, label: 'Wahl', color: colors.accent.violet, href: '/electives' },
-    { id: 'allday', icon: Sun, label: 'Ganztag', color: colors.accent.violet, href: '/allday' },
-  ].filter((action) => snapshot.modules.length === 0 || snapshot.modules.includes(action.id));
+  // Gebuchte Zusatzmodule (im Demo-Modus alle) bleiben sichtbar wie vorher.
+  const moduleActions: QuickAction[] = [
+    { id: 'invoicing', icon: CreditCard, label: 'Zahlungen', color: colors.blocks.mint, href: '/payments' },
+    { id: 'documents', icon: FolderOpen, label: 'Dokumente', color: colors.blocks.amber, href: '/documents' },
+    { id: 'parenttalks', icon: Users, label: 'Sprechtag', color: colors.blocks.sky, href: '/parent-talks' },
+    { id: 'electives', icon: GitBranch, label: 'Wahl', color: colors.blocks.violet, href: '/electives' },
+    { id: 'allday', icon: Sun, label: 'Ganztag', color: colors.blocks.lavender, href: '/allday' },
+  ].filter((action) => snapshot.modules.length === 0 || (action.id != null && snapshot.modules.includes(action.id)));
 
   return (
-    <Card padded={false} className="overflow-hidden">
-      <WidgetHeader icon={Sparkles} iconColor={colors.accent.violet} title="Schnellaktionen" />
-      <View className="px-5 pb-5 pt-1">
-        <Row className="gap-3">
+    <ColorBlockCard color={colors.blocks.violet} padded={false}>
+      <WidgetHeader icon={Sparkles} title="Schnellaktionen" />
+      <View className="px-5 pb-5">
+        <View className="flex-row" style={{ gap: 12 }}>
           {actions.map((action) => (
-            <PressableScale key={action.label} onPress={() => router.push(action.href as never)} className="flex-1">
-              <Card className="items-center py-3.5" padded={false}>
-                <IconBadge icon={action.icon} color={action.color} size="lg" />
-                <Text className="mt-1.5 text-[11px] font-bold text-ink">{action.label}</Text>
-              </Card>
-            </PressableScale>
+            <View key={action.label} style={{ flex: 1, minWidth: 0 }}>
+              <QuickActionTile action={action} onPress={() => router.push(action.href as never)} />
+            </View>
           ))}
-        </Row>
+        </View>
 
         {moduleActions.length > 0 ? (
-          <Row className="mt-3 gap-3">
-            {moduleActions.slice(0, 5).map((action) => (
-              <PressableScale key={action.label} onPress={() => router.push(action.href as never)} className="flex-1">
-                <Card className="items-center py-3.5" padded={false}>
-                  <IconBadge icon={action.icon} color={action.color} size="lg" />
-                  <Text className="mt-1.5 text-[11px] font-bold text-ink">{action.label}</Text>
-                </Card>
-              </PressableScale>
+          <View className="mt-3 flex-row flex-wrap" style={{ gap: 12 }}>
+            {moduleActions.map((action) => (
+              <View key={action.label} style={{ flexBasis: '29%', flexGrow: 1, minWidth: 88 }}>
+                <QuickActionTile action={action} onPress={() => router.push(action.href as never)} />
+              </View>
             ))}
-          </Row>
+          </View>
         ) : null}
-      </View>
 
-      {items.length > 0 ? (
-        <View className="border-t border-line px-5 pt-3 pb-5">
-          <Row className="gap-2">
-            <ShoppingBag size={15} strokeWidth={2.1} color={colors.accent.violet} />
-            <Text className="text-[15px] font-bold text-ink">Für morgen einpacken</Text>
-          </Row>
-          <Row className="mt-2 flex-wrap gap-2">
-            {items.map((item) => (
-              <Pill key={item} label={item} color={colors.accent.violet} />
-            ))}
-          </Row>
+        {items.length > 0 ? <PackingPreview items={items} /> : null}
+      </View>
+    </ColorBlockCard>
+  );
+}
+
+function QuickActionTile({ action, onPress }: { action: QuickAction; onPress: () => void }) {
+  return (
+    <ColorBlockCard
+      color={action.color}
+      onPress={onPress}
+      accessibilityLabel={action.label}
+      radius={radius.cardSm}
+      padded={false}
+      className="min-h-[108px] items-center justify-center px-2 py-3"
+    >
+      <QuickActionTileContent icon={action.icon} label={action.label} />
+    </ColorBlockCard>
+  );
+}
+
+function QuickActionTileContent({ icon, label }: { icon: LucideIcon; label: string }) {
+  const ink = useBlockInk();
+  return (
+    <>
+      <IconBadge icon={icon} color={ink} size="lg" tone="tint" />
+      <BlockText className="mt-2 text-center text-[11px] font-extrabold leading-[14px]" numberOfLines={2}>{label}</BlockText>
+    </>
+  );
+}
+
+function PackingPreview({ items }: { items: string[] }) {
+  const ink = useBlockInk();
+  return (
+    <BlockInset className="mt-4 px-3 py-3">
+      <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+        <IconBadge icon={ShoppingBag} color={ink} size="lg" tone="tint" />
+        <View className="min-w-0 flex-1">
+          <BlockText className="text-[15px] font-extrabold">Für morgen einpacken</BlockText>
+          <View className="mt-2 flex-row flex-wrap" style={{ gap: 8 }}>
+            {items.map((item) => <InkPill key={item} label={item} />)}
+          </View>
         </View>
-      ) : null}
-    </Card>
+      </Row>
+    </BlockInset>
   );
 }
 

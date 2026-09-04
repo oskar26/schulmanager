@@ -21,7 +21,7 @@ import { downloadStoredFile } from '@/api/downloads';
 import { formatRelativeDay, formatTimeAgo } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
-import { Card, Chip, Divider, EmptyState, Muted, Row, Screen, SectionHeader, SegmentedControl, Sheet, Skeleton, Title } from '@/ui/primitives';
+import { Card, Chip, Divider, EmptyState, Muted, Row, Screen, ScreenHeader, SectionHeader, SegmentedControl, Sheet, Skeleton } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Avatar, Spinner } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
@@ -58,13 +58,12 @@ export default function InboxScreen() {
 
   return (
     <Screen adaptive="content">
-      <View className="px-4 pb-3 pt-2">
-        <Title>Postfach</Title>
-        <Muted className="mb-3">Elternbriefe, Nachrichten und Aushänge</Muted>
-        {tabs.length > 1 ? (
+      <ScreenHeader title="Postfach" subtitle="Elternbriefe, Nachrichten und Aushänge" />
+      {tabs.length > 1 ? (
+        <View className="px-4 pb-3">
           <SegmentedControl<Tab> options={tabs} value={activeTab} onChange={setTab} />
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (

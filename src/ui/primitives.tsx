@@ -160,6 +160,52 @@ export function AdaptiveContent({
   );
 }
 
+/**
+ * Einheitlicher Kopf aller Haupt-Tabs (Redesign Phase 2): großer 28/800-Titel
+ * links, eine optionale Aktion rechts und derselbe vertikale Rhythmus auf
+ * Phone, Rail und Sidebar. Inhalte wie Segment-Controls bleiben bewusst
+ * außerhalb der Kopfzeile, damit die Titelbasis auf jedem Screen identisch ist.
+ */
+export function ScreenHeader({
+  title,
+  subtitle,
+  action,
+  className = '',
+  style,
+  ...rest
+}: ViewProps & {
+  title: string;
+  subtitle?: string;
+  /** Icon-, Pill- oder Switch-Aktion am rechten Rand. */
+  action?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <View
+      {...rest}
+      className={className}
+      style={[
+        {
+          // Die adaptive Inhaltsbreite sitzt außen; innerhalb davon beginnen
+          // Header und Scroll-Content immer auf derselben 16-dp-Kante.
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 12,
+        },
+        style,
+      ]}
+    >
+      <Row className="min-h-[48px] justify-between gap-4">
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Title numberOfLines={1}>{title}</Title>
+          {subtitle ? <Muted className="mt-0.5" numberOfLines={1}>{subtitle}</Muted> : null}
+        </View>
+        {action ? <View style={{ flexShrink: 0 }}>{action}</View> : null}
+      </Row>
+    </View>
+  );
+}
+
 export function Card({
   children,
   className = '',
@@ -603,12 +649,16 @@ export function EmptyState({
   hint?: string;
 }) {
   const IconComponent = icon;
+  // Außerhalb einer Farbfläche ist das einfach `colors.ink`; innerhalb einer
+  // ColorBlockCard erbt der Leerzustand dagegen dieselbe kontraststarke Farbe
+  // wie die übrigen Block-Texte.
+  const ink = useBlockInk();
   return (
     <View className="items-center justify-center gap-2.5 px-8 py-12">
       {illustration ??
         (IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="xl" tone="tint" strokeWidth={2} /> : null)}
-      <Text className="text-center text-[17px] font-extrabold tracking-[-0.2px] text-ink">{title}</Text>
-      {hint ? <Text className="text-center text-[13px] leading-5 text-muted">{hint}</Text> : null}
+      <Text className="text-center text-[17px] font-extrabold tracking-[-0.2px]" style={{ color: ink }}>{title}</Text>
+      {hint ? <Text className="text-center text-[13px] leading-5" style={{ color: ink, opacity: 0.72 }}>{hint}</Text> : null}
     </View>
   );
 }

@@ -270,7 +270,9 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
         onPress={() => {
           hapticLight();
           onClose();
-          router.push('/timetable');
+          // Haupt-Tab gezielt aktivieren statt einen zweiten Stack-Eintrag zu
+          // erzeugen: Rückweg und Scrollposition des Stundenplans bleiben intakt.
+          router.navigate('/timetable');
         }}
         className="active:opacity-85"
         style={{

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeBack } from '@/ui/navigation';
 import { CalendarDays, ChevronLeft, ChevronRight, Link2 } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
@@ -21,7 +21,7 @@ type Mode = 'list' | 'month';
 
 export default function CalendarScreen() {
   const { colors } = useThemeColors();
-  const router = useRouter();
+  const dismiss = useSafeBack();
   const { data } = useSnapshot();
   const [mode, setMode] = useState<Mode>('list');
   const [monthOffset, setMonthOffset] = useState(0);
@@ -79,7 +79,7 @@ export default function CalendarScreen() {
   return (
     <Screen adaptive="content">
       <Row className="px-4 pb-2 pt-2">
-        <IconButton icon={ChevronLeft} onPress={() => router.back()} size={36} />
+        <IconButton icon={ChevronLeft} onPress={() => dismiss()} size={36} />
         <View className="ml-2 flex-1">
           <Title>Kalender</Title>
           <Muted>Termine, Ferien und Arbeiten in einer Ansicht</Muted>
