@@ -69,3 +69,63 @@ export function gradeColor(value: number | null | undefined, system: 0 | 1 = 0):
   if (normalised <= 4.5) return palette.warning;
   return palette.danger;
 }
+
+/* ------------------------------------------------------------------ Trend (Redesign Phase 6) */
+
+/**
+ * Datierte Noten in zeitlicher Reihenfolge — Basis für die Mini-Trendlinie
+ * (Sparkline) auf den Fach-Karten. Noten ohne Datum oder ohne numerischen
+ * Wert werden ignoriert, weil sie sich nicht auf der Zeitachse einordnen
+ * lassen.
+ */
+export function datedSeries(subject: SubjectGrades): { date: string; value: number }[] {
+  return subject.grades
+    .filter((grade): grade is Grade & { date: string; numeric: number } =>
+      typeof grade.date === 'string' && grade.date.length > 0 && grade.numeric != null)
+    .map((grade) => ({ date: grade.date, value: grade.numeric }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export type GradeTrend = {
+  /** Chronologische Werte (mind. 3), sonst `points = []`. */
+  points: number[];
+  /** Differenz „zweite Hälfte − erste Hälfte“ in Notenpunkten. */
+  delta: number;
+  /** `up` = Entwicklung verbessert sich, `down` = verschlechtert, `flat` = stabil. */
+  direction: 'up' | 'down' | 'flat';
+};
+
+/**
+ * Trend über die Zeit: Vergleicht den Schnitt der älteren mit dem der
+ * jüngeren Hälfte der datierten Noten. „Besser“ heißt bei Noten 1–6 ein
+ * *kleinerer*, bei Punkten 0–15 ein *größerer* Wert — `direction` normalisiert
+ * das, damit die Oberfläche immer dieselbe Semantik anzeigen kann.
+ * Erst ab 3 datierten Noten aussagekräftig (Vorgabe Phase 6).
+ */
+export function gradeTrend(subject: SubjectGrades): GradeTrend {
+  const series = datedSeries(subject);
+  if (series.length < 3) return { points: [], delta: 0, direction: 'flat' };
+
+  const values = series.map((entry) => entry.value);
+  const half = Math.floor(values.length / 2);
+  const older = values.slice(0, half);
+  const newer = values.slice(values.length - half);
+  const mean = (list: number[]) => list.reduce((sum, value) => sum + value, 0) / list.length;
+  const delta = mean(newer) - mean(older);
+
+  // Punkte: mehr = besser. Noten: weniger = besser.
+  const improving = subject.gradingSystem === 1 ? delta > 0 : delta < 0;
+  const flat = Math.abs(delta) < (subject.gradingSystem === 1 ? 0.5 : 0.15);
+
+  return { points: values, delta, direction: flat ? 'flat' : improving ? 'up' : 'down' };
+}
+
+/**
+ * Normalisiert einen Notenwert auf 0…1, wobei 1 immer „am besten“ bedeutet —
+ * unabhängig vom Notensystem. Für Balken- und Sparkline-Höhen.
+ */
+export function gradeRatio(value: number | null | undefined, system: 0 | 1 = 0): number {
+  if (value == null) return 0;
+  const ratio = system === 1 ? value / 15 : (6 - value) / 5;
+  return Math.max(0, Math.min(1, ratio));
+}

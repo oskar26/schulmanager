@@ -46,10 +46,17 @@ export function Switch({
   value,
   onValueChange,
   disabled,
+  accessibilityLabel,
 }: {
   value: boolean;
   onValueChange: (next: boolean) => void;
   disabled?: boolean;
+  /**
+   * Redesign Phase 6/8: Toggles stehen im neuen Stil oft ohne sichtbares
+   * Label direkt neben einer Überschrift — Screenreader brauchen dann eine
+   * explizite Beschriftung.
+   */
+  accessibilityLabel?: string;
 }) {
   const { colors } = useThemeColors();
   return (
@@ -57,6 +64,7 @@ export function Switch({
       value={value}
       onValueChange={onValueChange}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
       trackColor={{ false: colors.line, true: colors.accent.amber }}
       thumbColor={colors.surface}
       ios_backgroundColor={colors.line}

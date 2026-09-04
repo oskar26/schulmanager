@@ -16,14 +16,40 @@ import type { Letter, MessageThread, Tile } from '@/api/types';
 import { useSession } from '@/state/session';
 import { useConfirmLetter, useMarkThreadRead, useModuleActive, useSnapshot } from '@/data/queries';
 import { tint } from '@/design/subjects';
+import {
+  categoryColor,
+  categoryFromText,
+  categoryIcon,
+  categoryLabel,
+  type CategoryKey,
+} from '@/design/categories';
 import { useThemeColors } from '@/design/theme';
+import { foregroundOn, resolveThemeColor } from '@/design/tokens';
 import { downloadStoredFile } from '@/api/downloads';
 import { formatRelativeDay, formatTimeAgo } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
 import { hapticError, hapticLight, hapticSuccess } from '@/lib/haptics';
-import { Card, Chip, Divider, EmptyState, Muted, Row, Screen, ScreenHeader, SectionHeader, SegmentedControl, Sheet, Skeleton } from '@/ui/primitives';
+import {
+  BlockCaption,
+  BlockText,
+  Card,
+  Chip,
+  ColorBlockCard,
+  Divider,
+  EmptyState,
+  IconBadge,
+  Muted,
+  Pill,
+  Row,
+  Screen,
+  ScreenHeader,
+  SegmentedControl,
+  Sheet,
+  Skeleton,
+  useBlockInk,
+} from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
-import { Avatar, Spinner } from '@/ui/gluestack/feedback';
+import { Spinner } from '@/ui/gluestack/feedback';
 import { FadeInUp } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { ErrorBoundary } from '@/ui/error-boundary';
@@ -31,7 +57,7 @@ import { ErrorBoundary } from '@/ui/error-boundary';
 type Tab = 'letters' | 'messages' | 'board';
 
 export default function InboxScreen() {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { data, isLoading } = useSnapshot();
   const reserve = useTabNavReserve();
   const [tab, setTab] = useState<Tab>('letters');
@@ -39,8 +65,24 @@ export default function InboxScreen() {
   const [tile, setTile] = useState<Tile | null>(null);
   const router = useRouter();
 
-  const pending = data?.letters.filter((item) => item.requiresConfirmation && !item.confirmed).length ?? 0;
-  const unread = data?.threads.reduce((sum, item) => sum + item.unreadCount, 0) ?? 0;
+  /**
+   * Bug (Phase 7): Die Tab-Badges zählten stur alle Briefe mit
+   * `requiresConfirmation`, auch wenn der Server sie als bestätigt
+   * zurückgeliefert hat, aber `confirmed` als String/`0` kam. Jetzt strikt
+   * über `Boolean()` normalisiert — und in einem `useMemo`, damit die Zahl
+   * nicht bei jedem Tastendruck neu durch die Liste läuft.
+   */
+  const pending = useMemo(
+    () =>
+      (data?.letters ?? []).filter(
+        (item) => Boolean(item.requiresConfirmation) && !Boolean(item.confirmed),
+      ).length,
+    [data?.letters],
+  );
+  const unread = useMemo(
+    () => (data?.threads ?? []).reduce((sum, item) => sum + Math.max(0, item.unreadCount ?? 0), 0),
+    [data?.threads],
+  );
 
   // Sparten nur bei gebuchtem Modul — wie das offizielle Menü der Schule.
   const lettersOn = useModuleActive('letters');
@@ -68,22 +110,22 @@ export default function InboxScreen() {
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: reserve }}>
         {isLoading || !data ? (
           <View className="gap-3">
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
           </View>
         ) : tabs.length === 0 ? (
           <EmptyState
             icon={Inbox}
-            iconColor={colors.accent.violet}
+            iconColor={colors.blocks.violet}
             title="Postfach nicht gebucht"
             hint="Deine Schule hat weder Elternbriefe, Nachrichten noch Aushänge freigeschaltet."
           />
         ) : activeTab === 'letters' ? (
           data.letters.length === 0 ? (
-            <EmptyState icon={MailOpen} iconColor={colors.accent.violet} title="Keine Elternbriefe" />
+            <EmptyState icon={MailOpen} iconColor={colors.blocks.lavender} title="Keine Elternbriefe" />
           ) : (
             data.letters.map((item, index) => (
-              <LetterRow
+              <LetterCard
                 key={String(item.id)}
                 letter={item}
                 index={index}
@@ -96,48 +138,48 @@ export default function InboxScreen() {
           )
         ) : activeTab === 'messages' ? (
           data.threads.length === 0 ? (
-            <EmptyState icon={MessagesSquare} iconColor={colors.accent.violet} title="Keine Nachrichten" hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht." />
+            <EmptyState
+              icon={MessagesSquare}
+              iconColor={colors.blocks.violet}
+              title="Keine Nachrichten"
+              hint="Das Modul „Nachrichten“ ist evtl. nicht gebucht."
+            />
           ) : (
             data.threads.map((item, index) => (
-              <ThreadRow key={String(item.subscriptionId)} thread={item} index={index} onOpen={() => {
-                hapticLight();
-                router.push({
-                  pathname: '/thread',
-                  params: {
-                    subscriptionId: String(item.subscriptionId),
-                    threadId: String(item.id),
-                    subject: item.subject,
-                    sender: item.sender,
-                    recipients: item.recipients ?? '',
-                    preview: item.preview ?? '',
-                  },
-                });
-              }} />
+              <ThreadCard
+                key={String(item.subscriptionId)}
+                thread={item}
+                index={index}
+                onOpen={() => {
+                  hapticLight();
+                  router.push({
+                    pathname: '/thread',
+                    params: {
+                      subscriptionId: String(item.subscriptionId),
+                      threadId: String(item.id),
+                      subject: item.subject,
+                      sender: item.sender,
+                      recipients: item.recipients ?? '',
+                      preview: item.preview ?? '',
+                    },
+                  });
+                }}
+              />
             ))
           )
         ) : data.tiles.length === 0 ? (
-          <EmptyState icon={MapPin} iconColor={colors.warning} title="Kein Aushang" />
+          <EmptyState icon={MapPin} iconColor={colors.blocks.amber} title="Kein Aushang" />
         ) : (
           data.tiles.map((item, index) => (
-            <FadeInUp key={String(item.id)} delay={Math.min(index, 8) * 30}>
-              <Pressable
-                onPress={() => {
-                  hapticLight();
-                  setTile(item);
-                }}
-                className="mb-2 hover:opacity-90 active:opacity-80"
-              >
-                <Card>
-                  <Row className="gap-2">
-                    {item.pinned ? <MapPin size={15} strokeWidth={2.1} color={colors.warning} /> : null}
-                    <Text className="flex-1 text-[15px] font-bold text-ink">{item.title}</Text>
-                  </Row>
-                  <Muted className="mt-1" numberOfLines={3}>
-                    {htmlToText(item.content)}
-                  </Muted>
-                </Card>
-              </Pressable>
-            </FadeInUp>
+            <BoardCard
+              key={String(item.id)}
+              tile={item}
+              index={index}
+              onOpen={() => {
+                hapticLight();
+                setTile(item);
+              }}
+            />
           ))
         )}
       </ScrollView>
@@ -147,21 +189,84 @@ export default function InboxScreen() {
       </ErrorBoundary>
 
       <Sheet open={Boolean(tile)} onClose={() => setTile(null)} title={tile?.title}>
-        {tile ? <Text className="text-[15px] leading-6 text-ink">{htmlToText(tile.content)}</Text> : null}
+        {tile ? (
+          <View className="gap-3">
+            {(() => {
+              const category = categoryFromText(`${tile.title} ${htmlToText(tile.content)}`);
+              return (
+                <Pill
+                  label={categoryLabel(category)}
+                  color={resolveThemeColor(categoryColor(category, isDark), isDark)}
+                  tone="solid"
+                  icon={categoryIcon(category)}
+                />
+              );
+            })()}
+            <Text className="text-[15px] leading-6 text-ink">{htmlToText(tile.content)}</Text>
+          </View>
+        ) : null}
       </Sheet>
     </Screen>
   );
 }
 
-/* ------------------------------------------------------------------ Brief-Zeile (Phase 3) */
+/* ------------------------------------------------------------------ Brett (Phase 7) */
 
 /**
- * Farbcodierte Prioritäts-Karten fürs Postfach:
- * Amber = Aktion nötig (Bestätigung offen) · Lime = erledigt/bestätigt ·
- * Coral = neue Nachrichten (Ungelesen) · Violet = gelesen/neutral.
- * Briefe mit offener Bestätigung haben eine Inline-Action „Bestätigen“.
+ * Brett-Aushang als vollflächige Kategorie-Karte: Die Farbe kommt aus
+ * `categories.ts` (Sekretariat = Sky, Bibliothek = Mint, AG = Violet,
+ * Fundsachen = Amber, Fallback Lavendel) und wird pro Eintrag abgeleitet —
+ * ein Brett kann mehrere Bereiche mischen (Entscheidung #10).
  */
-function LetterRow({
+function BoardCard({ tile, index, onOpen }: { tile: Tile; index: number; onOpen: () => void }) {
+  const { isDark } = useThemeColors();
+  const category: CategoryKey = categoryFromText(`${tile.title} ${htmlToText(tile.content)}`);
+  const tone = categoryColor(category, isDark);
+
+  return (
+    <FadeInUp delay={Math.min(index, 8) * 30}>
+      <ColorBlockCard
+        color={tone}
+        onPress={onOpen}
+        accessibilityLabel={`Aushang: ${tile.title}`}
+        className="mb-2.5"
+        style={{ padding: 16 }}
+      >
+        <BoardCardBody tile={tile} category={category} />
+      </ColorBlockCard>
+    </FadeInUp>
+  );
+}
+
+function BoardCardBody({ tile, category }: { tile: Tile; category: CategoryKey }) {
+  const ink = useBlockInk();
+  return (
+    <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+      <IconBadge icon={tile.pinned ? MapPin : categoryIcon(category)} color={ink} tone="tint" size="lg" />
+      <View className="min-w-0 flex-1">
+        <BlockText className="text-[15.5px] font-extrabold leading-[20px]" numberOfLines={2}>
+          {tile.title}
+        </BlockText>
+        <BlockCaption className="mt-1 text-[12.5px] leading-[18px]" numberOfLines={3}>
+          {htmlToText(tile.content)}
+        </BlockCaption>
+        <Row className="mt-2 flex-wrap gap-1.5">
+          <Pill label={categoryLabel(category)} color={ink} tone="tint" icon={categoryIcon(category)} className="px-2.5 py-1" />
+          {tile.pinned ? <Pill label="Angeheftet" color={ink} tone="tint" icon={MapPin} className="px-2.5 py-1" /> : null}
+        </Row>
+      </View>
+    </Row>
+  );
+}
+
+/* ------------------------------------------------------------------ Brief-Karte (Phase 7) */
+
+/**
+ * Brief-Karte im Farbflächen-Stil: Grundfamilie ist **Lavendel** (Kategorie
+ * „Elternbriefe“). Briefe mit offener Bestätigung heben sich als
+ * Coral-Akzentfläche ab, bestätigte in Mint — Randfarben-Only ist entfallen.
+ */
+function LetterCard({
   letter,
   index,
   onOpen,
@@ -170,15 +275,29 @@ function LetterRow({
   index: number;
   onOpen: () => void;
 }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const confirm = useConfirmLetter();
   const [justConfirmed, setJustConfirmed] = useState(false);
 
-  const needsAction = letter.requiresConfirmation && !letter.confirmed && !justConfirmed;
-  const isConfirmed = Boolean(letter.requiresConfirmation && (letter.confirmed || justConfirmed));
-  const tone = needsAction ? colors.warning : isConfirmed ? colors.success : colors.accent.violet;
+  const needsAction = Boolean(letter.requiresConfirmation) && !letter.confirmed && !justConfirmed;
+  const isConfirmed = Boolean(letter.requiresConfirmation) && (Boolean(letter.confirmed) || justConfirmed);
 
+  const tone = resolveThemeColor(
+    needsAction ? colors.blocks.coral : isConfirmed ? colors.blocks.mint : colors.blocks.lavender,
+    isDark,
+  );
+  const ink = foregroundOn(tone, colors);
+  const StatusIcon = needsAction ? AlertCircle : isConfirmed ? CheckCheck : MailOpen;
+
+  /**
+   * Bug (Phase 7 · Race-Condition): Bei schnellem Doppeltippen liefen zwei
+   * `confirm`-Mutationen parallel; die zweite bekam vom Server einen Fehler
+   * und der Nutzer sah trotz erfolgreicher Bestätigung eine Fehlermeldung.
+   * Der Guard blockt weitere Aufrufe, solange eine Mutation läuft oder die
+   * Bestätigung lokal bereits durch ist.
+   */
   const quickConfirm = () => {
+    if (confirm.isPending || justConfirmed || !needsAction) return;
     confirm.mutate(
       { letterId: String(letter.id), studentStatusId: letter.studentStatusId },
       {
@@ -199,137 +318,177 @@ function LetterRow({
 
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
-      <Card
-        padded={false}
-        className="mb-2 overflow-hidden"
-        style={{
-          backgroundColor: needsAction || isConfirmed ? tint(tone, 0.06) : colors.surface,
-          borderWidth: 1,
-          borderColor: needsAction || isConfirmed ? tint(tone, 0.4) : colors.line,
-        }}
-      >
-        <View className="flex-row">
-          <View style={{ width: 4, backgroundColor: tone }} />
-          <Pressable onPress={onOpen} className="flex-1 py-3 pl-3.5 pr-4 hover:opacity-90 active:opacity-70">
-            <Row className="gap-3">
-              <View
-                className="h-10 w-10 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: tint(tone, 0.16) }}
-              >
+      <ColorBlockCard color={tone} className="mb-2.5" padded={false}>
+        <Pressable
+          onPress={onOpen}
+          accessibilityRole="button"
+          accessibilityLabel={`Brief öffnen: ${letter.subject}`}
+          className="px-4 pb-3.5 pt-4 hover:opacity-90 active:opacity-80"
+        >
+          <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+            <IconBadge icon={StatusIcon} color={ink} tone="tint" size="lg" />
+            <View className="min-w-0 flex-1">
+              <Row className="gap-2" style={{ alignItems: 'flex-start' }}>
+                <BlockText className="min-w-0 flex-1 text-[15.5px] font-extrabold leading-[20px]" numberOfLines={2}>
+                  {letter.subject}
+                </BlockText>
+                <BlockCaption className="text-[11px]">{formatTimeAgo(letter.createdAt)}</BlockCaption>
+              </Row>
+              <BlockCaption className="mt-1 text-[12.5px] leading-[18px]" numberOfLines={2}>
+                {letter.content
+                  ? excerpt(htmlToText(letter.content), 90)
+                  : `${letter.sender ?? 'Schule'} · zum Lesen antippen`}
+              </BlockCaption>
+              <Row className="mt-2 flex-wrap gap-1.5">
+                <Pill label={letter.sender ?? 'Schule'} color={ink} tone="tint" className="px-2.5 py-1" />
                 {needsAction ? (
-                  <AlertCircle size={19} strokeWidth={2.1} color={tone} />
-                ) : isConfirmed ? (
-                  <CheckCheck size={19} strokeWidth={2.3} color={tone} />
-                ) : (
-                  <MailOpen size={19} strokeWidth={2.1} color={tone} />
-                )}
-              </View>
-              <View className="flex-1">
-                <Row className="justify-between gap-2">
-                  <Text className="flex-1 text-[15px] font-bold text-ink" numberOfLines={2}>
-                    {letter.subject}
-                  </Text>
-                  <Muted className="self-start text-[11px]">{formatTimeAgo(letter.createdAt)}</Muted>
-                </Row>
-                <Muted className="mt-0.5" numberOfLines={2}>
-                  {letter.content
-                    ? excerpt(htmlToText(letter.content), 90)
-                    : `${letter.sender ?? 'Schule'} · zum Lesen antippen`}
-                </Muted>
-                <Row className="mt-2 flex-wrap gap-2">
-                  <Chip label={letter.sender ?? 'Schule'} color={colors.faint} />
-                  {needsAction ? (
-                    <Chip label="Bestätigung nötig" color={colors.warning} tone="solid" />
-                  ) : null}
-                  {isConfirmed ? <Chip label="bestätigt" color={colors.success} tone="solid" /> : null}
-                </Row>
-              </View>
-            </Row>
-          </Pressable>
-        </View>
+                  <Pill label="Bestätigung nötig" color={ink} tone="tint" icon={AlertCircle} className="px-2.5 py-1" />
+                ) : null}
+                {isConfirmed ? (
+                  <Pill label="bestätigt" color={ink} tone="tint" icon={CheckCheck} className="px-2.5 py-1" />
+                ) : null}
+              </Row>
+            </View>
+          </Row>
+        </Pressable>
 
-        {/* Action-Button: Brief direkt bestätigen, ohne ihn zu öffnen */}
+        {/* Action-Zeile: Brief direkt bestätigen, ohne ihn zu öffnen */}
         {needsAction ? (
           <View
-            className="flex-row items-center justify-between gap-3 border-t px-4 py-2"
-            style={{ borderColor: tint(tone, 0.3) }}
+            className="flex-row items-center justify-between gap-3 px-4 py-3"
+            style={{ backgroundColor: tint(ink, 0.12) }}
           >
-            <Muted className="flex-1 text-[11px]">
+            <BlockCaption className="min-w-0 flex-1 text-[11.5px]">
               Kenntnisnahme wird direkt an die Schule gesendet.
-            </Muted>
+            </BlockCaption>
             <Button size="sm" action="primary" disabled={confirm.isPending} onPress={quickConfirm}>
               {confirm.isPending ? <Spinner color={colors.on.amber} size="small" /> : null}
               <ButtonText>Bestätigen</ButtonText>
             </Button>
           </View>
         ) : null}
-      </Card>
+      </ColorBlockCard>
     </FadeInUp>
   );
 }
 
-/* ------------------------------------------------------------------ Thread-Zeile */
+/* ------------------------------------------------------------------ Thread-Karte (Phase 7) */
 
-function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: number; onOpen: () => void }) {
-  const { colors } = useThemeColors();
+/**
+ * Nachrichten-Karte im Chat-App-Stil: ungelesene Threads sind ein
+ * **Charcoal-Block** (maximale Aufmerksamkeit), gelesene bleiben eine ruhige
+ * Surface-Karte. Avatare sind voll rund.
+ */
+function ThreadCard({ thread, index, onOpen }: { thread: MessageThread; index: number; onOpen: () => void }) {
+  const { colors, isDark } = useThemeColors();
   const markRead = useMarkThreadRead();
-  const unread = thread.unreadCount > 0;
+  const unread = (thread.unreadCount ?? 0) > 0;
+
+  const open = () => {
+    // Bug (Phase 7): `markRead` wurde bei jedem Tap erneut gefeuert, auch
+    // während die vorherige Mutation noch lief — der Badge sprang zurück.
+    if (unread && !markRead.isPending) markRead.mutate(String(thread.subscriptionId));
+    onOpen();
+  };
+
+  const initials = (thread.sender || 'Schule')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+
+  if (unread) {
+    const tone = resolveThemeColor(colors.blocks.charcoal, isDark);
+    const ink = foregroundOn(tone, colors);
+    return (
+      <FadeInUp delay={Math.min(index, 8) * 30}>
+        <ColorBlockCard
+          color={tone}
+          onPress={open}
+          accessibilityLabel={`Ungelesene Nachricht von ${thread.sender || 'Schule'} öffnen`}
+          className="mb-2.5"
+          style={{ padding: 16 }}
+        >
+          <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+            <View
+              className="h-11 w-11 items-center justify-center rounded-full"
+              style={{ backgroundColor: resolveThemeColor(colors.blocks.amber, isDark) }}
+            >
+              <Text className="text-[15px] font-extrabold" style={{ color: colors.onBlocks.amber }}>
+                {initials}
+              </Text>
+            </View>
+            <View className="min-w-0 flex-1">
+              <Row className="gap-2">
+                <BlockText className="min-w-0 flex-1 text-[15.5px] font-extrabold leading-5" numberOfLines={1}>
+                  {thread.sender || 'Schule'}
+                </BlockText>
+                <BlockCaption className="text-[11px]">{formatTimeAgo(thread.lastMessageAt)}</BlockCaption>
+              </Row>
+              <BlockText className="mt-0.5 text-[13.5px] font-semibold" numberOfLines={1}>
+                {thread.subject}
+              </BlockText>
+              {thread.preview ? (
+                <BlockCaption className="mt-1 text-[12.5px] leading-[18px]" numberOfLines={2}>
+                  {thread.preview}
+                </BlockCaption>
+              ) : null}
+              <Row className="mt-2 gap-1.5">
+                <Pill
+                  label={`${thread.unreadCount} neu`}
+                  color={resolveThemeColor(colors.blocks.amber, isDark)}
+                  tone="solid"
+                  className="px-2.5 py-1"
+                />
+              </Row>
+            </View>
+          </Row>
+        </ColorBlockCard>
+      </FadeInUp>
+    );
+  }
+
   return (
     <FadeInUp delay={Math.min(index, 8) * 30}>
-      <Card
-        padded={false}
-        className="mb-2 overflow-hidden"
-        style={{
-          backgroundColor: unread ? tint(colors.accent.coral, 0.06) : colors.surface,
-          borderWidth: 1,
-          borderColor: unread ? tint(colors.accent.coral, 0.35) : colors.line,
-        }}
+      <Pressable
+        onPress={open}
+        accessibilityRole="button"
+        accessibilityLabel={`Nachricht von ${thread.sender || 'Schule'} öffnen`}
+        className="mb-2.5 hover:opacity-90 active:opacity-80"
       >
-        <View className="flex-row">
-          <View
-            style={{ width: 4, backgroundColor: unread ? colors.accent.coral : 'transparent' }}
-          />
-          <Pressable
-            onPress={() => {
-              if (unread) markRead.mutate(String(thread.subscriptionId));
-              onOpen();
-            }}
-            className="flex-1 py-3 pl-3.5 pr-4 hover:opacity-90 active:opacity-70"
-          >
-            <Row className="gap-3">
-              <Avatar name={thread.sender || 'Schule'} size={40} color={unread ? colors.accent.coral : colors.accent.violet} />
-              <View className="flex-1">
-                <Row className="justify-between">
-                  <Text
-                    className={`flex-1 text-[15px] text-ink ${unread ? 'font-extrabold' : 'font-bold'}`}
-                    numberOfLines={1}
-                  >
-                    {thread.sender || 'Schule'}
-                  </Text>
-                  <Muted className="text-[11px]">{formatTimeAgo(thread.lastMessageAt)}</Muted>
-                </Row>
-                <Text className={`text-[13px] text-muted ${unread ? 'font-semibold' : ''}`} numberOfLines={1}>
-                  {thread.subject}
+        <Card style={{ padding: 16 }} padded={false}>
+          <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
+            <View
+              className="h-11 w-11 items-center justify-center rounded-full"
+              style={{ backgroundColor: tint(resolveThemeColor(colors.blocks.lavender, isDark), 0.3) }}
+            >
+              <Text
+                className="text-[15px] font-extrabold"
+                style={{ color: resolveThemeColor(colors.blocks.violet, isDark) }}
+              >
+                {initials}
+              </Text>
+            </View>
+            <View className="min-w-0 flex-1">
+              <Row className="gap-2">
+                <Text className="min-w-0 flex-1 text-[15px] font-bold text-ink" numberOfLines={1}>
+                  {thread.sender || 'Schule'}
                 </Text>
-                {thread.preview ? (
-                  <Muted className="mt-0.5 text-[12px]" numberOfLines={2}>
-                    {thread.preview}
-                  </Muted>
-                ) : null}
-                <Row className="mt-1.5 gap-2">
-                  {unread ? <Chip label="Neu" color={colors.accent.coral} tone="solid" /> : null}
-                  <Chip label="Nachricht" color={colors.accent.violet} />
-                </Row>
-              </View>
-              {unread ? (
-                <View className="h-6 min-w-[24px] items-center justify-center rounded-full bg-accent-coral px-1.5">
-                  <Text className="text-[11px] font-bold text-on-coral">{thread.unreadCount}</Text>
-                </View>
+                <Muted className="text-[11px]">{formatTimeAgo(thread.lastMessageAt)}</Muted>
+              </Row>
+              <Text className="mt-0.5 text-[13px] font-semibold text-muted" numberOfLines={1}>
+                {thread.subject}
+              </Text>
+              {thread.preview ? (
+                <Muted className="mt-1 text-[12.5px] leading-[18px]" numberOfLines={2}>
+                  {thread.preview}
+                </Muted>
               ) : null}
-            </Row>
-          </Pressable>
-        </View>
-      </Card>
+            </View>
+          </Row>
+        </Card>
+      </Pressable>
     </FadeInUp>
   );
 }
@@ -337,7 +496,7 @@ function ThreadRow({ thread, index, onOpen }: { thread: MessageThread; index: nu
 /* ------------------------------------------------------------------ Brief-Detail */
 
 function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () => void }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const confirm = useConfirmLetter();
   const { api } = useSession.getState();
   const isDemo = useSession((state) => state.status !== 'connected');
@@ -358,19 +517,33 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
     if (isDemo || loadedId === String(letter.id)) return;
     const id = String(letter.id);
     setLoadedId(id);
+    // Bug (Phase 7): Beim schnellen Wechsel zwischen zwei Briefen konnte die
+    // langsamere Antwort die neuere überschreiben. `cancelled` verwirft
+    // Antworten, die nicht mehr zum offenen Brief gehören.
+    let cancelled = false;
+    setContent(null);
+    setAttachments([]);
     void api
       .letterDetail(letter.id)
       .then((detail) => {
+        if (cancelled) return;
         setContent(detail?.content ?? '');
         setAttachments(detail?.attachments ?? []);
       })
-      .catch(() => setContent(''));
+      .catch(() => {
+        if (!cancelled) setContent('');
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [letter?.id, isDemo]);
 
-  const needsAction = letter?.requiresConfirmation && !letter?.confirmed && !localConfirmed;
+  const needsAction = Boolean(letter?.requiresConfirmation) && !letter?.confirmed && !localConfirmed;
 
   const download = async (file: NonNullable<Letter['attachments']>[number]) => {
+    // Bug (Phase 7): Mehrfaches Tippen startete denselben Download parallel.
+    if (downloading) return;
     try {
       setDownloading(String(file.id));
       const result = await downloadStoredFile(api, file.file);
@@ -389,14 +562,23 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
     }
   };
 
+  const lavender = resolveThemeColor(colors.blocks.lavender, isDark);
+
   return (
     <Sheet open={open} onClose={onClose} title={letter?.subject}>
       {letter ? (
         <View className="gap-3">
-          <Row className="gap-2">
-            <Chip label={letter.sender ?? 'Schule'} color={colors.accent.violet} />
-            <Muted className="text-[11px]">{formatTimeAgo(letter.createdAt)}</Muted>
-          </Row>
+          <ColorBlockCard color={lavender} style={{ padding: 16 }}>
+            <Row className="gap-3">
+              <IconBadge icon={MailOpen} color={foregroundOn(lavender, colors)} tone="tint" size="lg" />
+              <View className="min-w-0 flex-1">
+                <BlockText className="text-[15px] font-extrabold" numberOfLines={1}>
+                  {letter.sender ?? 'Schule'}
+                </BlockText>
+                <BlockCaption className="mt-0.5 text-[12px]">{formatTimeAgo(letter.createdAt)}</BlockCaption>
+              </View>
+            </Row>
+          </ColorBlockCard>
 
           {letter.content || content ? (
             <Text className="text-[15px] leading-6 text-ink">{htmlToText(letter.content || content || '')}</Text>
@@ -411,12 +593,13 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
           {/* Umfrage */}
           {letter.questions && letter.questions.length > 0 ? (
             <Card padded={false}>
-              <Text className="px-4 pt-3 text-[13px] font-bold text-ink">Umfrage</Text>
+              <Text className="px-4 pt-4 text-[13px] font-extrabold uppercase tracking-[1.2px] text-muted">
+                Umfrage
+              </Text>
               {letter.questions.map((question, qIndex) => (
                 <View key={String(question.id)}>
-                  <Divider className="ml-4" />
                   <View className="px-4 py-3">
-                    <Text className="text-[14px] font-semibold text-ink">{question.question}</Text>
+                    <Text className="text-[14px] font-bold text-ink">{question.question}</Text>
                     <View className="mt-2 gap-1.5">
                       {question.options?.map((option) => {
                         const active = answers[String(question.id)] === option;
@@ -427,11 +610,19 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                               hapticLight();
                               setAnswers((prev) => ({ ...prev, [String(question.id)]: option }));
                             }}
-                            className={`rounded-xl border px-3 py-2.5 hover:opacity-85 active:opacity-70 ${
-                              active ? 'border-accent-amber bg-accent-amber/15' : 'border-line bg-canvas'
-                            }`}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: active }}
+                            className="min-h-[48px] justify-center rounded-[20px] px-4 py-2.5 hover:opacity-90 active:opacity-80"
+                            style={{
+                              backgroundColor: active
+                                ? resolveThemeColor(colors.blocks.amber, isDark)
+                                : tint(colors.line, 0.9),
+                            }}
                           >
-                            <Text className={`text-[13px] ${active ? 'font-bold text-on-amber' : 'text-ink'}`}>
+                            <Text
+                              className="text-[13.5px] font-bold"
+                              style={{ color: active ? colors.onBlocks.amber : colors.ink }}
+                            >
                               {option}
                             </Text>
                           </Pressable>
@@ -439,10 +630,11 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
                       })}
                     </View>
                   </View>
+                  {qIndex < (letter.questions?.length ?? 0) - 1 ? <Divider className="ml-4" /> : null}
                 </View>
               ))}
               {letter.answerDeadline ? (
-                <Muted className="px-4 pb-3">Frist: {formatRelativeDay(letter.answerDeadline.slice(0, 10))}</Muted>
+                <Muted className="px-4 pb-4">Frist: {formatRelativeDay(letter.answerDeadline.slice(0, 10))}</Muted>
               ) : null}
             </Card>
           ) : null}
@@ -452,18 +644,27 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
             <Card padded={false}>
               {attachments.map((file, index) => (
                 <View key={String(file.id)}>
-                  <Pressable onPress={() => void download(file)} className="hover:bg-line/30 active:bg-line/50">
-                    <Row className="gap-3 px-4 py-3">
-                      <Paperclip size={18} strokeWidth={2} color={colors.accent.violet} />
-                      <Text className="flex-1 text-[14px] text-ink">{file.name}</Text>
+                  <Pressable
+                    onPress={() => void download(file)}
+                    disabled={Boolean(downloading)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Anhang herunterladen: ${file.name}`}
+                    className="hover:bg-line/30 active:bg-line/50"
+                    style={downloading && downloading !== String(file.id) ? { opacity: 0.5 } : undefined}
+                  >
+                    <Row className="gap-3 px-4 py-3.5">
+                      <IconBadge icon={Paperclip} color={colors.blocks.violet} tone="tint" size="md" />
+                      <Text className="flex-1 text-[14px] font-semibold text-ink" numberOfLines={1}>
+                        {file.name}
+                      </Text>
                       {downloading === String(file.id) ? (
                         <Spinner />
                       ) : (
-                        <Download size={18} strokeWidth={2} color={colors.faint} />
+                        <Download size={18} strokeWidth={2.2} color={colors.faint} />
                       )}
                     </Row>
                   </Pressable>
-                  {index < attachments.length - 1 ? <Divider className="ml-12" /> : null}
+                  {index < attachments.length - 1 ? <Divider className="ml-16" /> : null}
                 </View>
               ))}
             </Card>
@@ -474,8 +675,10 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
               action="primary"
               size="lg"
               block
+              disabled={confirm.isPending}
               onPress={() => {
-                // Antworten in `formData` — Schlüssel ist die **Frage-Id als String**.
+                // Race-Condition-Guard wie in der Listenkarte.
+                if (confirm.isPending || localConfirmed) return;
                 confirm.mutate(
                   { letterId: String(letter.id), studentStatusId: letter.studentStatusId },
                   {
@@ -500,13 +703,18 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
               <ButtonText>Kenntnisnahme bestätigen</ButtonText>
             </Button>
           ) : (
-            <Row className="justify-center gap-2 rounded-2xl bg-success/10 py-3">
-              <CheckCheck size={18} strokeWidth={2.2} color={colors.success} />
-              <Text className="text-[14px] font-semibold text-success">
+            <Row
+              className="justify-center gap-2 rounded-[20px] py-3.5"
+              style={{ backgroundColor: tint(resolveThemeColor(colors.blocks.mint, isDark), 0.35) }}
+            >
+              <CheckCheck size={18} strokeWidth={2.4} color={colors.success} />
+              <Text className="text-[14px] font-bold text-ink">
                 {letter.confirmed || localConfirmed ? 'Bestätigt' : 'Keine Bestätigung nötig'}
               </Text>
             </Row>
           )}
+
+          <Chip label="Bestätigungen gehen direkt an die Schule." color={colors.faint} />
         </View>
       ) : null}
     </Sheet>

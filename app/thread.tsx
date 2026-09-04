@@ -8,13 +8,27 @@ import type { ChatMessage } from '@/api/types';
 import { useSendMessage, useThreadMessages } from '@/data/queries';
 import { formatTimeAgo } from '@/lib/date';
 import { hapticLight, hapticSuccess } from '@/lib/haptics';
-import { Card, EmptyState, IconButton, Muted, Row, Screen, Skeleton, Title } from '@/ui/primitives';
+import {
+  BlockCaption,
+  BlockText,
+  Card,
+  ColorBlockCard,
+  EmptyState,
+  IconBadge,
+  IconButton,
+  Muted,
+  Row,
+  Screen,
+  Skeleton,
+  Title,
+} from '@/ui/primitives';
 import { FadeInUp } from '@/ui/motion';
-import { Avatar, Spinner } from '@/ui/gluestack/feedback';
+import { Spinner } from '@/ui/gluestack/feedback';
 import { useThemeColors } from '@/design/theme';
+import { foregroundOn, resolveThemeColor, shadow } from '@/design/tokens';
 
 export default function ThreadScreen() {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const dismiss = useSafeBack('/inbox');
   const params = useLocalSearchParams<{
     subscriptionId: string;
@@ -47,19 +61,28 @@ export default function ThreadScreen() {
 
   return (
     <Screen adaptive="narrow" edges={['top', 'bottom']}>
-      {/* Kopf */}
-      <Row className="justify-between px-4 pb-2 pt-2">
-        <Row className="gap-2">
-          <IconButton icon={X} onPress={() => dismiss()} size={36} />
-          <View className="flex-1">
-            <Title numberOfLines={2}>{params.sender || params.subject || 'Nachricht'}</Title>
-            {params.subject && params.sender ? (
-              <Muted className="text-[12px]" numberOfLines={1}>
-                {params.subject}
-              </Muted>
-            ) : null}
-          </View>
-        </Row>
+      {/* Kopf — Chat-App-Referenz: runder Avatar, fetter Name, Schließen-Pill */}
+      <Row className="gap-3 px-4 pb-3 pt-2">
+        <View
+          className="h-11 w-11 items-center justify-center rounded-full"
+          style={{ backgroundColor: resolveThemeColor(colors.blocks.lavender, isDark) }}
+        >
+          <Text
+            className="text-[15px] font-extrabold"
+            style={{ color: colors.onBlocks.lavender }}
+          >
+            {initialsOf(params.sender || params.subject || 'Schule')}
+          </Text>
+        </View>
+        <View className="min-w-0 flex-1">
+          <Title numberOfLines={1}>{params.sender || params.subject || 'Nachricht'}</Title>
+          {params.subject && params.sender ? (
+            <Muted className="text-[12px]" numberOfLines={1}>
+              {params.subject}
+            </Muted>
+          ) : null}
+        </View>
+        <IconButton icon={X} onPress={() => dismiss()} size={40} background="bg-line/50" />
       </Row>
 
       {/* Verlauf */}
@@ -67,10 +90,14 @@ export default function ThreadScreen() {
         <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 12 }}>
           {params.recipients ? (
             <FadeInUp>
-            <Card className="mb-3">
-              <Muted className="text-[11px]">An</Muted>
-              <Text className="mt-0.5 text-[13px] leading-5 text-muted">{params.recipients}</Text>
-            </Card>
+            <ColorBlockCard
+              color={colors.blocks.slate}
+              className="mb-3"
+              style={{ paddingHorizontal: 16, paddingVertical: 14 }}
+            >
+              <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.4px]">An</BlockCaption>
+              <BlockText className="mt-0.5 text-[13.5px] leading-5">{params.recipients}</BlockText>
+            </ColorBlockCard>
             </FadeInUp>
           ) : null}
 
@@ -91,66 +118,121 @@ export default function ThreadScreen() {
             [...data]
               .sort((a, b) => (a.sentAt ?? '').localeCompare(b.sentAt ?? ''))
               .map((message: ChatMessage) => (
-                <View
-                  key={String(message.id)}
-                  className={`mb-2 max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
-                    message.isOwn ? 'ml-auto bg-accent-amber' : 'bg-surface'
-                  }`}
-                  style={message.isOwn ? undefined : { shadowColor: colors.charcoal, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 }}
-                >
-                  {!message.isOwn && message.sender ? (
-                    <Text className="mb-0.5 text-[11px] font-bold text-accent-amber-deep">{message.sender}</Text>
-                  ) : null}
-                  <Text className={`text-[14px] leading-5 ${message.isOwn ? 'text-on-amber' : 'text-ink'}`}>
-                    {message.text}
-                  </Text>
-                  <Text
-                    className={`mt-1 self-end text-[10px] ${message.isOwn ? 'text-on-amber/70' : 'text-faint'}`}
-                  >
-                    {formatTimeAgo(message.sentAt)}
-                  </Text>
-                </View>
+                <Bubble key={String(message.id)} message={message} />
               ))
           )}
 
           {data && data.length === 0 && params.preview ? (
-            <Card>
+            <Card style={{ padding: 16 }} padded={false}>
               <Text className="text-[14px] leading-5 text-ink">{params.preview}</Text>
             </Card>
           ) : null}
         </ScrollView>
 
         {/* Antwortfeld */}
-        <View className="border-t border-line bg-surface px-3 py-2.5">
+        {/* Antwortfeld — weiche Fläche statt Trennlinie (Kernprinzip 8) */}
+        <View className="bg-surface px-3 py-3" style={shadow.float}>
           <Row className="gap-2">
-            <View className="h-9 w-9 items-center justify-center rounded-full bg-accent-amber/15">
-              {send.isPending ? (
+            {send.isPending ? (
+              <View className="h-11 w-11 items-center justify-center rounded-full bg-line/50">
                 <Spinner size="small" />
-              ) : (
-                <MessageSquare size={16} strokeWidth={2} color={colors.accent.violet} />
-              )}
-            </View>
+              </View>
+            ) : (
+              <IconBadge icon={MessageSquare} color={colors.blocks.violet} tone="tint" size="lg" />
+            )}
             <TextInput
               value={draft}
               onChangeText={setDraft}
               placeholder="Antworten …"
               placeholderTextColor={colors.faint}
               multiline
-              className="flex-1 rounded-2xl bg-canvas px-3.5 py-2.5 text-[14px] text-ink"
+              accessibilityLabel="Antwort schreiben"
+              className="min-h-[44px] flex-1 rounded-[20px] bg-canvas px-4 py-3 text-[14.5px] text-ink"
               onSubmitEditing={sendDraft}
             />
             <Pressable
               onPress={sendDraft}
               disabled={draft.trim().length === 0 || send.isPending}
-              className={`h-11 w-11 items-center justify-center rounded-2xl ${
-                draft.trim().length === 0 ? 'bg-line/50' : 'bg-accent-amber hover:opacity-90 active:opacity-80'
-              }`}
+              accessibilityRole="button"
+              accessibilityLabel="Antwort senden"
+              className="h-11 w-11 items-center justify-center rounded-full hover:opacity-90 active:opacity-80"
+              style={{
+                backgroundColor:
+                  draft.trim().length === 0
+                    ? colors.line
+                    : resolveThemeColor(colors.blocks.amber, isDark),
+              }}
             >
-              <Send size={18} strokeWidth={2} color={draft.trim().length === 0 ? colors.faint : colors.on.amber} />
+              <Send
+                size={18}
+                strokeWidth={2.4}
+                color={draft.trim().length === 0 ? colors.faint : colors.onBlocks.amber}
+              />
             </Pressable>
           </Row>
         </View>
       </KeyboardAvoidingView>
     </Screen>
+  );
+}
+
+/* ------------------------------------------------------------------ Bubble (Phase 7) */
+
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+/**
+ * Chat-Bubble im Farbflächen-Stil (Chat-App-Referenz): eigene Nachrichten
+ * sind ein Amber-Block, fremde eine weiche Surface-Karte — beide voll rund
+ * (Radius 24) mit einer „angehefteten“ Ecke auf der Sprecher-Seite.
+ */
+function Bubble({ message }: { message: ChatMessage }) {
+  const { colors, isDark } = useThemeColors();
+
+  if (message.isOwn) {
+    const tone = resolveThemeColor(colors.blocks.amber, isDark);
+    const ink = foregroundOn(tone, colors);
+    return (
+      <View
+        className="mb-2 ml-auto max-w-[85%] px-4 py-3"
+        style={{
+          backgroundColor: tone,
+          borderRadius: 24,
+          borderBottomRightRadius: 8,
+          ...shadow.card,
+        }}
+      >
+        <Text className="text-[14.5px] font-medium leading-[20px]" style={{ color: ink }}>
+          {message.text}
+        </Text>
+        <Text className="mt-1 self-end text-[10.5px] font-bold" style={{ color: ink, opacity: 0.7 }}>
+          {formatTimeAgo(message.sentAt)}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View
+      className="mb-2 mr-auto max-w-[85%] bg-surface px-4 py-3"
+      style={{ borderRadius: 24, borderBottomLeftRadius: 8, ...shadow.card }}
+    >
+      {message.sender ? (
+        <Text
+          className="mb-0.5 text-[11.5px] font-extrabold"
+          style={{ color: resolveThemeColor(colors.blocks.violet, isDark) }}
+        >
+          {message.sender}
+        </Text>
+      ) : null}
+      <Text className="text-[14.5px] leading-[20px] text-ink">{message.text}</Text>
+      <Text className="mt-1 self-end text-[10.5px] font-bold text-faint">{formatTimeAgo(message.sentAt)}</Text>
+    </View>
   );
 }

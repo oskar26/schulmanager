@@ -11,7 +11,7 @@
 > Typografie, riesige Radien, Icon-Badges, Pill-Tags, schwarze Pill-Nav,
 > weiche Schatten.**
 >
-> Stand: 2026-09-04 · Phasen 1–5 **umgesetzt ✅** (siehe Status je Phase)
+> Stand: 2026-09-04 · Phasen 1–8 **umgesetzt ✅** (siehe Status je Phase)
 
 ---
 
@@ -429,7 +429,43 @@ Benötigt Phase 1 (Blocks, priority, ColorBlockCard, Pill).
 
 ## Phase 6 — Noten (Feinschliff)
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- `app/(tabs)/grades.tsx` neu aufgebaut: Lime-Hero (Radius 32) mit
+  `StatNumber size="lg"` für den Gesamtschnitt, Notenanzahl als zweite
+  Riesenzahl und „Stärkstes Fach“/„Größter Hebel“ als getönte Innenkacheln.
+- Fach-Karten sind jetzt `ColorBlockCard` in der **gesättigten** Fachfarbe
+  (kein 14-%-Tint mehr) mit `IconBadge lg` (Fach-Icon aus `subjectIcon`),
+  riesiger Notenzahl (`StatNumber`), Trend-Pill und Noten-Chips im 20er-Radius.
+- **Neu** `src/features/grades/sparkline.tsx`: `Sparkline` (geglättete SVG-
+  Kurve, `react-native-svg`) ab 3 datierten Noten, `QualityBar` als
+  Balken-Fallback. Beide zeichnen in der Vordergrundfarbe der Fläche und sind
+  **qualitätsnormalisiert** (oben/voll = besser) — Noten 1–6 und Punkte 0–15
+  lesen sich damit identisch.
+- `src/features/grades/calculator.ts`: `datedSeries()`, `gradeTrend()`
+  (Vergleich jüngere vs. ältere Hälfte, `direction` normalisiert) und
+  `gradeRatio()`.
+- Detail-Sheet: Kopf als `ColorBlockCard` in Fachfarbe mit Icon-Badge, großer
+  Sparkline und Trend-Text; Rechner-Pills auf Radius 20/voll rund.
+- `Switch` akzeptiert jetzt `accessibilityLabel` (der „verbergen“-Toggle im
+  Header hat kein sichtbares Label).
+
+### Behobene Bugs (Phase 6)
+
+- **Gesamtschnitt-Rundung:** Der Schnitt mittelte bereits gerundete
+  Fachschnitte; jetzt ein Durchgang, Rundung nur in der Ausgabe.
+- **Systeme gemischt:** Punkte-Fächer (0–15) und Noten-Fächer (1–6) flossen in
+  denselben Schnitt. Jetzt wird nur das dominante System gemittelt.
+- **`worst !== best`** verglich Objektidentität — bei genau einem bewerteten
+  Fach stand dasselbe Fach zweimal im Hero. Jetzt über die Position im Ranking.
+- **Leere Fächer** liefen als „–“-Karten mit; sie stehen jetzt in einer eigenen
+  ruhigen Gruppe „Noch ohne Note“.
+- **Rechner-Zustand** blieb beim Fachwechsel stehen (Simulation eines anderen
+  Fachs); wird jetzt beim Wechsel zurückgesetzt, Zielschnitt-Default folgt dem
+  Notensystem.
+- **„verbergen“-Toggle** maskierte die Einzelnoten im Detail-Sheet nicht.
 
 ### Ziel
 
@@ -450,15 +486,15 @@ Notenzahl je Fach größer, Mini-Trendlinie statt nur Balken (wenn machbar).
 
 ### Akzeptanzkriterien
 
-- [ ] Fach-Karten nutzen gesättigte Blockfarben (kein 14-%-Tint mehr als
+- [x] Fach-Karten nutzen gesättigte Blockfarben (kein 14-%-Tint mehr als
       Hauptfläche).
-- [ ] Jede Fach-Karte hat ein Fach-Icon-Badge (Lucide-Icon je Fach, deterministisch).
-- [ ] Notenzahl je Fach visuell größer/gewichtiger als die Noten-Chips.
-- [ ] Fächer mit ≥ 3 datierten Noten zeigen eine Mini-Trendlinie; Balken
+- [x] Jede Fach-Karte hat ein Fach-Icon-Badge (Lucide-Icon je Fach, deterministisch).
+- [x] Notenzahl je Fach visuell größer/gewichtiger als die Noten-Chips.
+- [x] Fächer mit ≥ 3 datierten Noten zeigen eine Mini-Trendlinie; Balken
       bleibt Fallback.
-- [ ] Schnitt-Simulation/Rechner-Sheet funktioniert weiter und folgt dem
+- [x] Schnitt-Simulation/Rechner-Sheet funktioniert weiter und folgt dem
       neuen Stil.
-- [ ] Noten-Bugs behoben (u. a.: „verbergen“-Toggle, Schnitt-Rundung,
+- [x] Noten-Bugs behoben (u. a.: „verbergen“-Toggle, Schnitt-Rundung,
       leere Fächer).
 
 ### Abhängigkeiten
@@ -469,7 +505,48 @@ Benötigt Phase 1 (Blocks, IconBadge, StatCard).
 
 ## Phase 7 — Postfach
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- `app/(tabs)/inbox.tsx` komplett auf Farbflächen umgestellt:
+  - **Brett:** `BoardCard` leitet die Kategorie **je Eintrag** über
+    `categoryFromText()` ab (Entscheidung #10) und füllt die Karte mit
+    `categoryColor()`; Icon-Badge und Kategorie-Pill kommen aus den neuen
+    Helfern `categoryIcon()` / `categoryLabel()` in `categories.ts`.
+  - **Briefe:** `LetterCard` als `ColorBlockCard` — Lavendel als
+    Grundfamilie, Coral bei offener Bestätigung, Mint nach Bestätigung.
+    Randfarbe-Only (`borderWidth` + 4-px-Streifen) ist entfernt; die
+    Bestätigen-Zeile sitzt als getönte Fläche im selben Block.
+  - **Nachrichten:** ungelesene Threads sind ein **Charcoal-Block** mit
+    Amber-Avatar und „N neu“-Pill, gelesene eine ruhige Surface-Karte;
+    Avatare sind voll rund.
+- `app/thread.tsx` im Chat-App-Stil: runder Avatar im Kopf, Bubbles mit
+  Radius 24 (eigene Nachrichten = Amber-Block mit angehefteter Ecke unten
+  rechts, fremde = Surface mit Ecke unten links), Empfänger-Karte als
+  Slate-Block, Antwortfeld als weiche Fläche mit rundem Amber-Sendeknopf
+  statt Trennlinie.
+- `src/design/categories.ts`: `categoryIcon()` und `categoryLabel()` ergänzt.
+
+### Behobene Bugs (Phase 7)
+
+- **`categoryBlock()`-Fallback** gab `'general'` (einen *Kategorie*-Schlüssel)
+  statt eines Block-Namens zurück — `blocks['general']` ist `undefined`, die
+  Fläche wurde unsichtbar. Fallback ist jetzt die Lavendel-Familie.
+- **Tab-Badges** zählten `requiresConfirmation`/`confirmed` ohne Normalisierung
+  (String/`0` vom Server zählte als „offen“); jetzt strikt über `Boolean()`
+  und memoisiert.
+- **Bestätigungs-Race:** Doppeltippen feuerte zwei `confirm`-Mutationen; die
+  zweite lief in einen Serverfehler und zeigte trotz Erfolg einen Alert.
+  Guard in Listenkarte **und** Sheet.
+- **Anhang-Download:** Mehrfachtippen startete denselben Download parallel;
+  jetzt gesperrt, solange ein Download läuft (andere Zeilen sichtbar
+  ausgegraut).
+- **Brief-Detail-Race:** Beim schnellen Wechsel zwischen zwei Briefen konnte
+  die langsamere Antwort die neuere überschreiben — Effekt räumt jetzt per
+  `cancelled`-Flag auf und leert den Inhalt beim Wechsel.
+- **`markThreadRead`** wurde bei jedem Tap erneut gefeuert; der Badge sprang
+  zurück. Jetzt nur, wenn keine Mutation läuft.
 
 ### Ziel
 
@@ -492,14 +569,14 @@ Kategorie eingefärbt.
 
 ### Akzeptanzkriterien
 
-- [ ] Brett-Karten sind vollflächig nach Kategorie eingefärbt (Zuordnung aus
+- [x] Brett-Karten sind vollflächig nach Kategorie eingefärbt (Zuordnung aus
       `categories.ts`, Titel-Schlüsselwörter erkannt).
-- [ ] Brief-Karten sind Farbflächen (Lavendel-Familie); Randfarbe-Only ist
+- [x] Brief-Karten sind Farbflächen (Lavendel-Familie); Randfarbe-Only ist
       entfernt.
-- [ ] Bestätigen-Flow unverändert funktional (Confirm → Erfolg → Badge sinkt).
-- [ ] Nachrichten-Tab: unread hervorgehoben (farbiger Block/Punkt),
+- [x] Bestätigen-Flow unverändert funktional (Confirm → Erfolg → Badge sinkt).
+- [x] Nachrichten-Tab: unread hervorgehoben (farbiger Block/Punkt),
       Avatare voll rund.
-- [ ] Postfach-Bugs behoben (u. a.: Tab-Badges, Anhang-Download,
+- [x] Postfach-Bugs behoben (u. a.: Tab-Badges, Anhang-Download,
       Bestätigungs-Race-Condition).
 
 ### Abhängigkeiten
@@ -511,7 +588,37 @@ neu ist Teil Phase 1, Header aus Phase 2).
 
 ## Phase 8 — Einstellungen
 
-**Status: ⬜ offen**
+**Status: ✅ umgesetzt (2026-09-04)**
+
+### Umsetzung
+
+- `app/settings.tsx` neu strukturiert um drei lokale Bausteine:
+  - `SectionBlock` — jede Sektion ist eine **vollflächige Farbkarte** mit
+    `IconBadge lg`, fettem 19er-Titel und kurzem Hint: Konto = Mint,
+    Schule = Sky, Dashboard = Violet, Benachrichtigungen = Apricot,
+    Live-Island = Lavendel, Erscheinungsbild = Amber, Datenschutz =
+    Charcoal, Über = Slate.
+  - `SettingsGroup` — weiße Gruppenkarte; `Divider` **nur** zwischen ihren
+    eigenen Zeilen, nie zwischen Gruppen (Kernprinzip 8).
+  - `ToggleRow` / `InfoRow` — min. 56 px Höhe, mehr Weißraum, optionales
+    Icon-Badge, `accessibilityLabel` am Switch.
+- Farbschema nutzt jetzt das gemeinsame `SegmentedControl` (min-h 48, runde
+  Pille) statt drei eigener Pressables; der Wechsel greift unverändert sofort.
+- Modul-Liste als fette `Pill`s statt dünner Chips; „Über“-Badges ebenso.
+- Eingabefelder randlos auf Canvas (Radius 20, min-h 52) statt
+  `border-line`-Kästen; Label als 10,5-px-Uppercase.
+
+### Behobene Bugs (Phase 8)
+
+- **Widget-Sortierung:** `moveWidget` tauschte blind mit dem Nachbarn im
+  Gesamt-Array — bei ausgeblendeten Widgets (z. B. „Noten“ ohne Modul) wirkte
+  ein Klick folgenlos. `moveWidget(id, dir, visibleIds)` sucht jetzt den
+  nächsten **sichtbaren** Nachbarn (additive, optionale API).
+- **Persistenz „Lokale Daten löschen“:** `update(DEFAULT_SETTINGS)` setzte auch
+  `onboarded` zurück; beim nächsten Start landete man im Onboarding. Der
+  Onboarding-Status bleibt jetzt erhalten.
+- **Screenreader:** Die Toggle-Zeilen im neuen Stil haben kein Label am Switch
+  selbst — `Switch` bekam dafür `accessibilityLabel` (auch von Phase 6 genutzt).
 
 ### Ziel
 
@@ -532,14 +639,14 @@ Linien getrennt.
 
 ### Akzeptanzkriterien
 
-- [ ] Jede Sektion ist eine farbige Karte (ColorBlockCard) mit IconBadge ≥
+- [x] Jede Sektion ist eine farbige Karte (ColorBlockCard) mit IconBadge ≥
       lg; keine Android-Settings-Listenoptik mehr.
-- [ ] Farbschema-Segmented-Control und Modul-Chips funktional unverändert,
+- [x] Farbschema-Segmented-Control und Modul-Chips funktional unverändert,
       aber fetter/größer.
-- [ ] Toggle-Zeilen: ≥ 56 px Höhe, mehr Weißraum, gruppiert in Karten;
+- [x] Toggle-Zeilen: ≥ 56 px Höhe, mehr Weißraum, gruppiert in Karten;
       keine dünnen Trennlinien zwischen Gruppen.
-- [ ] Fach-Farb-Overrides (falls vorhanden) folgen der neuen Palette.
-- [ ] Einstellungs-Bugs behoben (u. a.: Theme-Wechsel-Immediate,
+- [x] Fach-Farb-Overrides (falls vorhanden) folgen der neuen Palette.
+- [x] Einstellungs-Bugs behoben (u. a.: Theme-Wechsel-Immediate,
       Widget-Sortierung, Persistenz).
 
 ### Abhängigkeiten
@@ -614,3 +721,10 @@ Phase 9 (Politur) — benötigt 1–8
 | 10 | **Brett-Aushänge erhalten je Eintrag statt nur je Widget eine Kategorie-Fläche** | Ein Widget kann Sekretariat, Bibliothek und Fundsachen gleichzeitig enthalten. Die individuelle Ableitung über `categories.ts` macht die Farbcodierung auch bei gemischten Aushängen wahr. |
 | 11 | **Phase 4 ersetzt Wochen-/Zeitraster (Tablet `WeekGrid`, Desktop `TimeGrid`) durch die einheitliche Zwei-Wochen-Liste** | Die Phase schreibt „beide Wochen ohne Navigation sichtbar“ und „Pfeil-Navigation entfernt“ für den ganzen Screen vor. Ein einziges Interaktionsmuster (2 Streifen + Tagesliste, auf breiten Screens als zentrierte ~780-dp-Spalte) hält Stil und Code konsistent; ein zusätzliches Zeitraster kann Phase 9 als Politur wiederbeleben. |
 | 12 | **Fälligkeits-/Ampel-Pillen sind `solid` in den `priority`-Tokens; bei gleicher Farbfamilie wie die Fachfläche bekommen sie einen weißen Ring** | Auf einem vollflächigen Fachblock darf die Fälligkeit nie in der Fläche verschwinden. `Pill`/`Chip` akzeptieren dafür ein optionales `style` (additive API). |
+| 13 | **Sparkline-Y-Achse ist qualitätsnormalisiert** (oben = bessere Note), nicht wertnormalisiert | Noten 1–6 (klein = gut) und Punkte 0–15 (groß = gut) müssen dieselbe Lesart haben: „Linie steigt ⇒ es wird besser“. Sonst bedeutete dieselbe Kurvenform in zwei Fächern das Gegenteil. |
+| 14 | **Der Gesamtschnitt mittelt nur das dominante Notensystem** statt alle Fächer | Ein Mittel aus „2,0“ (Note) und „12 P“ (Punkte) ist rechnerisch sinnlos. Das seltenere System bleibt auf seinen Fach-Karten korrekt sichtbar. |
+| 15 | **Sparkline & Qualitätsbalken zeichnen in der Vordergrundfarbe der Fläche** (`useBlockInk`), nicht in der Notenampel-Farbe | Auf 13 gesättigten Blockfarben × Light/Dark ist nur die zugehörige `onBlocks`-Farbe garantiert lesbar. Die Notenqualität trägt die Zahl, nicht die Linienfarbe. |
+| 16 | **Ungelesene Threads sind ein Charcoal-Block, gelesene eine weiße Surface-Karte** | Die Chat-App-Referenz nutzt maximalen Kontrast für „neu“. Charcoal ist die einzige Familie, die in Light und Dark gleich stark „vorne“ steht, ohne mit den Prioritätsfarben (Coral/Amber/Lime) zu kollidieren. |
+| 17 | **Brief-Karten wechseln die Familie nach Status** (Lavendel → Coral offen → Mint bestätigt) statt nur einen Akzent zu setzen | Die Vorgabe nennt Lavendel als Grundfamilie und „Bestätigungspflicht = Coral-Akzent“. Auf einer vollflächigen Karte ist ein Akzent zu leise — der Statuswechsel der *ganzen* Fläche macht offene Aufgaben auf Scroll-Distanz sichtbar und folgt der Ampel-Semantik der App. |
+| 18 | **Einstellungs-Sektionen sind Farbkarten *über* weißen Gruppenkarten**, nicht farbige Karten mit Inhalt darin | Toggle-Zeilen brauchen ruhigen Hintergrund für Lesbarkeit und Switch-Kontrast. Der Farbblock trägt Identität und Icon-Badge, die Gruppe darunter den Inhalt — Divider bleiben so sauber gruppenintern (Kernprinzip 8). |
+

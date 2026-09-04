@@ -14,6 +14,16 @@
  * Unbekannte Kategorien fallen auf Lavendel zurück — die Standardfamilie
  * für „allgemeine Informationen“.
  */
+import {
+  Backpack,
+  BookMarked,
+  Building2,
+  ClipboardList,
+  Inbox,
+  Mail,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { palette, resolveThemeColor, type BlockName, type ThemePalette } from '@/design/tokens';
 
 export type CategoryKey =
@@ -59,7 +69,43 @@ export function categoryFromText(text?: string | null): CategoryKey {
 
 /** Block-Familie einer Kategorie. */
 export function categoryBlock(key: CategoryKey): BlockName {
-  return CATEGORY_BLOCKS[key] ?? 'general';
+  // Bug (Phase 7): Der frühere Fallback `?? 'general'` gab einen
+  // Kategorie-Schlüssel statt eines Block-Namens zurück — `blocks['general']`
+  // ist `undefined`, die Fläche wurde unsichtbar. Fallback ist jetzt die
+  // Familie der Kategorie `general` (Lavendel).
+  return CATEGORY_BLOCKS[key] ?? CATEGORY_BLOCKS.general;
+}
+
+/** Lucide-Icon je Kategorie — für die Icon-Badges auf Brett-/Brief-Karten. */
+const CATEGORY_ICONS: Record<CategoryKey, LucideIcon> = {
+  letters: Mail,
+  exams: ClipboardList,
+  mailbox: Inbox,
+  secretary: Building2,
+  library: BookMarked,
+  club: Sparkles,
+  lostfound: Backpack,
+  general: Inbox,
+};
+
+/** Kurzer, menschenlesbarer Name der Kategorie (für Pills). */
+const CATEGORY_LABELS: Record<CategoryKey, string> = {
+  letters: 'Elternbrief',
+  exams: 'Klassenarbeit',
+  mailbox: 'Postfach',
+  secretary: 'Sekretariat',
+  library: 'Bibliothek',
+  club: 'AG-Anmeldung',
+  lostfound: 'Fundsachen',
+  general: 'Aushang',
+};
+
+export function categoryIcon(key: CategoryKey): LucideIcon {
+  return CATEGORY_ICONS[key] ?? CATEGORY_ICONS.general;
+}
+
+export function categoryLabel(key: CategoryKey): string {
+  return CATEGORY_LABELS[key] ?? CATEGORY_LABELS.general;
 }
 
 /** Vollton-Farbe einer Kategorie, theme-aufgelöst. */
