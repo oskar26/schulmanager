@@ -8,29 +8,20 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 /**
- * Die native Seite der Schulflow-Live-Island (Android).
+ * Native Android side of Schulflow's live lesson notification.
  *
- * Postet eine *dauerhafte* Fortschritts-Notification mit derselben ID im
- * Insel-Takt (Updates via `show`):
- *
- * · `setOngoing(true)` + `FLAG_ONGOING_EVENT` + `CATEGORY_PROGRESS`
- *   → wird auf Android 15/16 als **Live-Update** behandelt (Statusbar-Chip,
- *   prominent im Shade, Fortschritt sichtbar).
- * · Auf Xiaomi HyperOS stuft das System genau diese Notification-Klasse
- *   automatisch zur **Fokus-Notification** hoch („HyperIsland" um die
- *   Punch-Hole-Kamera) — ohne Xiaomi-interne SDKs.
- * · Ab API 35 (Android 15) wird per Reflexion `setPromotedOngoing(true)`
- *   gesetzt, wo verfügbar — sicher in try/catch, da Version-gebunden.
- *
- * Läuft nur in einem Dev-Build (`npx expo prebuild && npx expo run:android`).
- * In Expo Go ist das Modul nicht verlinkt — die JS-Seite (`bridge.native.ts`)
- * erkennt das und fällt auf eine stille `expo-notifications`-Notification zurück.
+ * Calls to `show` update one ongoing progress notification. Android 15/16 can
+ * promote eligible ongoing notifications to a status-bar live update; HyperOS
+ * may present the same notification as a focus notification.
  */
 class SchulflowLiveIslandModule : Module() {
+    private val context: Context
+        get() = appContext.reactContext ?: throw Exceptions.ReactContextLost()
 
     override fun definition() = ModuleDefinition {
         Name("SchulflowLiveIsland")
@@ -38,38 +29,54 @@ class SchulflowLiveIslandModule : Module() {
         Function("isSupported") { true }
 
         AsyncFunction("show") { title: String, body: String, progress: Int, targetAt: Long ->
-            showIsland(reactContext, title, body, progress.coerceIn(0, 100))
+            showIsland(context, title, body, progress.coerceIn(0, 100), targetAt)
             true
         }
 
         AsyncFunction("hide") {
-            val manager = reactContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.cancel(NOTIFICATION_ID)
+            notificationManager(context).cancel(NOTIFICATION_ID)
         }
     }
+
+    private fun notificationManager(context: Context): NotificationManager =
+        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     private fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Nächste Stunde · Live",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Dauerhafte Fortschritts-Notification der Live-Island"
-                setShowBadge(false)
-                // Phase-2-Primärakzent Amber (#FF8C38), passend zu JS/PWA-Notifications.
-                setLightColor(0xFFFF8C38.toInt(), true)
-            }
-            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-                .createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Nächste Stunde · Live",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Dauerhafte Fortschritts-Notification der Live-Island"
+            setShowBadge(false)
+            lightColor = BRAND_AMBER
+            enableLights(true)
         }
+        notificationManager(context).createNotificationChannel(channel)
     }
 
-    private fun showIsland(context: Context, title: String, body: String, progress: Int) {
+    @Suppress("DEPRECATION")
+    private fun notificationBuilder(context: Context): Notification.Builder =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(context, CHANNEL_ID)
+        } else {
+            Notification.Builder(context)
+        }
+
+    private fun showIsland(
+        context: Context,
+        title: String,
+        body: String,
+        progress: Int,
+        targetAt: Long
+    ) {
         ensureChannel(context)
 
-        // Tap auf die Insel öffnet den Stundenplan (Deep Link aus app.json: scheme `schulflow`)
-        val open = Intent(Intent.ACTION_VIEW, Uri.parse("schulflow://timetable")).setPackage(context.packageName)
+        // Tapping the notification opens the timetable via the app's URL scheme.
+        val open = Intent(Intent.ACTION_VIEW, Uri.parse("schulflow://timetable"))
+            .setPackage(context.packageName)
         val pending = PendingIntent.getActivity(
             context,
             REQUEST_CODE,
@@ -77,35 +84,46 @@ class SchulflowLiveIslandModule : Module() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = Notification.Builder(context, CHANNEL_ID)
-            // Launcher-Icon der App als Small-Icon — kein eigener Asset-Abhängigkeit
-            .setSmallIcon(context.applicationContext.applicationInfo.icon)
+        val builder = notificationBuilder(context)
+            .setSmallIcon(context.applicationInfo.icon)
             .setContentTitle(title)
             .setContentText(body)
             .setContentIntent(pending)
+            .setAutoCancel(false)
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setProgress(100, progress, false)
-            .setContentIntent(pending)
+            .setColor(BRAND_AMBER)
+            .setWhen(targetAt)
+            .setOnlyAlertOnce(true)
 
-        builder.flags = builder.flags or Notification.FLAG_ONGOING_EVENT
+        requestLiveUpdatePromotion(builder)
+        notificationManager(context).notify(NOTIFICATION_ID, builder.build())
+    }
 
-        // Android 15+: Live-Update-Promotion, wo das System sie bietet.
-        try {
-            val method = Notification.Builder::class.java.getMethod("setPromotedOngoing", Boolean::class.javaPrimitiveType)
-            method.invoke(builder, true)
-        } catch (_: Throwable) {
-            // Version ohne API — die Standard-Live-Update-Heuristik greift trotzdem.
+    /**
+     * Android 16 exposes `setRequestPromotedOngoing`; the fallback name keeps
+     * compatibility with earlier previews and OEM implementations. Reflection
+     * lets the module still compile against older Android SDKs.
+     */
+    private fun requestLiveUpdatePromotion(builder: Notification.Builder) {
+        for (methodName in listOf("setRequestPromotedOngoing", "setPromotedOngoing")) {
+            try {
+                Notification.Builder::class.java
+                    .getMethod(methodName, java.lang.Boolean.TYPE)
+                    .invoke(builder, true)
+                return
+            } catch (_: ReflectiveOperationException) {
+                // Try the next known API name, then rely on Android's heuristic.
+            }
         }
-
-        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-            .notify(NOTIFICATION_ID, builder.build())
     }
 
     companion object {
-        const val CHANNEL_ID = "schulflow-live-island"
-        const val NOTIFICATION_ID = 4210
-        const val REQUEST_CODE = 4211
+        private const val CHANNEL_ID = "schulflow-live-island"
+        private const val NOTIFICATION_ID = 4210
+        private const val REQUEST_CODE = 4211
+        private val BRAND_AMBER = 0xFFFF8C38.toInt()
     }
 }
