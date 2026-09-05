@@ -14,7 +14,7 @@
 >
 > Stand: 2026-09-05 · **Phasen 1–9 umgesetzt ✅ · Phase 10 ✅ · Phase 11 ✅ ·
 > Phase 12 ✅ · Phase 13 ✅ (Android-Systemkanal + Web-Pille; iOS-Target-Quelle
-> vorbereitet) · Phase 14 ✅ · Phase 15 geplant.**
+> vorbereitet) · Phase 14 ✅ · Phase 15 ✅ · Phase 16 ✅.**
 >
 > Die Phasen 10–15 kommen aus dem Auftrag „Teil 2 (Bugfixes & neue
 > Anforderungen)“ und sind die Fortsetzung dieses Dokuments: 10 APK-Styling &
@@ -1155,7 +1155,7 @@ Benötigt Phase 1 (Komponenten), 2 (Header-Pattern), 8 (Sektionskarten), 10
 
 ## Phase 15 — Stundenplan: Listen- ↔ Kalenderansicht (aus „Teil 2“, Punkt 6)
 
-**Status: 🟡 geplant**
+**Status: ✅ umgesetzt (2026-09-05)**
 
 ### Ziel
 

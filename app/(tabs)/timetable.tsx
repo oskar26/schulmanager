@@ -5,6 +5,8 @@ import {
   Ban,
   BookOpen,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   MapPin,
   MoveRight,
@@ -21,20 +23,21 @@ import {
 import { useLayout } from '@/lib/breakpoints';
 import {
   AdaptiveContent, BlockCaption, BlockText, Chip, ColorBlockCard, EmptyState,
-  IconBadge, Muted, Pill, Row, Screen, ScreenHeader, Sheet, Skeleton, useBlockInk,
+  IconBadge, Muted, Pill, Row, Screen, ScreenHeader, SegmentedControl, Sheet,
+  Skeleton, useBlockInk,
 } from '@/ui/primitives';
 import { FadeInUp, LivePulse, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
+import { TimetableWeekGrid } from '@/ui/timetable-week-grid';
 
 /**
- * Phase 4 · Stundenplan — „Zwei Wochen auf einen Blick".
+ * Phase 15 · Stundenplan — Listen- ↔ Kalenderansicht.
  *
- * Zwei Wochen-Streifen (diese + nächste Woche) sind gleichzeitig sichtbar und
- * direkt antippbar; darunter liegt die Tagesliste des gewählten Tags. Die
- * Stunden sind vollflächige Farbblöcke in Fachfarbe (`ColorBlockCard`), die
- * Pfeil-Navigation ist durch einen „Heute“-Sprung ersetzt.
+ * Umschaltbar zwischen der Listenansicht aus Phase 4 (zwei Wochen-Streifen +
+ * Tagesliste) und einer neuen Kalenderansicht (Wochenraster mit Zeitachse).
+ * Die gewählte Ansicht wird über `settings.timetableMode` persistiert.
  */
 
 /* Solange die App läuft, merkt sie sich den gewählten Tag — ein Tab-Wechsel
@@ -84,13 +87,17 @@ export default function TimetableScreen() {
   const { data, isLoading } = useSnapshot();
   const showWeekend = useSettings((state) => state.settings.showWeekend);
   const compact = useSettings((state) => state.settings.compactTimetable);
+  const timetableMode = useSettings((state) => state.settings.timetableMode);
+  const { update } = useSettings();
   const layout = useLayout();
   const wide = layout.navigation !== 'bottom';
 
   const [selectedDay, setSelectedDay] = useState<string | null>(() => lastSelectedDay);
   const [detail, setDetail] = useState<Lesson | null>(null);
+  // Kalenderansicht: weekOffset relativ zur aktuellen Woche (0 = diese Woche).
+  const [calendarWeekOffset, setCalendarWeekOffset] = useState(0);
 
-  // Zwei feste Wochen ab dem Montag der aktuellen Woche — kein Pfeil-Wechsel.
+  // Zwei feste Wochen ab dem Montag der aktuellen Woche — für die Listenansicht.
   const weeks = useMemo(() => {
     const monday = startOfWeek(new Date());
     const length = showWeekend ? 7 : 5;
@@ -102,21 +109,32 @@ export default function TimetableScreen() {
     return [make(0, 'Diese Woche'), make(1, 'Nächste Woche')];
   }, [showWeekend]);
 
+  // Kalenderansicht: eine Woche mit weekOffset.
+  const calendarWeek = useMemo(() => {
+    const monday = startOfWeek(addDays(new Date(), calendarWeekOffset * 7));
+    const length = showWeekend ? 7 : 5;
+    return {
+      days: Array.from({ length }, (_, index) => toISO(addDays(monday, index))),
+      monday,
+    };
+  }, [calendarWeekOffset, showWeekend]);
+
   const allDays = useMemo(() => weeks.flatMap((week) => week.days), [weeks]);
   const todayISO = toISO(new Date());
 
   const byDay = useMemo(() => {
     const map = new Map<string, Lesson[]>();
     allDays.forEach((day) => map.set(day, []));
+    calendarWeek.days.forEach((day) => map.set(day, []));
     (data?.lessons ?? []).forEach((lesson) => {
       if (map.has(lesson.date)) map.get(lesson.date)!.push(lesson);
     });
     map.forEach((lessons) => lessons.sort((a, b) => a.start.localeCompare(b.start)));
     return map;
-  }, [data?.lessons, allDays]);
+  }, [data?.lessons, allDays, calendarWeek.days]);
 
   // Auswahl: zuletzt gewählten Tag wiederherstellen, sonst heute (bzw. den
-  // ersten sichtbaren Tag, wenn „heute“ z. B. am ausgeblendeten Wochenende liegt).
+  // ersten sichtbaren Tag, wenn „heute" z. B. am ausgeblendeten Wochenende liegt).
   const activeDay = selectedDay && allDays.includes(selectedDay)
     ? selectedDay
     : allDays.includes(todayISO)
@@ -128,7 +146,10 @@ export default function TimetableScreen() {
     setSelectedDay(day);
   };
 
-  const jumpToday = () => selectDay(allDays.includes(todayISO) ? todayISO : allDays[0]);
+  const jumpToday = () => {
+    selectDay(allDays.includes(todayISO) ? todayISO : allDays[0]);
+    setCalendarWeekOffset(0);
+  };
 
   const visibleLessons = allDays.flatMap((day) => byDay.get(day) ?? []);
   const stats = useMemo(() => ({
@@ -145,24 +166,55 @@ export default function TimetableScreen() {
     return `${fmt(first)} – ${fmt(last)}${sameYear ? '' : ` ${last.getFullYear()}`}`;
   }, [allDays]);
 
+  // Kalenderansicht: Wochen-Label.
+  const calendarRangeLabel = useMemo(() => {
+    const first = calendarWeek.days[0] ? new Date(calendarWeek.days[0]) : new Date();
+    const last = calendarWeek.days[calendarWeek.days.length - 1] ? new Date(calendarWeek.days[calendarWeek.days.length - 1]) : new Date();
+    const fmt = (date: Date) => `${date.getDate()}.${String(date.getMonth() + 1).padStart(2, '0')}.`;
+    return `${fmt(first)} – ${fmt(last)}`;
+  }, [calendarWeek.days]);
+
   const active = activeDay;
 
   const content = (
     <>
       <ScreenHeader
         title="Stundenplan"
-        subtitle={`Zwei Wochen · ${rangeLabel}`}
-        action={(
-          <PressableOpacity
-            onPress={jumpToday}
-            className="min-h-[44px] items-center justify-center rounded-full bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
-            accessibilityRole="button"
-            accessibilityLabel="Zur aktuellen Woche springen"
-          >
-            <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
-          </PressableOpacity>
-        )}
+        subtitle={timetableMode === 'calendar' ? calendarRangeLabel : `Zwei Wochen · ${rangeLabel}`}
+        action={
+          timetableMode === 'list' ? (
+            <PressableOpacity
+              onPress={jumpToday}
+              className="min-h-[44px] items-center justify-center rounded-full bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
+              accessibilityRole="button"
+              accessibilityLabel="Zur aktuellen Woche springen"
+            >
+              <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
+            </PressableOpacity>
+          ) : (
+            <PressableOpacity
+              onPress={jumpToday}
+              className="min-h-[44px] items-center justify-center rounded-full bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
+              accessibilityRole="button"
+              accessibilityLabel="Zur aktuellen Woche springen"
+            >
+              <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
+            </PressableOpacity>
+          )
+        }
       />
+
+      {/* Ansicht-Umschalter */}
+      <View className="px-4 pb-3">
+        <SegmentedControl<'list' | 'calendar'>
+          value={timetableMode}
+          onChange={(mode) => update({ timetableMode: mode })}
+          options={[
+            { value: 'list', label: 'Liste' },
+            { value: 'calendar', label: 'Kalender' },
+          ]}
+        />
+      </View>
 
       {isLoading || !data ? (
         <View className="gap-3 px-4">
@@ -170,9 +222,45 @@ export default function TimetableScreen() {
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
         </View>
+      ) : timetableMode === 'calendar' ? (
+        /* Kalenderansicht */
+        <View
+          className="w-full flex-1"
+          style={wide ? { alignSelf: 'center', maxWidth: 780 } : undefined}
+        >
+          {/* Wochen-Navigation */}
+          <View className="flex-row items-center justify-between px-4 pb-2">
+            <PressableOpacity
+              onPress={() => setCalendarWeekOffset((offset) => offset - 1)}
+              className="h-10 w-10 items-center justify-center rounded-full bg-line/50"
+              accessibilityRole="button"
+              accessibilityLabel="Vorherige Woche"
+            >
+              <ChevronLeft color={colors.ink} size={20} />
+            </PressableOpacity>
+            <Text className="text-[13px] font-bold text-muted">
+              {calendarWeekOffset === 0 ? 'Diese Woche' : calendarWeekOffset === 1 ? 'Nächste Woche' : calendarWeekOffset === -1 ? 'Letzte Woche' : `Woche ${calendarWeekOffset > 0 ? '+' : ''}${calendarWeekOffset}`}
+            </Text>
+            <PressableOpacity
+              onPress={() => setCalendarWeekOffset((offset) => offset + 1)}
+              className="h-10 w-10 items-center justify-center rounded-full bg-line/50"
+              accessibilityRole="button"
+              accessibilityLabel="Nächste Woche"
+            >
+              <ChevronRight color={colors.ink} size={20} />
+            </PressableOpacity>
+          </View>
+
+          {/* Kalender-Raster */}
+          <TimetableWeekGrid
+            days={calendarWeek.days}
+            lessons={calendarWeek.days.flatMap((day) => byDay.get(day) ?? [])}
+            onSelectLesson={setDetail}
+            showWeekend={showWeekend}
+          />
+        </View>
       ) : (
-        /* Auf breiten Screens bleibt die Tagesliste eine ruhige, zentrierte
-           Lesespalte — Farbflächen über die volle Canvas-Breite wären wuchtig. */
+        /* Listenansicht (Phase 4) */
         <View
           className="w-full flex-1"
           style={wide ? { alignSelf: 'center', maxWidth: 780 } : undefined}
@@ -300,7 +388,7 @@ function WeekStrip({
               >
                 {WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}
               </Text>
-              {/* „Heute“ ist in beiden Streifen als Ring markiert — auch wenn der
+              {/* „Heute" ist in beiden Streifen als Ring markiert — auch wenn der
                   andere Streifen/die andere Woche ausgewählt ist. */}
               <View
                 className={`mt-0.5 h-7 w-7 items-center justify-center rounded-full border-[1.6px] ${
