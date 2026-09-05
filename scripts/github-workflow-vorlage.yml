@@ -3,6 +3,15 @@
 #  kopieren (genaue Schritte stehen in HANDY-TESTEN.md).
 #  Diese Datei liegt bewusst in scripts/, damit der Bot sie pushen
 #  darf — GitHub erlaubt ihm das Anlegen von Workflow-Dateien nicht.
+#
+#  Stand Phase 10/11: neu hinzugekommen sind die Schritte
+#    · „Styling-Pipeline prüfen“ (npm run doctor, Blocker vor prebuild)
+#    · „Metro-/NativeWind-Cache verwerfen“ + --rerun-tasks (kein halbfertiges Bundle)
+#    · „Native kompilierte Styles bestätigen“ (--built=android, nach dem Build)
+#    · „Styling-Pipeline prüfen (Web-Build)“ im Web-Job
+#  Ohne dieses Update kann ein ungestyltes APK weiterhin veröffentlicht werden —
+#  die Vorlage deshalb nach jedem Merge einmal manuell überschreiben:
+#    gh workflow run --repo oskar26/schulmanager   (nach Copy + Commit)
 # ============================================================
 
 # Automatischer Android-APK-Build + Web-Deploy — komplett ohne eigenen PC.
@@ -57,12 +66,25 @@ jobs:
         run: |
           node -e "const fs=require('fs');const p='app.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.expo.android=j.expo.android||{};j.expo.android.versionCode=${{ github.run_number }};j.expo.android.versionName='1.0.'+${{ github.run_number }};fs.writeFileSync(p,JSON.stringify(j,null,2));"
 
+      - name: Styling-Pipeline prüfen (Blocker für den APK-Build)
+        # Phase 10: Ein Duplikat von react-native-css-interop hat die NativeWind-
+        # Laufzeit gesplittet — das APK war halb ungestylt, Web sah unauffällig aus.
+        # Dieser Check bricht den Build ab, bevor Gradle Zeit verbrennt.
+        run: npm run doctor
+
       - name: Natives Android-Projekt generieren (expo prebuild)
         run: npx expo prebuild -p android --no-install
 
+      - name: Metro-/NativeWind-Cache verwerfen (kein halbfertiges Bundle)
+        run: rm -rf node_modules/.cache && rm -rf node_modules/react-native-css-interop/.cache
+
       - name: Release-APK bauen (Gradle)
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace --rerun-tasks
+
+      - name: Native kompilierte Styles bestätigen
+        # Kein „grüner“ Build ohne echtes StyleSheet-Registry im Bundle.
+        run: node scripts/style-pipeline-check.mjs --built=android
 
       - name: APK bereitstellen
         run: |
@@ -107,6 +129,9 @@ jobs:
 
       - name: Abhängigkeiten installieren
         run: npm ci
+
+      - name: Styling-Pipeline prüfen (Web-Build)
+        run: npm run doctor
 
       - name: Base-URL für GitHub Pages setzen
         run: |

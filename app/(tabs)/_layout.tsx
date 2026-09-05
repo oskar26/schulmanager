@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -99,8 +99,11 @@ function FloatingTabBar({ state, navigation, descriptors, colors }: BottomTabBar
       pointerEvents="box-none"
       style={{
         position: 'absolute',
-        left: 16,
-        right: 16,
+        // Phasen-10-Härtigung: seitlich die Safe-Area dazurechnen, damit die
+        // Kapsel in Landscape und auf Geräten mit Notch/Punch-Hole nicht vom
+        // Gehäuserand angeschnitten oder unter die Systemuhr geschoben wird.
+        left: 16 + insets.left,
+        right: 16 + insets.right,
         bottom: Math.max(insets.bottom, 14),
         alignItems: 'center',
       }}
@@ -173,6 +176,21 @@ function AnimatedTabItem({
   // Amber bleibt ein Akzent statt eines zweiten Tabs-Hintergrunds: ein weicher
   // Halo und ein kleiner Punkt machen den aktiven Tab auf der schwarzen Pill
   // sofort erkennbar, während die übrigen Icons bewusst ruhig bleiben.
+  //
+  // Phase 10 · Android-Korrektur: Diese Deko-Ebenen hatten `elevation`. Auf
+  // Android bestimmt Elevation die **Reihenfolge** im Draw-Pass — die Halo- und
+  // Hintergrund-Ebenen landeten *über* dem Icon, der Halo „pulsierte“ also als
+  // fremder Fleck auf dem Icon. Ohne elevation gilt Quellreihenfolge (Deko vor
+  // Icon), auf iOS ersetzt ein echter Schatten die Tiefenwirkung.
+  const iosGlowShadow = Platform.select({
+    ios: {
+      shadowColor: colors.accent.amber,
+      shadowOpacity: 0.62,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 3 },
+    },
+    default: {},
+  });
   const glowStyle = useAnimatedStyle(() => ({
     opacity: activeVal.value,
     transform: [{ scale: 0.82 + activeVal.value * 0.18 }],
@@ -214,12 +232,9 @@ function AnimatedTabItem({
               bottom: 2,
               borderRadius: 20,
               backgroundColor: `${colors.accent.amber}2B`,
-              shadowColor: colors.accent.amber,
-              shadowOpacity: 0.62,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 3 },
-              elevation: 5,
+              zIndex: 0,
             },
+            iosGlowShadow,
             glowStyle,
           ]}
         />
@@ -234,15 +249,18 @@ function AnimatedTabItem({
               bottom: 0,
               borderRadius: 22,
               backgroundColor: colors.charcoalElevated,
+              zIndex: 1,
             },
             bgStyle,
           ]}
         />
-        <Icon
-          size={22}
-          strokeWidth={active ? 2.5 : 2}
-          color={active ? colors.accent.amber : colors.faint}
-        />
+        <View style={{ zIndex: 2 }}>
+          <Icon
+            size={22}
+            strokeWidth={active ? 2.5 : 2}
+            color={active ? colors.accent.amber : colors.faint}
+          />
+        </View>
         <Animated.View
           pointerEvents="none"
           style={[
@@ -253,12 +271,17 @@ function AnimatedTabItem({
               height: 6,
               borderRadius: 3,
               backgroundColor: colors.accent.amber,
-              shadowColor: colors.accent.amber,
-              shadowOpacity: 0.85,
-              shadowRadius: 6,
-              shadowOffset: { width: 0, height: 2 },
-              elevation: 6,
+              zIndex: 3,
             },
+            Platform.select({
+              ios: {
+                shadowColor: colors.accent.amber,
+                shadowOpacity: 0.85,
+                shadowRadius: 6,
+                shadowOffset: { width: 0, height: 2 },
+              },
+              default: {},
+            }),
             dotStyle,
           ]}
         />

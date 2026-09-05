@@ -26,7 +26,7 @@ import {
 } from 'lucide-react-native';
 
 import { useModuleActive, useSnapshot } from '@/data/queries';
-import { WEB_USES_CORS_PROXY } from '@/api/client';
+import { WebConnectionCard } from '@/ui/connection-card';
 import { requestPermission, syncNotifications } from '@/features/notifications/scheduler';
 import { getNativeIsland } from '@/features/island/bridge';
 import {
@@ -302,9 +302,6 @@ export default function SettingsScreen() {
             E-Mail und Passwort werden verschlüsselt auf dem Gerät gespeichert
             ({Platform.OS === 'web' ? 'Browser-Speicher' : 'Keychain / Keystore'}) und ausschließlich an
             login.schulmanager-online.de gesendet.
-            {WEB_USES_CORS_PROXY
-              ? ' Im Web laufen die Aufrufe über den eingebauten CORS-Proxy dieser Installation — er reicht sie unverändert weiter.'
-              : ''}
           </Muted>
 
           <Text className="mb-1.5 mt-4 text-[10.5px] font-extrabold uppercase tracking-[1.3px] text-muted">
@@ -424,6 +421,9 @@ export default function SettingsScreen() {
             ) : null}
           </Row>
         </Card>
+
+        {/* Phase 11: auf Web sichtbar — erklärt und repariert den API-Umweg. */}
+        <WebConnectionCard />
 
         <SettingsGroup>
           <ToggleRow

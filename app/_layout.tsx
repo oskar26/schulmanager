@@ -20,12 +20,14 @@ import { useThemeColors } from '@/design/theme';
 import { useSettings } from '@/state/settings';
 import { useSession } from '@/state/session';
 import { registerNotificationHandler } from '@/features/notifications/scheduler';
+import { hydrateRelayOverride } from '@/api/transport';
 import { LiveIsland } from '@/features/island/LiveIsland';
 import { useIslandState } from '@/features/island/use-island';
 import { useLiveIslandEffects } from '@/features/island/effects';
 import { ErrorBoundary as ScreenErrorBoundary } from '@/ui/error-boundary';
 import { LockGate } from '@/ui/lock-gate';
 import { PressableScale } from '@/ui/motion';
+import { StylePipelineGuard } from '@/ui/style-guard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +65,9 @@ export default function RootLayout() {
   useEffect(() => {
     void hydrate();
     registerNotificationHandler();
+    // Phase 11: ein in den Einstellungen hinterlegter CORS-Umweg muss vor der
+    // ersten Datenanfrage bekannt sein, sonst läuft der Start ins Leere.
+    void hydrateRelayOverride();
   }, [hydrate]);
 
   useEffect(() => {
@@ -112,25 +117,42 @@ export default function RootLayout() {
                     <StatusBar style={dark ? 'light' : 'dark'} />
                     <Stack
                       initialRouteName={needsOnboarding ? 'onboarding' : '(tabs)'}
-                      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
+                      screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: colors.canvas },
+                        // Phase 12: Screen-Wechsel bewegen sich einheitlich statt
+                        // hart zu springen. Kürzer als der Systemdefault (260 ms),
+                        // damit sich die App direkt anfühlt; `slide_from_bottom`
+                        // bleibt den modalen Formularen vorbehalten.
+                        animation: 'slide_from_right',
+                        animationDuration: 260,
+                      }}
                     >
                       <Stack.Screen name="(tabs)" />
                       <Stack.Screen name="onboarding" />
-                      <Stack.Screen name="settings" options={{ presentation: 'card' }} />
-                      <Stack.Screen name="sick-note" options={{ presentation: 'modal' }} />
-                      <Stack.Screen name="exemption" options={{ presentation: 'modal' }} />
+                      <Stack.Screen name="settings" options={{ presentation: 'card', animation: 'slide_from_right' }} />
+                      <Stack.Screen name="sick-note" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+                      <Stack.Screen name="exemption" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
                       <Stack.Screen name="calendar" />
                       <Stack.Screen name="attendance" />
-                      <Stack.Screen name="search" options={{ presentation: 'modal' }} />
-                      <Stack.Screen name="thread" options={{ presentation: 'modal' }} />
+                      <Stack.Screen name="search" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+                      <Stack.Screen name="thread" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
                       <Stack.Screen name="payments" />
                       <Stack.Screen name="documents" />
                       <Stack.Screen name="parent-talks" />
-                      <Stack.Screen name="electives" options={{ presentation: 'modal' }} />
-                      <Stack.Screen name="allday" options={{ presentation: 'modal' }} />
+                      <Stack.Screen name="electives" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+                      <Stack.Screen name="allday" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
                     </Stack>
-                    {/* Live-Island schwebt über allen Screens (In-App-Dynamic-Island). */}
+                    {/*
+                     * Phase 13: die Kapsel schwebt nicht mehr über allen Screens.
+                     * Auf Web ist sie die Erweiterung über der Tab-Bar, nativ liefert
+                     * sie null — dort übernehmen System-Mechanismen (Android-Live-Update,
+                     * iOS Live Activity). `useLiveIslandEffects` läuft trotzdem weiter:
+                     * es füttert genau diese Kanäle.
+                     */}
                     <IslandHost />
+                    {/* Phase 10: meldet ein fehlendes Stylesheet-Bundle, statt es stumm zu lassen. */}
+                    <StylePipelineGuard />
                   </View>
                 ) : (
                   <BootScreen dark={dark} />

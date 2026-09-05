@@ -9,6 +9,7 @@ import { Platform, Share } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { SchulmanagerApi } from './endpoints';
+import { resolveSmTransport, rewriteStorageUrlForWeb } from './transport';
 import { decryptStoredFile, descriptorPath, parseStoredFile } from './files';
 import { bytesToBase64 } from '@/lib/base64';
 import { useSession } from '@/state/session';
@@ -27,7 +28,12 @@ export async function downloadStoredFile(
   const parts = parseStoredFile(descriptor);
   if (!parts) throw new Error('Datei-Deskriptor nicht lesbar.');
 
-  const storageUrl = (await api.remoteStorageUrl().catch(() => null)) ?? 'https://storage.schulmanager-online.de';
+  const storageHost = (await api.remoteStorageUrl().catch(() => null)) ?? 'https://storage.schulmanager-online.de';
+  // Phase 11: Anhänge hängen am selben CORS-Problem wie die API. Auf Web läuft
+  // der Download deshalb über den gleichen Umweg (Relay/Durchreicher) wie die
+  // RPC-Aufrufe — sonst funktioniert die Anmeldung, aber kein Elternbrief.
+  const transport = await resolveSmTransport();
+  const storageUrl = rewriteStorageUrlForWeb(storageHost, transport);
   const path = descriptorPath(descriptor);
   if (!path) throw new Error('Datei-Deskriptor nicht lesbar.');
 

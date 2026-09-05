@@ -196,7 +196,20 @@ export function ScreenHeader({
         style,
       ]}
     >
-      <Row className="min-h-[48px] justify-between gap-4">
+      {/*
+       * Phase 10 · Struktur-Härtung: Die Kopfzeile trägt ihre Achsen bewusst
+       * **inline** *und* als Klasse. Der Header ist die einzige Stelle, an der
+       * eine verlorene Klasse nicht „nur“ falsch aussieht, sondern Elemente
+       * physisch überlappt (gemeldetes Symptom auf dem Start-Screen: Such- und
+       * Einstellungs-Icon über dem Begrüßungstext). Typografie bleibt dagegen
+       * ausschließlich klassenbasiert — 45 Screens überschreiben die Größen der
+       * Text-Bausteine per className, und inline würde jede diese Entscheidungen
+       * still aushebeln.
+       */}
+      <Row
+        className="min-h-[48px] justify-between gap-4"
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 48 }}
+      >
         <View style={{ flex: 1, minWidth: 0 }}>
           <Title numberOfLines={1}>{title}</Title>
           {subtitle ? <Muted className="mt-0.5" numberOfLines={1}>{subtitle}</Muted> : null}
