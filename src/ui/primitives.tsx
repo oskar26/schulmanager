@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react-native';
 
-import { foregroundOn, radius, resolveThemeColor, shadow } from '@/design/tokens';
+import { foregroundOn, radius, readableInk, resolveThemeColor, shadow, solidPair, whiteOn } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
@@ -309,44 +309,57 @@ export function IconBadge({
   );
 }
 
-/* ------------------------------------------- ColorBlockCard (Phase 1) */
-
-/** Context der aufgelösten Farbfläche — Kinder bekommen die passende Textfarbe. */
-const ColorBlockContext = React.createContext<{ fg: string } | null>(null);
+/* ------------------------------------------- ColorBlockCard (Phase 1 · 17) */
 
 /**
- * Vordergrundfarbe innerhalb einer `ColorBlockCard`: kontrastsicher zur
- * Flächenfarbe (inkl. Dark-Mode-Auflösung). Außerhalb eines Blocks: Ink.
+ * Context der aufgelösten Akzentfarbe. Seit Phase 17 („Karten-Neutralisierung“)
+ * sind ColorBlockCards **neutrale Surface-Karten mit Akzent-Streifen** links —
+ * Text läuft damit immer auf Weiß bzw. Dark-Surface und ist kontrastsicher:
+ * · `accent` — die rohe Akzentfarbe (Streifen, Punkte, Fortschritt)
+ * · `ink`    — AA-sichere Text-/Icon-Variante des Akzents für Tint-Pills & Icons
+ */
+const ColorBlockContext = React.createContext<{ accent: string; ink: string } | null>(null);
+
+/**
+ * AA-sichere Akzentfarbe innerhalb einer `ColorBlockCard` — für Icons,
+ * Tint-Pills und dezente Insets auf der neutralen Fläche.
  */
 export function useBlockInk(): string {
   const { colors } = useThemeColors();
   const context = React.useContext(ColorBlockContext);
-  return context?.fg ?? colors.ink;
+  return context?.ink ?? colors.ink;
 }
 
-/** Text auf einer Farbfläche — erbt automatisch die kontrastsichere Farbe. */
+/** Rohe Akzentfarbe der umgebenden `ColorBlockCard` (Streifen, Deko, Verläufe). */
+export function useBlockAccent(): string {
+  const { colors } = useThemeColors();
+  const context = React.useContext(ColorBlockContext);
+  return context?.accent ?? colors.accent.amber;
+}
+
+/** Text auf einer Akzentkarte — neutraler Ink, unabhängig von der Akzentfarbe. */
 export const BlockText = ({ className = '', ...props }: TxtProps) => {
-  const fg = useBlockInk();
-  return <Text {...props} style={[{ color: fg }, props.style]} className={`text-[15px] font-semibold ${className}`} />;
+  const { colors } = useThemeColors();
+  return <Text {...props} style={[{ color: colors.ink }, props.style]} className={`text-[15px] font-semibold ${className}`} />;
 };
 
-/** Sekundärtext auf einer Farbfläche — gleiche Farbe, reduzierte Deckkraft. */
+/** Sekundärtext auf einer Akzentkarte — Muted statt Deckkraft-Trick. */
 export const BlockCaption = ({ className = '', ...props }: TxtProps) => {
-  const fg = useBlockInk();
+  const { colors } = useThemeColors();
   return (
     <Text
       {...props}
-      style={[{ color: fg, opacity: 0.72 }, props.style]}
+      style={[{ color: colors.muted }, props.style]}
       className={`text-[13px] font-medium ${className}`}
     />
   );
 };
 
 /**
- * ColorBlockCard — die Farbflächen-Karte des Redesigns: vollflächig eingefärbt
- * (Fach-, Kategorie- oder Prioritätsfarbe), Radius 28, weicher Schatten,
- * **kein Rand**. Optional pressbar (Press-Scale). Kinder nutzen `BlockText`/
- * `BlockCaption` oder `useBlockInk()` für Textfarben.
+ * ColorBlockCard — seit Phase 17: **neutrale Karte (Surface) mit linkem
+ * Akzent-Streifen** statt vollflächiger Farbe. Die Fach-/Kategorie-/Prioritäts-
+ * farbe bleibt als 5-px-Streifen, in Icon- und Pill-Tints erkennbar; alle Texte
+ * sitzen auf neutraler Fläche (WCAG AA). Optional pressbar (Press-Scale).
  */
 export function ColorBlockCard({
   children,
@@ -362,7 +375,7 @@ export function ColorBlockCard({
   style,
   ...rest
 }: ViewProps & {
-  /** Flächenfarbe (Light- oder Dark-Hex; wird theme-aufgelöst). */
+  /** Akzentfarbe (Light- oder Dark-Hex; wird theme-aufgelöst). */
   color: string;
   onPress?: () => void;
   accessibilityLabel?: string;
@@ -377,22 +390,28 @@ export function ColorBlockCard({
 }) {
   const { colors, isDark } = useThemeColors();
   const base = resolveThemeColor(color, isDark);
-  const fg = foregroundOn(base, colors);
+  const ink = readableInk(base, isDark);
   const boxStyle: ViewStyle = {
     borderRadius: cardRadius,
     overflow: 'hidden',
-    backgroundColor: base,
-    opacity: dim ? 0.55 : 1,
+    backgroundColor: colors.surface,
+    opacity: dim ? 0.62 : 1,
     ...(elevated ? shadow.float : shadow.card),
   };
 
   const inner = (
-    <ColorBlockContext.Provider value={{ fg }}>
+    <ColorBlockContext.Provider value={{ accent: base, ink }}>
       <View
         {...rest}
         style={[boxStyle, style]}
-        className={`${padded ? 'p-5' : ''} ${className}`}
+        className={`${padded ? 'p-[18px]' : ''} ${className}`}
       >
+        {/* Akzent-Streifen: volle Höhe, in der Ecke von overflow: hidden sauber
+            abgerundet. Farben leben ab jetzt als Akzent, nicht als Fläche. */}
+        <View
+          pointerEvents="none"
+          style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, backgroundColor: base }}
+        />
         {children}
       </View>
     </ColorBlockContext.Provider>
@@ -414,11 +433,12 @@ export function ColorBlockCard({
   );
 }
 
-/* ------------------------------------------------- StatCard (Phase 1) */
+/* ------------------------------------------------- StatCard (Phase 1 · 17) */
 
 /**
- * StatCard — „Statistiken als riesige Zahl + kleine Caption, statt
- * Fließtext“. Plain auf Surface oder als vollflächiger Farbblock (`block`).
+ * StatCard — „Statistiken als riesige Zahl + kleine Caption“. Seit Phase 17
+ * immer eine **neutrale** Karte: Die Zahl trägt die Farbe (AA-sichere
+ * Akzentvariante), die Caption bleibt Muted — volle Farbflächen entfallen.
  */
 export function StatCard({
   value,
@@ -433,9 +453,9 @@ export function StatCard({
 }: {
   value: string | number;
   caption: string;
-  /** Zahl-/Caption-Farbe (nur ohne `block`). */
+  /** Zahl-/Caption-Farbe (Light- oder Dark-Hex). */
   color?: string;
-  /** Vollflächen-Farbe — Karte wird zum Farbblock. */
+  /** Akzentfarbe der Karte (ehemals Vollfläche, jetzt Zahl + Icon). */
   block?: string;
   icon?: LucideIcon;
   align?: 'left' | 'center';
@@ -444,50 +464,40 @@ export function StatCard({
   style?: ViewStyle;
 }) {
   const { colors, isDark } = useThemeColors();
-  const blockFg = block ? foregroundOn(resolveThemeColor(block, isDark), colors) : undefined;
+  const accent = resolveThemeColor(block ?? color ?? colors.accent.amber, isDark);
+  const numberColor = readableInk(accent, isDark);
 
   const body = (
     <>
       {icon ? (
         <IconBadge
           icon={icon}
-          color={block ?? color}
-          tone={block ? 'solid' : 'tint'}
+          color={accent}
+          tone="tint"
           size="sm"
           className={align === 'center' ? '' : 'mb-2'}
-          style={{
-            // Auf Vollton-Blöcken: transparent-abgedunkelter/aufgehellter Kreis
-            // statt Vollfarbe, damit Zahl & Badge sich nicht beißen.
-            backgroundColor: block ? (blockFg === '#FFFFFF' ? 'rgba(0,0,0,0.16)' : 'rgba(255,255,255,0.55)') : undefined,
-          }}
         />
       ) : null}
       <StatNumber
         size={size}
         className={align === 'center' ? 'text-center' : ''}
-        style={{ color: blockFg ?? resolveThemeColor(color ?? colors.ink, isDark) }}
+        style={{ color: numberColor, fontVariant: ['tabular-nums'] }}
         adjustsFontSizeToFit
         numberOfLines={1}
       >
         {value}
       </StatNumber>
       <Text
-        className={`mt-0.5 text-[10.5px] font-extrabold uppercase tracking-[1.2px] ${align === 'center' ? 'text-center' : ''}`}
-        style={{ color: blockFg ?? resolveThemeColor(color ?? colors.muted, isDark), opacity: block ? 0.72 : 1 }}
-        numberOfLines={2}
+        className={`mt-1 text-[10px] font-bold uppercase tracking-[0.9px] ${align === 'center' ? 'text-center' : ''}`}
+        style={{ color: colors.muted }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.78}
       >
         {caption}
       </Text>
     </>
   );
-
-  if (block) {
-    return (
-      <ColorBlockCard color={block} padded style={[{ paddingTop: 16, paddingBottom: 14, paddingHorizontal: 16 }, style]} className={className}>
-        {body}
-      </ColorBlockCard>
-    );
-  }
 
   return (
     <Card padded style={[{ paddingTop: 16, paddingBottom: 14, paddingHorizontal: 16 }, style]} className={className}>
@@ -514,16 +524,22 @@ export function SectionHeader({
   icon?: LucideIcon;
   iconColor?: string;
 }) {
+  const { colors, isDark } = useThemeColors();
   const IconComponent = icon;
+  // AA: Amber-Deep als Textfarbe schafft auf Canvas nur ~2,7:1 — Aktions-Links
+  // nutzen deshalb die abgedunkelte, lesbare Akzentvariante.
+  const actionColor = readableInk(resolveThemeColor(colors.accent.amber, isDark), isDark);
   return (
-    <Row className="mb-3 mt-6 justify-between px-1">
-      <Row className="flex-1 gap-2.5">
+    <Row className="mb-3 mt-6 justify-between gap-3 px-1">
+      <Row className="min-w-0 flex-1 gap-2.5">
         {IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="sm" /> : null}
-        <Text className="flex-shrink text-[19px] font-extrabold tracking-[-0.3px] text-ink">{title}</Text>
+        <Text className="flex-shrink text-[17px] font-bold tracking-[-0.2px] text-ink" numberOfLines={1}>
+          {title}
+        </Text>
       </Row>
       {action ? (
         <PressableOpacity onPress={onAction} hitSlop={14} accessibilityRole="button">
-          <Text className="text-[13px] font-extrabold text-accent-amber-deep">{action}</Text>
+          <Text className="text-[13px] font-bold" style={{ color: actionColor }}>{action}</Text>
         </PressableOpacity>
       ) : null}
     </Row>
@@ -550,7 +566,14 @@ function variantColor(variant: ChipVariant, colors: ReturnType<typeof useThemeCo
   }
 }
 
-/** Gemeinsame Pill-/Chip-Optik des Farbflächen-Stils: Radius 20, fett, Icon-fähig. */
+/**
+ * Gemeinsame Pill-/Chip-Optik (Phase 17): voll runde Pill (999), 12 px
+ * semibold — Status-Badges bleiben damit dezenter als der Hauptinhalt.
+ * Kontraste sind automatisch AA-sicher:
+ * · tint     → 14-%-Tönung + abgedunkelte/aufgehellte Akzent-Textfarbe
+ * · solid    → Fläche + Vordergrund aus `solidPair()` (notfalls angepasste Fläche)
+ * · outline  → feine Kontur + AA-Textfarbe
+ */
 function PillBase({
   label,
   color,
@@ -568,26 +591,28 @@ function PillBase({
   iconSize?: number;
   textClassName: string;
   className: string;
-  /** Optionaler Zusatz-Style (z. B. Ring, wenn Pill und Fläche dieselbe Farbe haben). */
+  /** Optionaler Zusatz-Style. */
   style?: ViewStyle;
 }) {
-  const { colors, isDark } = useThemeColors();
+  const { isDark } = useThemeColors();
   const base = resolveThemeColor(color, isDark);
-  const fg = tone === 'solid' ? foregroundOn(base, colors) : base;
+  const inkTone = readableInk(base, isDark);
+  const solid = solidPair(base, isDark);
+  const fg = tone === 'solid' ? solid.fg : inkTone;
   const boxStyle: ViewStyle =
     tone === 'solid'
-      ? { backgroundColor: base }
+      ? { backgroundColor: solid.bg }
       : tone === 'outline'
-        ? { borderWidth: 1.5, borderColor: base, backgroundColor: 'transparent' }
+        ? { borderWidth: 1.25, borderColor: inkTone, backgroundColor: 'transparent' }
         : { backgroundColor: tint(base, 0.15) };
 
   return (
     <View
       style={[boxStyle, style]}
-      className={`flex-row items-center gap-1 rounded-[20px] self-start px-3 py-1.5 ${className}`}
+      className={`flex-row items-center gap-1 rounded-full self-start px-2.5 py-[3px] ${className}`}
     >
-      {IconComponent ? <IconComponent size={iconSize} strokeWidth={2.6} color={fg} /> : null}
-      <Text className={`flex-shrink font-extrabold ${textClassName}`} style={{ color: fg }} numberOfLines={1}>
+      {IconComponent ? <IconComponent size={iconSize} strokeWidth={2.4} color={fg} /> : null}
+      <Text className={`flex-shrink text-[12px] font-semibold ${textClassName}`} style={{ color: fg }} numberOfLines={1}>
         {label}
       </Text>
     </View>
@@ -623,22 +648,25 @@ export function Chip({
       tone={tone}
       icon={icon}
       iconSize={12}
-      textClassName="text-[11.5px]"
-      className={`px-2.5 py-1 ${className}`}
+      textClassName=""
+      className={className}
       style={style}
     />
   );
 }
 
 export function Badge({ count, className = '' }: { count: number; className?: string }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   if (count <= 0) return null;
+  // AA auch für die kleinen Zähler: Fläche so abdunkeln, dass Weiß ≥ 4,6:1
+  // hält (Coral → sattes Rot statt Signalrot mit 3,8:1).
+  const bg = whiteOn(resolveThemeColor(colors.accent.coral, isDark), isDark);
   return (
     <View
-      className={`min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 ${className}`}
-      style={{ backgroundColor: colors.accent.coral }}
+      className={`min-w-[20px] shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 ${className}`}
+      style={{ backgroundColor: bg }}
     >
-      <Text className="text-[11px] font-extrabold" style={{ color: colors.on.coral }}>
+      <Text className="text-[10.5px] font-bold" style={{ color: '#FFFFFF' }}>
         {count > 99 ? '99+' : count}
       </Text>
     </View>
@@ -672,11 +700,11 @@ export function EmptyState({
   title: string;
   hint?: string;
 }) {
+  const { colors } = useThemeColors();
   const IconComponent = icon;
-  // Außerhalb einer Farbfläche ist das einfach `colors.ink`; innerhalb einer
-  // ColorBlockCard erbt der Leerzustand dagegen dieselbe kontraststarke Farbe
-  // wie die übrigen Block-Texte.
-  const ink = useBlockInk();
+  // Phase 17: Leere Zustände sitzen immer auf neutralen Karten — Titel in Ink,
+  // Hinweis in Muted (klare Hierarchie, AA auf Surface).
+  const ink = colors.ink;
   const art =
     typeof illustration === 'string' ? (
       <Illustration name={illustration as IllustrationName} ink={ink} />
@@ -688,9 +716,9 @@ export function EmptyState({
     <FadeInUp>
       <View className="items-center justify-center gap-2.5 px-8 py-12">
         {art ??
-          (IconComponent ? <IconBadge icon={IconComponent} color={iconColor} size="xl" tone="tint" strokeWidth={2} /> : null)}
-        <Text className="text-center text-[17px] font-extrabold tracking-[-0.2px]" style={{ color: ink }}>{title}</Text>
-        {hint ? <Text className="text-center text-[13px] leading-5" style={{ color: ink, opacity: 0.72 }}>{hint}</Text> : null}
+          (IconComponent ? <IconBadge icon={IconComponent} color={iconColor ?? colors.accent.amber} size="xl" tone="tint" strokeWidth={2} /> : null)}
+        <Text className="text-center text-[16px] font-bold tracking-[-0.2px]" style={{ color: ink }}>{title}</Text>
+        {hint ? <Text className="text-center text-[13px] leading-5 text-muted">{hint}</Text> : null}
       </View>
     </FadeInUp>
   );
@@ -708,7 +736,11 @@ export function SegmentedControl<T extends string>({
   onChange: (next: T) => void;
 }) {
   return (
-    <View className="flex-row rounded-full bg-line/60 p-1.5">
+    // Phase 17: Das Control misst sich nach seinem Inhalt (fit-content) statt
+    // die ganze Bildschirmbreite mit Leerraum zu füllen. `flexBasis: 'auto'`
+    // lässt Segmente schrumpfen, falls die Summe die verfügbare Breite doch
+    // übersteigt (z. B. „Hausaufgaben/Arbeiten/Lernplan“ auf schmalen Phones).
+    <View className="flex-row self-start rounded-full bg-line/60 p-1.5">
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -718,17 +750,15 @@ export function SegmentedControl<T extends string>({
               if (!active) hapticSelection();
               onChange(option.value);
             }}
-            className={`min-h-[48px] flex-1 flex-row items-center justify-center gap-1.5 rounded-full px-2 py-1.5 ${
+            className={`min-h-[44px] flex-row items-center justify-center gap-1.5 rounded-full px-4 py-1.5 ${
               active ? 'bg-surface hover:bg-surface' : 'hover:bg-line/60'
             }`}
-            style={active ? shadow.card : undefined}
+            style={[{ flexGrow: 0, flexShrink: 1, flexBasis: 'auto' }, active ? shadow.card : undefined]}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
           >
-            {/* Label darf schrumpfen statt abzuschneiden („Hausaufga…“);
-                min-h 48 px — Segment-Buttons sind volle Touch-Targets. */}
             <Text
-              className={`text-[13.5px] ${active ? 'font-extrabold text-ink' : 'font-semibold text-muted'}`}
+              className={`text-[13.5px] ${active ? 'font-bold text-ink' : 'font-semibold text-muted'}`}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.72}
@@ -825,6 +855,29 @@ export function IconButton({
 
 /* ------------------------------------------------------------------ Sheet */
 
+/**
+ * Modal-Kopf (Phase 17): Der Titel bekommt einen eigenen, schrumpfbaren
+ * Container (`flex: 1` + `minWidth: 0`) mit `numberOfLines` — lange Titel
+ * wie „Mathematik: Klassenarbeit“ brechen damit **im** Dialog um bzw. werden
+ * mit Auslassungspunkten gekürzt und laufen nicht mehr oben links aus der
+ * Box in den abgedunkelten Hintergrund. Der Schließen-Button bleibt fix
+ * rechts (flexShrink 0), das Padding ist symmetrisch zum Content (px-6/pt-5).
+ */
+function SheetHeader({ title, onClose }: { title: string; onClose: () => void }) {
+  return (
+    <View className="flex-row items-center gap-3 px-6 pb-2 pt-5" style={{ minWidth: 0 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={2} className="text-[20px] font-bold leading-[25px] tracking-[-0.3px] text-ink">
+          {title}
+        </Text>
+      </View>
+      <View style={{ flexShrink: 0 }}>
+        <IconButton icon="close" onPress={onClose} background="bg-line/50" size={34} />
+      </View>
+    </View>
+  );
+}
+
 export function Sheet({
   open,
   onClose,
@@ -839,22 +892,19 @@ export function Sheet({
   const layout = useLayout();
 
   if (layout.isDesktop || layout.isTablet) {
-    // Großer Screen ⇒ zentrierter Dialog statt Bottom-Sheet.
+    // Großer Screen ⇒ zentrierter Dialog statt Bottom-Sheet. `overflow:
+    // hidden` hält den Kopf in der abgerundeten Box; das Z-Stacking (Pressable-
+    // Backdrop liegt hinter dem Dialog) bleibt unverändert.
     return (
       <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
         <View className="flex-1 items-center justify-center bg-black/45 p-6">
           <Pressable accessibilityLabel="Schließen" onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
           <FadeInUp
-            className="max-h-[86%] w-full max-w-[560px] rounded-[28px] bg-surface pb-6"
+            className="max-h-[86%] w-full max-w-[560px] overflow-hidden rounded-[28px] bg-surface"
             style={shadow.float}
           >
-            {title ? (
-              <Row className="justify-between px-5 pb-1 pt-4">
-                <Title>{title}</Title>
-                <IconButton icon="close" onPress={onClose} background="bg-line/50" size={34} />
-              </Row>
-            ) : null}
-            <ScrollView className="px-5" contentContainerClassName="pb-6">
+            {title ? <SheetHeader title={title} onClose={onClose} /> : null}
+            <ScrollView className="px-6" contentContainerClassName="pb-6">
               {children}
             </ScrollView>
           </FadeInUp>
@@ -866,23 +916,19 @@ export function Sheet({
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 bg-black/40" />
-      <FadeInUp className="max-h-[82%] rounded-t-[30px] bg-surface pb-8" style={shadow.float}>
+      <FadeInUp className="max-h-[82%] overflow-hidden rounded-t-[30px] bg-surface pb-8" style={shadow.float}>
         <View className="items-center py-3">
           <View className="h-1.5 w-11 rounded-full bg-line" />
         </View>
-        {title ? (
-          <Row className="justify-between px-5 pb-2">
-            <Title>{title}</Title>
-            <IconButton icon="close" onPress={onClose} background="bg-line/50" size={34} />
-          </Row>
-        ) : null}
-        <ScrollView className="px-5" contentContainerClassName="pb-6">
+        {title ? <SheetHeader title={title} onClose={onClose} /> : null}
+        <ScrollView className="px-6" contentContainerClassName="pb-6">
           {children}
         </ScrollView>
       </FadeInUp>
     </Modal>
   );
 }
+
 
 /* ------------------------------------------------------------------ Bento (Phase 2) */
 
@@ -896,10 +942,8 @@ export function resolveTone(tone?: string, isDark = false): string | undefined {
 
 /**
  * Status-Pill — farbige, runde Markierung für Metadaten wie „Fällig morgen“,
- * „Raum“ oder „Vertretung“. Charcoal, Amber und Lime stehen als Varianten
- * bereit; Fach- und Semantikfarben können weiterhin explizit übergeben werden.
- * Seit Phase 1 des Farbflächen-Redesigns: Radius 20, fetter Text (13 px),
- * optionales Lucide-Icon.
+ * „Raum“ oder „Vertretung“. Seit Phase 17: voll runde Pill, 12 px semibold,
+ * AA-sichere Tint-/Solid-Kontraste; Icons optional über Lucide.
  */
 export function Pill({
   label,
@@ -925,8 +969,8 @@ export function Pill({
       color={color ?? variantColor(variant, colors)}
       tone={tone}
       icon={icon}
-      iconSize={13}
-      textClassName="text-[13px]"
+      iconSize={12}
+      textClassName=""
       className={className}
       style={style}
     />
