@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react-native';
 
-import { blockTint, foregroundOn, radius, resolveThemeColor, shadow } from '@/design/tokens';
+import { foregroundOn, radius, resolveThemeColor, shadow } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
@@ -221,10 +221,6 @@ export function ScreenHeader({
   );
 }
 
-/**
- * Weiße Bento-Karte: Radius 20, feiner Rand (`--border-subtle`), kaum
- * sichtbarer Schatten. Die Standardfläche des „Playful Modern“-Systems.
- */
 export function Card({
   children,
   className = '',
@@ -233,39 +229,16 @@ export function Card({
   style,
   ...rest
 }: ViewProps & { children: React.ReactNode; className?: string; padded?: boolean; floating?: boolean }) {
-  const { colors } = useThemeColors();
   return (
     <View
       {...rest}
-      style={[
-        floating ? shadow.float : shadow.card,
-        { borderWidth: 1, borderColor: colors.line, borderRadius: radius.lg },
-        style,
-      ]}
-      className={`bg-surface ${padded ? 'p-5' : ''} ${className}`}
+      style={[floating ? shadow.float : shadow.card, style]}
+      className={`rounded-[28px] bg-surface ${padded ? 'p-[18px]' : ''} ${className}`}
     >
       {children}
     </View>
   );
 }
-
-/**
- * Kartentitel nach Briefing (`.card-title`): 18/700, Slate, einzeilig mit
- * Ellipsis — nie mehr mitten im Wort abgeschnitten.
- */
-export const CardTitle = ({ className = '', ...props }: TxtProps) => (
-  <Text
-    numberOfLines={1}
-    ellipsizeMode="tail"
-    {...props}
-    className={`text-[18px] font-bold leading-[24px] tracking-[-0.2px] text-ink ${className}`}
-  />
-);
-
-/** Untertitel (`--text-muted`, 14 px, 4 px Abstand). */
-export const CardSubtitle = ({ className = '', ...props }: TxtProps) => (
-  <Text {...props} className={`mt-1 text-[14px] font-medium leading-5 text-muted ${className}`} />
-);
 
 export function Row({ children, className = '', ...rest }: ViewProps & { className?: string }) {
   return (
@@ -336,19 +309,14 @@ export function IconBadge({
   );
 }
 
-/* ------------------------------------------- ColorBlockCard (Playful Modern) */
+/* ------------------------------------------- ColorBlockCard (Phase 1) */
+
+/** Context der aufgelösten Farbfläche — Kinder bekommen die passende Textfarbe. */
+const ColorBlockContext = React.createContext<{ fg: string } | null>(null);
 
 /**
- * Context der Farbkarte: `fg` = Textfarbe, `accent` = kräftiger Familienton
- * (für Icons, Pills, Fortschritt), `solid` = Karte ist ausnahmsweise
- * vollflächig eingefärbt (dann ist `fg` die On-Farbe).
- */
-const ColorBlockContext = React.createContext<{ fg: string; accent: string; solid: boolean } | null>(null);
-
-/**
- * Textfarbe innerhalb einer `ColorBlockCard`. Auf Tint-Karten ist das der
- * normale Slate-Ink; auf Solid-Karten die kontrastsichere On-Farbe.
- * Außerhalb eines Blocks: Ink.
+ * Vordergrundfarbe innerhalb einer `ColorBlockCard`: kontrastsicher zur
+ * Flächenfarbe (inkl. Dark-Mode-Auflösung). Außerhalb eines Blocks: Ink.
  */
 export function useBlockInk(): string {
   const { colors } = useThemeColors();
@@ -356,106 +324,70 @@ export function useBlockInk(): string {
   return context?.fg ?? colors.ink;
 }
 
-/** Akzentfarbe der umgebenden Karte (Icons, Pills, Borders). Außerhalb: Violet. */
-export function useBlockAccent(): string {
-  const { colors } = useThemeColors();
-  const context = React.useContext(ColorBlockContext);
-  return context?.accent ?? colors.accent.violet;
-}
-
-/** Steht der Text auf einer vollflächigen Farbkarte (Legacy/Hero)? */
-export function useBlockSolid(): boolean {
-  return React.useContext(ColorBlockContext)?.solid ?? false;
-}
-
-/** Text auf einer Farbkarte — erbt automatisch die passende Farbe. */
+/** Text auf einer Farbfläche — erbt automatisch die kontrastsichere Farbe. */
 export const BlockText = ({ className = '', ...props }: TxtProps) => {
   const fg = useBlockInk();
   return <Text {...props} style={[{ color: fg }, props.style]} className={`text-[15px] font-semibold ${className}`} />;
 };
 
-/** Sekundärtext auf einer Farbkarte: Muted-Slate (Tint) bzw. gedimmte On-Farbe (Solid). */
+/** Sekundärtext auf einer Farbfläche — gleiche Farbe, reduzierte Deckkraft. */
 export const BlockCaption = ({ className = '', ...props }: TxtProps) => {
-  const { colors } = useThemeColors();
   const fg = useBlockInk();
-  const solid = useBlockSolid();
   return (
     <Text
       {...props}
-      style={[solid ? { color: fg, opacity: 0.74 } : { color: colors.muted }, props.style]}
+      style={[{ color: fg, opacity: 0.72 }, props.style]}
       className={`text-[13px] font-medium ${className}`}
     />
   );
 };
 
-export type ColorBlockVariant = 'tint' | 'surface' | 'solid';
-
 /**
- * ColorBlockCard — die Farbkarte des „Playful Modern“-Systems.
- *
- * · `tint` (Default): Pastell-Fläche (8–12 % des Farbtons) + 4-px-Akzent-
- *   streifen links, dunkler Slate-Text. Radius 20, feiner Rand, weicher Schatten.
- * · `surface`: Reinweiße Karte mit Akzent nur in Icons/Pills (ruhige Kontexte).
- * · `solid`: Vollflächige Farbe — nur noch für Hero-Blöcke und bewusste Pops.
- *
- * Kinder nutzen `BlockText`/`BlockCaption`, `useBlockInk()` und
- * `useBlockAccent()` für Farben.
+ * ColorBlockCard — die Farbflächen-Karte des Redesigns: vollflächig eingefärbt
+ * (Fach-, Kategorie- oder Prioritätsfarbe), Radius 28, weicher Schatten,
+ * **kein Rand**. Optional pressbar (Press-Scale). Kinder nutzen `BlockText`/
+ * `BlockCaption` oder `useBlockInk()` für Textfarben.
  */
 export function ColorBlockCard({
   children,
   color,
-  variant = 'tint',
-  accentBar = true,
   onPress,
   accessibilityLabel,
   accessibilityRole,
   padded = true,
-  radius: cardRadius = radius.lg,
+  radius: cardRadius = radius.card,
   elevated = false,
   dim = false,
   className = '',
   style,
   ...rest
 }: ViewProps & {
-  /** Familienfarbe (Light- oder Dark-Hex; wird theme-aufgelöst). */
+  /** Flächenfarbe (Light- oder Dark-Hex; wird theme-aufgelöst). */
   color: string;
-  variant?: ColorBlockVariant;
-  /** 4-px-Akzentstreifen links (nur `tint`/`surface`). */
-  accentBar?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
   accessibilityRole?: 'button' | 'link';
   padded?: boolean;
   radius?: number;
-  /** Stärkerer Schatten für Hero-Blöcke. */
+  /** Starkere Schattenfläche für Hero-Blöcke. */
   elevated?: boolean;
   /** Reduzierte Deckkraft (z. B. erledigte Aufgaben). */
   dim?: boolean;
   className?: string;
 }) {
   const { colors, isDark } = useThemeColors();
-  const accent = resolveThemeColor(color, isDark);
-  const solid = variant === 'solid';
-  const background = solid ? accent : variant === 'surface' ? colors.surface : blockTint(accent, isDark);
-  const fg = solid ? foregroundOn(accent, colors) : colors.ink;
-
+  const base = resolveThemeColor(color, isDark);
+  const fg = foregroundOn(base, colors);
   const boxStyle: ViewStyle = {
     borderRadius: cardRadius,
     overflow: 'hidden',
-    backgroundColor: background,
+    backgroundColor: base,
     opacity: dim ? 0.55 : 1,
-    ...(solid
-      ? {}
-      : {
-          borderWidth: 1,
-          borderColor: colors.line,
-          ...(accentBar ? { borderLeftWidth: 4, borderLeftColor: accent } : {}),
-        }),
     ...(elevated ? shadow.float : shadow.card),
   };
 
   const inner = (
-    <ColorBlockContext.Provider value={{ fg, accent, solid }}>
+    <ColorBlockContext.Provider value={{ fg }}>
       <View
         {...rest}
         style={[boxStyle, style]}
@@ -473,9 +405,8 @@ export function ColorBlockCard({
       onPress={onPress}
       accessibilityRole={accessibilityRole ?? 'button'}
       accessibilityLabel={accessibilityLabel}
-      scale={0.98}
-      hoverScale={1.02}
-      hoverLift
+      scale={0.97}
+      hoverScale={1.008}
       style={{ borderRadius: cardRadius }}
     >
       {inner}
@@ -483,12 +414,11 @@ export function ColorBlockCard({
   );
 }
 
-/* ------------------------------------------------- StatCard */
+/* ------------------------------------------------- StatCard (Phase 1) */
 
 /**
- * StatCard — „große Zahl + kleine Caption“. Ohne `block` eine weiße Karte;
- * mit `block` eine Pastell-Karte, deren Zahl im Akzentton leuchtet (statt
- * einer Vollton-Fläche). `glass` liefert die dunkle Glas-Pille des Hero-Banners.
+ * StatCard — „Statistiken als riesige Zahl + kleine Caption, statt
+ * Fließtext“. Plain auf Surface oder als vollflächiger Farbblock (`block`).
  */
 export function StatCard({
   value,
@@ -498,7 +428,6 @@ export function StatCard({
   icon,
   align = 'left',
   size = 'md',
-  glass = false,
   className = '',
   style,
 }: {
@@ -506,37 +435,37 @@ export function StatCard({
   caption: string;
   /** Zahl-/Caption-Farbe (nur ohne `block`). */
   color?: string;
-  /** Familienfarbe — Karte wird zur Pastell-Karte mit Akzentzahl. */
+  /** Vollflächen-Farbe — Karte wird zum Farbblock. */
   block?: string;
   icon?: LucideIcon;
   align?: 'left' | 'center';
   size?: 'md' | 'lg';
-  /** Gläserne Pille auf dunklem Hero (rgba weiß 8 %). */
-  glass?: boolean;
   className?: string;
   style?: ViewStyle;
 }) {
   const { colors, isDark } = useThemeColors();
-  const accent = block ? resolveThemeColor(block, isDark) : resolveThemeColor(color ?? colors.ink, isDark);
-  const numberColor = glass ? '#FFFFFF' : accent;
-  const captionColor = glass ? 'rgba(255,255,255,0.68)' : block ? colors.muted : resolveThemeColor(color ?? colors.muted, isDark);
+  const blockFg = block ? foregroundOn(resolveThemeColor(block, isDark), colors) : undefined;
 
   const body = (
     <>
       {icon ? (
         <IconBadge
           icon={icon}
-          color={glass ? '#FFFFFF' : accent}
-          tone="tint"
+          color={block ?? color}
+          tone={block ? 'solid' : 'tint'}
           size="sm"
           className={align === 'center' ? '' : 'mb-2'}
-          style={glass ? { backgroundColor: 'rgba(255,255,255,0.14)' } : undefined}
+          style={{
+            // Auf Vollton-Blöcken: transparent-abgedunkelter/aufgehellter Kreis
+            // statt Vollfarbe, damit Zahl & Badge sich nicht beißen.
+            backgroundColor: block ? (blockFg === '#FFFFFF' ? 'rgba(0,0,0,0.16)' : 'rgba(255,255,255,0.55)') : undefined,
+          }}
         />
       ) : null}
       <StatNumber
         size={size}
         className={align === 'center' ? 'text-center' : ''}
-        style={{ color: numberColor }}
+        style={{ color: blockFg ?? resolveThemeColor(color ?? colors.ink, isDark) }}
         adjustsFontSizeToFit
         numberOfLines={1}
       >
@@ -544,7 +473,7 @@ export function StatCard({
       </StatNumber>
       <Text
         className={`mt-0.5 text-[10.5px] font-extrabold uppercase tracking-[1.2px] ${align === 'center' ? 'text-center' : ''}`}
-        style={{ color: captionColor }}
+        style={{ color: blockFg ?? resolveThemeColor(color ?? colors.muted, isDark), opacity: block ? 0.72 : 1 }}
         numberOfLines={2}
       >
         {caption}
@@ -552,45 +481,16 @@ export function StatCard({
     </>
   );
 
-  if (glass) {
-    return (
-      <View
-        className={className}
-        style={[
-          {
-            paddingTop: 14,
-            paddingBottom: 12,
-            paddingHorizontal: 16,
-            borderRadius: radius.md,
-            backgroundColor: 'rgba(255,255,255,0.08)',
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.12)',
-          },
-          style,
-        ]}
-      >
-        {body}
-      </View>
-    );
-  }
-
   if (block) {
     return (
-      <ColorBlockCard
-        color={block}
-        radius={radius.md}
-        accentBar={false}
-        padded
-        style={[{ paddingTop: 14, paddingBottom: 12, paddingHorizontal: 16 }, style]}
-        className={className}
-      >
+      <ColorBlockCard color={block} padded style={[{ paddingTop: 16, paddingBottom: 14, paddingHorizontal: 16 }, style]} className={className}>
         {body}
       </ColorBlockCard>
     );
   }
 
   return (
-    <Card padded style={[{ paddingTop: 14, paddingBottom: 12, paddingHorizontal: 16, borderRadius: radius.md }, style]} className={className}>
+    <Card padded style={[{ paddingTop: 16, paddingBottom: 14, paddingHorizontal: 16 }, style]} className={className}>
       {body}
     </Card>
   );
@@ -684,7 +584,7 @@ function PillBase({
   return (
     <View
       style={[boxStyle, style]}
-      className={`flex-row items-center gap-1 rounded-full self-start px-3 py-1.5 ${className}`}
+      className={`flex-row items-center gap-1 rounded-[20px] self-start px-3 py-1.5 ${className}`}
     >
       {IconComponent ? <IconComponent size={iconSize} strokeWidth={2.6} color={fg} /> : null}
       <Text className={`flex-shrink font-extrabold ${textClassName}`} style={{ color: fg }} numberOfLines={1}>
@@ -735,10 +635,10 @@ export function Badge({ count, className = '' }: { count: number; className?: st
   if (count <= 0) return null;
   return (
     <View
-      className={`min-w-[20px] items-center justify-center rounded-full px-2 py-0.5 ${className}`}
-      style={{ backgroundColor: colors.status.urgent, marginLeft: 'auto' }}
+      className={`min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 ${className}`}
+      style={{ backgroundColor: colors.accent.coral }}
     >
-      <Text className="text-[11px] font-extrabold text-white" style={{ lineHeight: 14 }}>
+      <Text className="text-[11px] font-extrabold" style={{ color: colors.on.coral }}>
         {count > 99 ? '99+' : count}
       </Text>
     </View>
@@ -749,7 +649,7 @@ export function Badge({ count, className = '' }: { count: number; className?: st
 
 export function Skeleton({ className = '' }: { className?: string }) {
   // Skeletons folgen dem Kartenradius des Farbflächen-Stils (Kernprinzip 3).
-  return <View className={`overflow-hidden rounded-[20px] bg-line/70 ${className}`} />;
+  return <View className={`overflow-hidden rounded-[24px] bg-line/70 ${className}`} />;
 }
 
 export function EmptyState({
@@ -925,57 +825,35 @@ export function IconButton({
 
 /* ------------------------------------------------------------------ Sheet */
 
-/**
- * Sheet / Modal. Desktop & Tablet: zentrierter Dialog; Phone: Bottom-Sheet.
- *
- * Die äußere Karte hat strikt `overflow: hidden` + `position: relative`, ein
- * optionaler `header` (z. B. das farbige Fach-Banner der Stundenansicht)
- * liegt **innerhalb** der Karte — Titel können nicht mehr auf den Backdrop
- * herausbrechen. Ohne `header` erscheint der klassische Titel + ✕.
- */
 export function Sheet({
   open,
   onClose,
   title,
-  header,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
-  /** Eigener Kopfbereich (ersetzt Titelzeile). */
-  header?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const layout = useLayout();
-  const { colors } = useThemeColors();
-
-  const defaultHeader = title ? (
-    <Row className="justify-between gap-3 px-5 pb-1 pt-5">
-      <Headline className="min-w-0 flex-1" numberOfLines={1} ellipsizeMode="tail">
-        {title}
-      </Headline>
-      <IconButton icon="close" onPress={onClose} background="bg-canvas" size={36} />
-    </Row>
-  ) : null;
-
-  const cardStyle: ViewStyle = {
-    position: 'relative',
-    overflow: 'hidden',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-    ...shadow.float,
-  };
 
   if (layout.isDesktop || layout.isTablet) {
     // Großer Screen ⇒ zentrierter Dialog statt Bottom-Sheet.
     return (
       <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-        <View className="flex-1 items-center justify-center p-6" style={{ backgroundColor: 'rgba(15,23,42,0.5)' }}>
+        <View className="flex-1 items-center justify-center bg-black/45 p-6">
           <Pressable accessibilityLabel="Schließen" onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-          <FadeInUp className="max-h-[86%] w-full max-w-[560px]" style={{ ...cardStyle, borderRadius: radius.md }}>
-            {header ?? defaultHeader}
+          <FadeInUp
+            className="max-h-[86%] w-full max-w-[560px] rounded-[28px] bg-surface pb-6"
+            style={shadow.float}
+          >
+            {title ? (
+              <Row className="justify-between px-5 pb-1 pt-4">
+                <Title>{title}</Title>
+                <IconButton icon="close" onPress={onClose} background="bg-line/50" size={34} />
+              </Row>
+            ) : null}
             <ScrollView className="px-5" contentContainerClassName="pb-6">
               {children}
             </ScrollView>
@@ -987,23 +865,17 @@ export function Sheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1" style={{ backgroundColor: 'rgba(15,23,42,0.45)' }} />
-      <FadeInUp
-        className="max-h-[86%] pb-8"
-        style={{ ...cardStyle, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, borderBottomWidth: 0 }}
-      >
-        {header ? (
-          <>
-            {header}
-          </>
-        ) : (
-          <>
-            <View className="items-center py-3">
-              <View className="h-1.5 w-11 rounded-full bg-line" />
-            </View>
-            {defaultHeader}
-          </>
-        )}
+      <Pressable onPress={onClose} className="flex-1 bg-black/40" />
+      <FadeInUp className="max-h-[82%] rounded-t-[30px] bg-surface pb-8" style={shadow.float}>
+        <View className="items-center py-3">
+          <View className="h-1.5 w-11 rounded-full bg-line" />
+        </View>
+        {title ? (
+          <Row className="justify-between px-5 pb-2">
+            <Title>{title}</Title>
+            <IconButton icon="close" onPress={onClose} background="bg-line/50" size={34} />
+          </Row>
+        ) : null}
         <ScrollView className="px-5" contentContainerClassName="pb-6">
           {children}
         </ScrollView>
@@ -1161,8 +1033,10 @@ export function AvatarStack({
 }
 
 /**
- * Bento-Kachel: klare Formkarte (Radius 20), feiner Rand, dezenter Schatten.
- * Ohne `tone` immer eine Reinweiß-Karte; für Farbkarten `ColorBlockCard`.
+ * Bento-Kachel: große, klare Formkarte (Radius 28), optionaler Farbblock und
+ * dezenter Schatten — seit Phase 1 des Farbflächen-Redesigns ohne sichtbaren
+ * Rand. Ohne `tone` ist sie immer eine Reinweiß-/Surface-Karte; für echte
+ * Farbflächen bevorzugt `ColorBlockCard` verwenden.
  */
 export function BentoCard({
   children,
@@ -1181,14 +1055,12 @@ export function BentoCard({
   radius?: number;
   padded?: boolean;
 }) {
-  const { isDark, colors } = useThemeColors();
+  const { isDark } = useThemeColors();
   const resolvedTone = resolveTone(tone, isDark);
 
   const boxStyle: ViewStyle = {
     borderRadius: cardRadius,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.line,
     ...shadow.card,
     ...(resolvedTone ? { backgroundColor: resolvedTone } : {}),
   };
@@ -1220,7 +1092,7 @@ export function BentoCard({
 /** Einfacher Raster-Wrapper mit einheitlichem Abstand (flex-row + wrap). */
 export function BentoGrid({
   children,
-  gap = 20,
+  gap = 14,
   className = '',
   style,
   ...rest

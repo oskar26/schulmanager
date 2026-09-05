@@ -40,7 +40,7 @@ import {
   SegmentedControl,
   Sheet,
   Skeleton,
-  useBlockAccent,
+  useBlockInk,
   type IconBadgeSize,
 } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
@@ -48,7 +48,7 @@ import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Progress } from '@/ui/gluestack/feedback';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn, radius, resolveThemeColor, type ThemePalette } from '@/design/tokens';
+import { foregroundOn, resolveThemeColor, type ThemePalette } from '@/design/tokens';
 
 type Tab = 'homework' | 'exams' | 'plan';
 
@@ -334,10 +334,10 @@ function HomeworkTab({
 function HomeworkProgress({ open, done, total }: { open: number; done: number; total: number }) {
   const { colors, isDark } = useThemeColors();
   const percent = Math.round((done / total) * 100);
-  const ink = resolveThemeColor(colors.blocks.mint, isDark);
+  const ink = foregroundOn(resolveThemeColor(colors.blocks.lime, isDark), colors);
 
   return (
-    <ColorBlockCard color={colors.blocks.mint} className="mb-3" style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
+    <ColorBlockCard color={colors.blocks.lime} className="mb-3" style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
       <Row className="gap-4">
         <View className="min-w-0 flex-1">
           <BlockText className="text-[15.5px] font-extrabold leading-5">
@@ -346,7 +346,8 @@ function HomeworkProgress({ open, done, total }: { open: number; done: number; t
           <Progress
             value={(done / total) * 100}
             className="mt-2.5"
-            color={colors.blocks.mint}
+            trackClassName="bg-black/10"
+            color={colors.blocks.violet}
           />
           <BlockCaption className="mt-2 text-[11.5px]">
             {done} von {total} erledigt{open > 0 ? ` · ${open} offen` : ''}
@@ -375,7 +376,7 @@ function OnBlockBadge({
   size?: IconBadgeSize;
   className?: string;
 }) {
-  const ink = useBlockAccent();
+  const ink = useBlockInk();
   return <IconBadge icon={icon} color={ink} size={size} tone="tint" className={className} />;
 }
 
@@ -392,12 +393,17 @@ function HomeworkTaskCard({
 }) {
   const { colors, isDark } = useThemeColors();
   const subjectTone = subjectColor(item.subject, isDark);
-  // Auf der Pastell-Karte ist der Akzent selbst die „Tinte“ für Ring/Icons.
-  const ink = subjectTone;
+  const ink = foregroundOn(subjectTone, colors);
   const days = daysUntil(item.due);
   const meta = priorityMeta(days, colors);
   const SubjectIcon = subjectIcon(item.subject);
-  const pillRing: StyleProp<ViewStyle> = undefined;
+
+  // Wenn Ampel- und Fachfarbe dieselbe Familie sind, bekommt die Pille einen
+  // weißen Ring, damit die Fälligkeit nicht in der Fläche verschwindet.
+  const pillRing: StyleProp<ViewStyle> =
+    meta.color.toUpperCase() === subjectTone.toUpperCase()
+      ? { borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)' }
+      : undefined;
 
   return (
     <ColorBlockCard
@@ -411,7 +417,7 @@ function HomeworkTaskCard({
         <RoundCheck
           checked={done}
           ink={ink}
-          onColor="#FFFFFF"
+          onColor={subjectTone}
           onPress={onToggle}
           label={`${item.subject}: ${done ? 'wieder öffnen' : 'als erledigt markieren'}`}
         />
@@ -454,7 +460,7 @@ function HomeworkTaskCard({
             {item.assigned ? (
               <BlockCaption className="text-[11.5px]">aufgegeben am {formatRelativeDay(item.assigned)}</BlockCaption>
             ) : null}
-            {done ? <Undo2 size={13} strokeWidth={2.4} color={colors.muted} /> : null}
+            {done ? <Undo2 size={13} strokeWidth={2.4} color={ink} style={{ opacity: 0.6 }} /> : null}
           </Row>
         </PressableOpacity>
       </Row>
@@ -520,7 +526,8 @@ function ExamCard({
   blockCount: number;
   onGoPlan: () => void;
 }) {
-  const ink = tone;
+  const { colors } = useThemeColors();
+  const ink = foregroundOn(tone, colors);
   const SubjectIcon = subjectIcon(exam.subject);
 
   return (
@@ -621,11 +628,11 @@ function PlanTab({ planByDay }: { planByDay: [string, { id: string; date: string
 function PlanBlockCard({ subject, focus, minutes }: { subject: string; focus: string; minutes: number }) {
   const { colors, isDark } = useThemeColors();
   const subjectTone = subjectColor(subject, isDark);
-  const ink = subjectTone;
+  const ink = foregroundOn(subjectTone, colors);
   const SubjectIcon = subjectIcon(subject);
 
   return (
-    <ColorBlockCard color={subjectTone} radius={radius.md} style={{ padding: 13 }}>
+    <ColorBlockCard color={subjectTone} radius={24} style={{ padding: 13 }}>
       <Row className="gap-3">
         <OnBlockBadge icon={SubjectIcon} size="md" />
         <View className="min-w-0 flex-1">
@@ -675,7 +682,7 @@ function HomeworkSheet({
             </Row>
           </ColorBlockCard>
 
-          <View className="gap-2 rounded-[14px] bg-canvas p-4">
+          <View className="gap-2 rounded-[24px] bg-line/50 p-4">
             <Text className="text-[15px] font-semibold leading-6 text-ink">{item.text}</Text>
             <Muted className="mt-1 text-[12px]">
               Fällig: {formatRelativeDay(item.due)}

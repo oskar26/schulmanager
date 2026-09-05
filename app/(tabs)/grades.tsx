@@ -41,7 +41,6 @@ import {
   Sheet,
   Skeleton,
   StatNumber,
-  useBlockAccent,
   useBlockInk,
 } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity } from '@/ui/motion';
@@ -116,7 +115,7 @@ export default function GradesScreen() {
   // Tab-Route landet er zuverlässig auf dem Start-Tab.
   if (!gradesOn) return <Redirect href="/" />;
 
-  const limeInk = resolveThemeColor(colors.blocks.mint, isDark);
+  const limeInk = foregroundOn(resolveThemeColor(colors.blocks.lime, isDark), colors);
 
   return (
     <Screen adaptive="content">
@@ -152,10 +151,11 @@ export default function GradesScreen() {
           <>
             {/* Hero: Gesamtschnitt als riesige Zahl auf Lime-Farbfläche */}
             <ColorBlockCard
-              color={colors.blocks.mint}
+              color={colors.blocks.lime}
+              elevated
               padded={false}
               className="mb-3"
-              radius={20}
+              radius={32}
             >
               <View className="flex-row items-center gap-4 px-5 pb-4 pt-5">
                 <IconBadge
@@ -272,9 +272,8 @@ function HeroFact({
   hidden: boolean;
 }) {
   const ink = useBlockInk();
-  const accent = useBlockAccent();
   return (
-    <View className="min-w-0 flex-1 rounded-[14px] px-3.5 py-3" style={{ backgroundColor: tint(accent, 0.12) }}>
+    <View className="min-w-0 flex-1 rounded-[20px] px-3.5 py-3" style={{ backgroundColor: tint(ink, 0.12) }}>
       <BlockCaption className="text-[10px] font-extrabold uppercase tracking-[1.2px]">{label}</BlockCaption>
       <BlockText className="mt-0.5 text-[15px] font-extrabold leading-5" numberOfLines={1}>
         {subject.subject}
@@ -311,7 +310,7 @@ function SubjectCard({
 }) {
   const { colors, isDark } = useThemeColors();
   const tone = subjectColor(subject.subject, isDark);
-  const ink = tone;
+  const ink = foregroundOn(tone, colors);
   const SubjectIcon = subjectIcon(subject.subject);
   const trend = gradeTrend(subject);
   const hasTrend = trend.points.length >= 3;
@@ -444,7 +443,7 @@ function SubjectSheet({
   if (!subject) return <Sheet open={false} onClose={onClose}><View /></Sheet>;
 
   const tone = subjectColor(subject.subject, isDark);
-  const ink = tone;
+  const ink = foregroundOn(tone, colors);
   const SubjectIcon = subjectIcon(subject.subject);
   const required = requiredGrade(subject, target);
   const preview = simulated != null ? simulate(subject, simulated) : null;
@@ -456,7 +455,7 @@ function SubjectSheet({
     <Sheet open onClose={onClose} title={subject.subject}>
       <View className="gap-3">
         {/* Kopf im Farbflächen-Stil: Fachfarbe, Icon-Badge, riesige Zahl */}
-        <ColorBlockCard color={tone} radius={20} style={{ padding: 18 }}>
+        <ColorBlockCard color={tone} radius={28} style={{ padding: 18 }}>
           <Row className="gap-3">
             <IconBadge icon={SubjectIcon} color={ink} tone="tint" size="lg" />
             <View className="min-w-0 flex-1">

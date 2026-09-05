@@ -1,38 +1,37 @@
-import React, { useState } from 'react';
-import { RefreshControl, ScrollView, Text, View, type LayoutChangeEvent } from 'react-native';
+import React from 'react';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LayoutGrid, Search, Settings } from 'lucide-react-native';
+import { Search, Settings } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
-import { WIDGET_COMPONENTS, WIDGET_SPANS, type WidgetKey } from '@/features/dashboard/widgets';
+import { WIDGET_COMPONENTS } from '@/features/dashboard/widgets';
 import { daysUntil, formatLongDay, formatTimeAgo, greeting, toISO } from '@/lib/date';
 import { useLayout } from '@/lib/breakpoints';
 import { Avatar } from '@/ui/gluestack/feedback';
 import {
   AdaptiveContent,
+  BlockCaption,
+  BlockText,
+  ColorBlockCard,
+  IconBadge,
   Pill,
   RoundActionButton,
   Row,
   Screen,
   ScreenHeader,
-  Skeleton,
   StatCard,
+  useBlockInk,
 } from '@/ui/primitives';
-import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
+import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
-import { radius, shadow } from '@/design/tokens';
+import { shadow } from '@/design/tokens';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 
-/** Raster-Konstanten des Dashboards (docs/playful-modern.md §3.2). */
-const GRID_COLUMNS = 12;
-const GRID_GAP = 20;
-const GRID_MAX_WIDTH = 1400;
-
 /**
- * Hero-Banner (Span 12): tiefdunkles Slate-Blau mit dezenten Licht-Blobs
- * statt eines isolierten schwarzen Kastens. Begrüßung links, die drei
- * Kennzahlen als gläserne Pillen rechts (auf dem Phone darunter).
+ * Charcoal-Hero: Begrüßung, Fortschritt und die drei großen Heute-Zahlen.
+ * Die Stats sind echte StatCards, damit auch die Startseite dem verbindlichen
+ * „Zahl + kleine Caption“-Muster folgt.
  */
 function WelcomeBanner({
   name,
@@ -42,7 +41,6 @@ function WelcomeBanner({
   hwDone,
   hwTotal,
   stats,
-  stacked,
   onOpenTasks,
 }: {
   name: string;
@@ -51,115 +49,101 @@ function WelcomeBanner({
   progress: number;
   hwDone: number;
   hwTotal: number;
-  stats: { value: string; label: string }[];
-  stacked: boolean;
+  stats: { value: string; label: string; color: string }[];
   onOpenTasks: () => void;
 }) {
   const { colors } = useThemeColors();
   const hasHomework = hwTotal > 0;
-  const whiteDim = 'rgba(255,255,255,0.62)';
+  const whiteDim = 'rgba(255,255,255,0.58)';
 
   return (
-    <View
-      style={{
-        overflow: 'hidden',
-        borderRadius: radius.lg,
-        backgroundColor: colors.charcoal,
-        ...shadow.float,
-      }}
-    >
-      {/* Dezenter „Gradient“ aus zwei Licht-Blobs (ohne native Gradient-Abhängigkeit). */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          top: -120,
-          right: -60,
-          width: 320,
-          height: 320,
-          borderRadius: 160,
-          backgroundColor: 'rgba(99,102,241,0.22)',
-        }}
-      />
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          bottom: -140,
-          left: '30%',
-          width: 280,
-          height: 280,
-          borderRadius: 140,
-          backgroundColor: 'rgba(30,41,59,0.9)',
-        }}
-      />
-
-      <View style={{ padding: 24, gap: 20, flexDirection: stacked ? 'column' : 'row', alignItems: stacked ? 'stretch' : 'center' }}>
-        <View style={{ flex: 1, minWidth: 0, gap: 14 }}>
-          <Row className="gap-3">
-            <Avatar name={name} size={46} color={colors.accent.amber} />
+    <View className="overflow-hidden rounded-[32px]" style={{ backgroundColor: colors.charcoal, ...shadow.float }}>
+      <View className="gap-4 px-5 pb-5 pt-5">
+        <Row>
+          <Row className="flex-1 gap-3">
+            <Avatar name={name} size={48} color={colors.accent.amber} />
             <View className="min-w-0 flex-1 justify-center">
-              <Text className="text-[11px] font-extrabold uppercase tracking-[1.6px]" style={{ color: whiteDim }} numberOfLines={1}>
-                {weekdayLabel} · {dateLabel}
+              <Text className="text-[10px] font-extrabold uppercase tracking-[1.8px]" style={{ color: whiteDim }}>
+                {greeting()}
               </Text>
               <Text
-                className="text-[26px] font-extrabold leading-[31px] tracking-[-0.6px] text-white"
+                className="text-[24px] font-extrabold leading-[27px] tracking-tight"
+                style={{ color: colors.on.charcoal }}
                 numberOfLines={1}
                 adjustsFontSizeToFit
-                minimumFontScale={0.7}
+                minimumFontScale={0.72}
               >
-                {greeting()}, {name} 👋
+                {name}
               </Text>
             </View>
           </Row>
+        </Row>
 
-          {hasHomework ? (
-            <View style={{ gap: 8 }}>
-              <View className="h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)', maxWidth: 420 }}>
-                <View className="h-full rounded-full" style={{ backgroundColor: colors.accent.amber, width: `${Math.max(2, progress)}%` }} />
-              </View>
-              <Row className="gap-3" style={{ maxWidth: 420 }}>
-                <Text className="flex-1 text-[12.5px] font-semibold" style={{ color: whiteDim }} numberOfLines={1}>
-                  {hwDone} von {hwTotal} Hausaufgaben erledigt · {progress}%
-                </Text>
-                <PressableOpacity onPress={onOpenTasks} hitSlop={12} accessibilityRole="link">
-                  <Text className="text-[12.5px] font-extrabold text-white">Alle ansehen</Text>
-                </PressableOpacity>
-              </Row>
-            </View>
-          ) : (
-            <Text className="text-[13px] font-semibold" style={{ color: whiteDim }}>
-              Keine Hausaufgaben offen — alles frei.
+        <Row className="items-end justify-between">
+          <View className="flex-1 pr-3">
+            <Text className="text-[13px] font-extrabold uppercase tracking-[1.8px]" style={{ color: colors.accent.amber }}>
+              {weekdayLabel}
             </Text>
-          )}
-        </View>
+            <Text className="mt-0.5 text-[22px] font-extrabold tracking-tight" style={{ color: colors.on.charcoal }}>
+              {dateLabel}
+            </Text>
+          </View>
+          {hasHomework ? (
+            <View className="items-end">
+              <Text className="text-[34px] font-extrabold leading-[36px] tracking-tight" style={{ color: colors.accent.amber }}>
+                {progress}%
+              </Text>
+              <Text className="text-[10px] font-extrabold uppercase tracking-[1.2px]" style={{ color: whiteDim }}>
+                erledigt
+              </Text>
+            </View>
+          ) : null}
+        </Row>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            gap: 10,
-            justifyContent: stacked ? 'flex-start' : 'flex-end',
-            flexShrink: 0,
-          }}
-        >
+        {hasHomework ? (
+          <>
+            <View className="h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
+              <View
+                className="h-full rounded-full"
+                style={{ backgroundColor: colors.accent.amber, width: `${Math.max(2, progress)}%` }}
+              />
+            </View>
+            <Row className="justify-between gap-3">
+              <Text className="flex-1 text-[12px] font-semibold" style={{ color: whiteDim }}>
+                {hwDone} von {hwTotal} Hausaufgaben erledigt
+              </Text>
+              <PressableOpacity onPress={onOpenTasks} hitSlop={12} accessibilityRole="link">
+                <Text className="text-[12px] font-extrabold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                  Alle ansehen
+                </Text>
+              </PressableOpacity>
+            </Row>
+          </>
+        ) : (
+          <Text className="text-[12px] font-semibold" style={{ color: whiteDim }}>
+            Keine Hausaufgaben offen — alles frei.
+          </Text>
+        )}
+
+        <Row className="mt-0.5 gap-2.5">
           {stats.map((stat) => (
             <StatCard
               key={stat.label}
               value={stat.value}
               caption={stat.label}
-              glass
-              className={stacked ? 'flex-1' : ''}
-              style={{ minWidth: stacked ? 0 : 118 }}
+              block={stat.color}
+              className="flex-1"
+              style={{ minWidth: 0 }}
             />
           ))}
-        </View>
+        </Row>
       </View>
     </View>
   );
 }
 
-/** Schul-/Datenstatus als schmale Zeile unter dem Hero — bündig zum Grid. */
-function SchoolStatusLine({
+/** Randlose Schul-/Datenstatus-Pill unter dem Hero. */
+function SchoolStatusPill({
   name,
   className,
   isDemo,
@@ -172,130 +156,52 @@ function SchoolStatusLine({
 }) {
   const { colors } = useThemeColors();
   return (
-    <Row className="gap-2 px-1">
-      <Text className="flex-shrink text-[12.5px] font-semibold text-muted" numberOfLines={1}>
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        borderRadius: 999,
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        alignSelf: 'center',
+        maxWidth: '100%',
+        ...shadow.card,
+      }}
+    >
+      <Text className="flex-shrink text-[12px] font-semibold text-ink" numberOfLines={1}>
         {name}{className ? ` · Klasse ${className}` : ''}
       </Text>
-      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.faint }} />
+      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.line }} />
       {isDemo ? (
-        <Pill label="DEMO" color={colors.accent.amber} tone="tint" className="px-2 py-0.5" />
+        <Pill label="DEMO" color={colors.accent.amber} tone="solid" className="px-2 py-1" />
       ) : (
-        <Text className="text-[12px] font-medium text-faint" numberOfLines={1}>{formatTimeAgo(fetchedAt)}</Text>
+        <Text className="text-[11px] font-medium text-muted" numberOfLines={1}>{formatTimeAgo(fetchedAt)}</Text>
       )}
-    </Row>
-  );
-}
-
-/** Kompakter, gestrichelter Action-Slot: „Dashboard anpassen“. */
-function CustomizeSlot({ onPress, compact }: { onPress: () => void; compact: boolean }) {
-  const { colors } = useThemeColors();
-  return (
-    <PressableScale
-      onPress={onPress}
-      scale={0.98}
-      hoverScale={1.01}
-      accessibilityRole="button"
-      accessibilityLabel="Dashboard anpassen"
-      style={{ borderRadius: radius.lg, flex: 1 }}
-    >
-      <View
-        style={{
-          flex: 1,
-          minHeight: compact ? 64 : 120,
-          borderRadius: radius.lg,
-          borderWidth: 2,
-          borderStyle: 'dashed',
-          borderColor: colors.line,
-          backgroundColor: 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: compact ? 'row' : 'column',
-          gap: compact ? 10 : 8,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-        }}
-      >
-        <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.elevated, alignItems: 'center', justifyContent: 'center' }}>
-          <LayoutGrid size={18} strokeWidth={2.2} color={colors.muted} />
-        </View>
-        <Text className="text-[13px] font-bold text-muted" numberOfLines={1}>Dashboard anpassen</Text>
-      </View>
-    </PressableScale>
-  );
-}
-
-/* ------------------------------------------------------------------ Bento-Packer */
-
-type GridItem = { key: string; span: number; node: React.ReactNode };
-
-/**
- * Packt Widgets in 12er-Zeilen. Passt ein Widget nicht mehr in die laufende
- * Zeile, wird die Zeile aufgefüllt (der letzte Eintrag wächst) — so bleiben
- * keine Leerflächen rechts. Die letzte Zeile bleibt ungefüllt, damit der
- * Aufrufer den Rest (z. B. mit dem Anpassen-Slot) belegen kann.
- */
-function packRows(items: GridItem[], columns: 1 | 2 | 3): { rows: GridItem[][]; free: number } {
-  const normalise = (span: number) => (columns === 1 ? 12 : columns === 2 ? (span >= 6 ? 12 : 6) : span);
-  const rows: GridItem[][] = [];
-  let current: GridItem[] = [];
-  let used = 0;
-
-  const flush = (fill: boolean) => {
-    if (current.length === 0) return;
-    const remaining = GRID_COLUMNS - used;
-    if (fill && remaining > 0) {
-      const last = current[current.length - 1];
-      current[current.length - 1] = { ...last, span: last.span + remaining };
-    }
-    rows.push(current);
-    current = [];
-    used = 0;
-  };
-
-  const queue = items.map((item) => ({ ...item, span: normalise(item.span) }));
-  while (queue.length > 0) {
-    const free = GRID_COLUMNS - used;
-    // Passt das nächste Widget nicht mehr, ziehen wir das erste spätere vor,
-    // das noch in die Lücke passt (Look-ahead) — erst dann wird aufgefüllt.
-    let index = queue.findIndex((item) => item.span <= free);
-    if (index === -1) {
-      flush(true);
-      index = 0;
-    }
-    const [item] = queue.splice(index, 1);
-    current.push(item);
-    used += item.span;
-    if (used === GRID_COLUMNS) flush(false);
-  }
-  const free = current.length > 0 ? GRID_COLUMNS - used : 0;
-  flush(false);
-  return { rows, free };
-}
-
-function BentoGrid12({ rows, width, gap }: { rows: GridItem[][]; width: number; gap: number }) {
-  const colWidth = (width - gap * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
-  let index = 0;
-  return (
-    <View style={{ gap }}>
-      {rows.map((row, rowIndex) => (
-        <View key={`row-${rowIndex}`} style={{ flexDirection: 'row', gap, alignItems: 'stretch' }}>
-          {row.map((item) => {
-            const itemWidth = item.span * colWidth + (item.span - 1) * gap;
-            const delay = Math.min(index, 10) * 45;
-            index += 1;
-            return (
-              <FadeInUp key={item.key} delay={delay} style={{ width: itemWidth, flexShrink: 0 }}>
-                <View style={{ flex: 1 }}>{item.node}</View>
-              </FadeInUp>
-            );
-          })}
-        </View>
-      ))}
     </View>
   );
 }
 
-/* ------------------------------------------------------------------ Screen */
+/** Farbige Platzhalter, solange der erste Snapshot noch eintrifft. */
+function DashboardSkeleton({ color, height }: { color: string; height: number }) {
+  return (
+    <ColorBlockCard color={color} dim style={{ height }}>
+      <DashboardSkeletonLines />
+    </ColorBlockCard>
+  );
+}
+
+function DashboardSkeletonLines() {
+  const ink = useBlockInk();
+  return (
+    <View className="gap-3">
+      <View style={{ width: '42%', height: 14, borderRadius: 8, backgroundColor: `${ink}38` }} />
+      <View style={{ width: '78%', height: 28, borderRadius: 12, backgroundColor: `${ink}24` }} />
+      <View style={{ width: '60%', height: 12, borderRadius: 8, backgroundColor: `${ink}1F` }} />
+    </View>
+  );
+}
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -306,7 +212,6 @@ export default function DashboardScreen() {
   const enabled = React.useMemo(() => widgets.filter((widget) => widget.enabled), [widgets]);
   const name = data?.student?.firstname ?? 'Schulflow';
   const reserve = useTabNavReserve();
-  const [gridWidth, setGridWidth] = useState(0);
 
   const isoToday = toISO(new Date());
   const [weekdayLabel, dateLabel] = formatLongDay(isoToday).split(', ');
@@ -322,60 +227,33 @@ export default function DashboardScreen() {
   const hasData = Boolean(data);
 
   const heroStats = [
-    { value: hasData ? String(lessonsToday) : '–', label: 'Std heute' },
-    { value: hasData ? String(openCount) : '–', label: 'Offen' },
+    { value: hasData ? String(lessonsToday) : '–', label: 'Stunden heute', color: colors.blocks.amber },
+    { value: hasData ? String(openCount) : '–', label: 'Aufgaben offen', color: colors.blocks.violet },
     {
       value: hasData ? (examDays == null ? '–' : String(examDays)) : '–',
-      label: examDays == null ? 'Keine Arbeit' : examDays === 1 ? 'Tag b. Arbeit' : 'Tage b. Arbeit',
+      label: examDays == null ? 'Keine Arbeit' : examDays === 1 ? 'Tag bis Arbeit' : 'Tage bis Arbeit',
+      color: colors.blocks.lime,
     },
   ];
 
   const headerActions = (
     <Row className="gap-2">
-      <RoundActionButton icon={Search} onPress={() => router.push('/search')} color={colors.ink} background={colors.surface} accessibilityLabel="Suche" />
-      <RoundActionButton icon={Settings} onPress={() => router.push('/settings')} color={colors.ink} background={colors.surface} accessibilityLabel="Einstellungen" />
+      <RoundActionButton
+        icon={Search}
+        onPress={() => router.push('/search')}
+        color={colors.ink}
+        background={colors.surface}
+        accessibilityLabel="Suche"
+      />
+      <RoundActionButton
+        icon={Settings}
+        onPress={() => router.push('/settings')}
+        color={colors.ink}
+        background={colors.surface}
+        accessibilityLabel="Einstellungen"
+      />
     </Row>
   );
-
-  const gap = layout.isPhone ? 14 : GRID_GAP;
-  const onGridLayout = (event: LayoutChangeEvent) => {
-    const next = Math.round(event.nativeEvent.layout.width);
-    if (next > 0 && next !== gridWidth) setGridWidth(next);
-  };
-  // Bis `onLayout` gemeldet hat (bzw. falls es nie feuert), rechnen wir die
-  // Rasterbreite aus Fensterbreite, Navigation und Gutters — nie ein leeres Grid.
-  const estimatedWidth = Math.max(
-    280,
-    Math.min(
-      GRID_MAX_WIDTH,
-      Math.min(layout.width - layout.navigationWidth, layout.isPhone ? layout.width : layout.dashboardMaxWidth) -
-        (layout.isPhone ? 0 : layout.gutter * 2) -
-        32,
-    ),
-  );
-  const effectiveWidth = gridWidth > 0 ? gridWidth : estimatedWidth;
-
-  const gridItems: GridItem[] = data
-    ? enabled.flatMap((widget) => {
-        const Component = WIDGET_COMPONENTS[widget.id as WidgetKey];
-        if (!Component) return [];
-        return [{ key: widget.id, span: WIDGET_SPANS[widget.id as WidgetKey] ?? 4, node: <Component snapshot={data} /> }];
-      })
-    : [];
-
-  // Anpassen-Slot: füllt den Rest der letzten Zeile (≥ 3 Spalten), sonst
-  // eine kompakte eigene Zeile. Nie mehr eine riesige Vollton-Karte.
-  const { rows, free } = packRows(gridItems, layout.columns);
-  const lastRow = rows[rows.length - 1];
-  if (layout.columns > 1 && lastRow && free >= 3) {
-    lastRow.push({ key: 'customize', span: free, node: <CustomizeSlot onPress={() => router.push('/settings/widgets')} compact={false} /> });
-  } else {
-    if (lastRow && free > 0) {
-      const last = lastRow[lastRow.length - 1];
-      lastRow[lastRow.length - 1] = { ...last, span: last.span + free };
-    }
-    rows.push([{ key: 'customize', span: GRID_COLUMNS, node: <CustomizeSlot onPress={() => router.push('/settings/widgets')} compact /> }]);
-  }
 
   return (
     <Screen>
@@ -395,8 +273,7 @@ export default function DashboardScreen() {
             />
           )}
         >
-          {/* Ein Container für Hero + Grid: gleiche Kante links/rechts, max 1400. */}
-          <View style={{ width: '100%', maxWidth: GRID_MAX_WIDTH, alignSelf: 'center', gap }} onLayout={onGridLayout}>
+          <View style={{ width: '100%', maxWidth: 980, alignSelf: 'center' }}>
             <WelcomeBanner
               name={name}
               weekdayLabel={weekdayLabel}
@@ -405,27 +282,73 @@ export default function DashboardScreen() {
               hwDone={hwDone}
               hwTotal={homework.length}
               stats={heroStats}
-              stacked={layout.isPhone}
               onOpenTasks={() => router.navigate('/tasks')}
             />
+          </View>
 
-            <SchoolStatusLine
+          <View className="my-4">
+            <SchoolStatusPill
               name={data?.institution?.name ?? 'Schule'}
               className={data?.student?.className}
               isDemo={isDemo}
               fetchedAt={data?.fetchedAt}
             />
-
-            {isLoading || !data ? (
-              <View style={{ gap }}>
-                <Skeleton className="h-40" />
-                <Skeleton className="h-48" />
-                <Skeleton className="h-56" />
-              </View>
-            ) : (
-              <BentoGrid12 rows={rows} width={effectiveWidth} gap={gap} />
-            )}
           </View>
+
+          {isLoading || !data ? (
+            <View className="gap-4">
+              <DashboardSkeleton color={colors.blocks.sky} height={164} />
+              <DashboardSkeleton color={colors.blocks.lavender} height={192} />
+              <DashboardSkeleton color={colors.blocks.mint} height={224} />
+            </View>
+          ) : (
+            <View
+              style={{
+                flexDirection: layout.columns > 1 ? 'row' : 'column',
+                flexWrap: layout.columns > 1 ? 'wrap' : 'nowrap',
+                gap: 16,
+              }}
+            >
+              {enabled.map((widget, index) => {
+                const Component = WIDGET_COMPONENTS[widget.id as keyof typeof WIDGET_COMPONENTS];
+                if (!Component) return null;
+                return (
+                  <FadeInUp
+                    key={widget.id}
+                    delay={Math.min(index, 10) * 45}
+                    style={
+                      layout.columns > 1
+                        ? { flexGrow: 1, flexBasis: layout.columns === 3 ? 300 : 360, maxWidth: '100%' }
+                        : { width: '100%' }
+                    }
+                  >
+                    <View className="h-full"><Component snapshot={data} /></View>
+                  </FadeInUp>
+                );
+              })}
+
+              <View
+                style={
+                  layout.columns > 1
+                    ? { flexGrow: 1, flexBasis: layout.columns === 3 ? 300 : 360, maxWidth: '100%' }
+                    : { width: '100%' }
+                }
+              >
+                <ColorBlockCard
+                  color={colors.blocks.amber}
+                  onPress={() => router.push('/settings')}
+                  accessibilityLabel="Dashboard anpassen"
+                  className="items-center py-6"
+                >
+                  <IconBadge icon={Settings} color={colors.onBlocks.amber} size="lg" tone="tint" />
+                  <BlockText className="mt-3 text-center text-[17px] font-extrabold">Dashboard anpassen</BlockText>
+                  <BlockCaption className="mt-1 text-center text-[13px] leading-5">
+                    Bestimme, welche Karten hier erscheinen und in welcher Reihenfolge.
+                  </BlockCaption>
+                </ColorBlockCard>
+              </View>
+            </View>
+          )}
         </ScrollView>
       </AdaptiveContent>
     </Screen>

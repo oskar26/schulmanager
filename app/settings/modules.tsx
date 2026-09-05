@@ -13,7 +13,7 @@ export default function ModulesSettings() {
   const { data } = useSnapshot();
   const modules = data?.modules ?? [];
   const tone = resolveThemeColor(colors.blocks.teal, isDark);
-  const ink = tone;
+  const ink = foregroundOn(tone, colors);
   return (
     <SettingsPage title="Module" subtitle="Freigaben deiner Schule">
       <SettingsNote color={colors.blocks.teal}>
@@ -23,8 +23,8 @@ export default function ModulesSettings() {
         <Row className="gap-3">
           <IconBadge icon={Boxes} color={ink} tone="tint" size="lg" />
           <View className="min-w-0 flex-1">
-            <Text className="text-[18px] font-extrabold text-ink">Aktive Module</Text>
-            <Text className="mt-0.5 text-[12.5px] leading-[17px] text-muted">{modules.length || 'Keine'} von der Schule bereitgestellt</Text>
+            <Text className="text-[18px] font-extrabold" style={{ color: ink }}>Aktive Module</Text>
+            <Text className="mt-0.5 text-[12.5px] leading-[17px]" style={{ color: `${ink}B8` }}>{modules.length || 'Keine'} von der Schule bereitgestellt</Text>
           </View>
         </Row>
         {modules.length ? (

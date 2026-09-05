@@ -6,13 +6,12 @@
  * importiert sie direkt von hier. Neue Farben werden deshalb immer in allen
  * drei Ebenen gepflegt.
  *
- * ── Redesign „Playful Modern Canvas“ (docs/playful-modern.md) ──
- * Wir wechseln von „Flat High-Saturation Blocks“ zu einem **Soft Bento-Grid**:
- * · Neutrale Basis: App-Hintergrund #F6F8FD, Karten Reinweiß, Slate-Text.
- * · Farb-Tints als Flächen: Fach-/Kategorieflächen tragen nur 8–12 % ihres
- *   Farbtons (`blockTints`), der kräftige Ton (`blocks`) lebt ausschließlich
- *   auf Akzentstreifen, Icons, Pills, Fortschrittsbalken und Buttons.
- * · Radii: 8 / 14 / 20 / 9999 · Schatten weich und kaum sichtbar.
+ * ── Redesign „Farbflächen-Stil“ (Phase 1 · docs/redesign-phasen.md) ──
+ * Neu: feste Block-Palette (13 gesättigte Farbfamilien für Fach-/Kategorie-
+ * flächen inkl. Vordergrundfarben `onBlocks` und Dark-Varianten), feste
+ * Prioritätsfarben (`priority`: Coral/Amber/Lime), verbindliche Radius-Skala
+ * (Karten 28, Chips/Pills 20, Heroes 32, alles Runde voll rund), Typo-Skala
+ * (`typeScale`) und erweitertes Spacing.
  */
 
 export type AccentName = 'amber' | 'amberDeep' | 'violet' | 'lime' | 'limeDeep' | 'coral';
@@ -25,9 +24,9 @@ export type OnColorName =
   | BlockName;
 
 /**
- * Farbfamilien der Playful-Palette. Die Namen bleiben aus Kompatibilität mit
- * dem vorherigen Farbflächen-System erhalten; ihre Werte sind jetzt die
- * kräftigen **Akzent**-Töne (Primary), die Flächen kommen aus `blockTints`.
+ * Feste Farbflächen-Familie des Farbflächen-Stils. Jede Familie bleibt über
+ * Light/Dark in derselben Helligkeitsklasse — dadurch passt die zugehörige
+ * Vordergrundfarbe (`onBlocks`) in beiden Themes.
  */
 export type BlockName =
   | 'violet'
@@ -46,235 +45,157 @@ export type BlockName =
 
 export type BlockPalette = Record<BlockName, string>;
 
-/** Feste Prioritätsfarben: Rot = dringend, Amber = bald, Grün = ok/erledigt. */
+/** Feste Prioritätsfarben: Coral = dringend, Amber = bald, Lime = ok/erledigt. */
 export type PriorityName = 'urgent' | 'soon' | 'ok';
 export type PriorityPalette = Record<PriorityName, string>;
 
-export type StatusPalette = { urgent: string; warning: string; success: string; info: string };
-
 export type ThemePalette = {
-  /** App-Hintergrund (`--bg-app`). */
   canvas: string;
-  /** Kartenfläche (`--bg-card`). */
   surface: string;
-  /** Hover-Fläche für Karten / erhöhte Flächen (`--bg-card-hover`). */
   elevated: string;
-  /** Tiefes Slate für Hero-Banner und dunkle Kapseln. */
   charcoal: string;
   charcoalElevated: string;
-  /** Haupttext (`--text-main`). */
   ink: string;
-  /** Sekundärtext (`--text-muted`). */
   muted: string;
   faint: string;
-  /** Feine Kartenränder (`--border-subtle`). */
   line: string;
   accent: Record<AccentName, string>;
   on: Record<OnColorName, string>;
-  /** Kräftige Akzenttöne der Familien (Borders, Icons, Pills, Buttons). */
+  /** Vollflächige Farbblöcke (Fächer, Kategorien, Sektionen). */
   blocks: BlockPalette;
-  /** Pastell-Flächen (8–12 % Tint) der Familien — Kartenhintergründe. */
-  blockTints: BlockPalette;
-  /** Vordergrundfarben, wenn eine Familie ausnahmsweise vollflächig steht. */
+  /** Passende Vordergrundfarben auf den Farbblöcken. */
   onBlocks: BlockPalette;
   /** Dringlichkeits-Ampel für Aufgaben/Arbeiten. */
   priority: PriorityPalette;
-  /** Funktionale Statusfarben. */
-  status: StatusPalette;
   success: string;
   warning: string;
   danger: string;
 };
 
-/* ------------------------------------------------------------------ Light */
-
-/** Kräftige Akzenttöne (Light). */
+/** Farbflächen-Palette (Light) — gesättigt, aber mit sicherem Textkontrast. */
 const LIGHT_BLOCKS: BlockPalette = {
-  violet: '#6366F1', // Mathematik / MINT — Electric Violet
-  lavender: '#8B5CF6', // Religion / Ethik / Elternbriefe
-  sky: '#0EA5E9', // Fremdsprachen — Sky Blue
-  teal: '#14B8A6',
-  mint: '#10B981', // Naturwissenschaften — Emerald Mint
-  lime: '#84CC16',
-  sun: '#EAB308',
-  amber: '#F97316', // Gesellschaft — Warm Orange (zugleich Marken-Akzent)
-  apricot: '#F59E0B',
-  coral: '#F43F5E', // Sprachen / Deutsch — Coral Red
-  pink: '#EC4899', // Sport & Kunst — Magenta
-  slate: '#64748B',
-  charcoal: '#0F172A',
-};
-
-/** Pastell-Flächen (Light) — kuratierte 50er-Stufen, ~8–12 % Farbanteil. */
-const LIGHT_TINTS: BlockPalette = {
-  violet: '#EEF2FF',
-  lavender: '#F5F3FF',
-  sky: '#F0F9FF',
-  teal: '#F0FDFA',
-  mint: '#ECFDF5',
-  lime: '#F7FEE7',
-  sun: '#FEFCE8',
-  amber: '#FFF7ED',
-  apricot: '#FFFBEB',
-  coral: '#FFF1F2',
-  pink: '#FDF2F8',
-  slate: '#F1F5F9',
-  charcoal: '#F1F5F9',
+  violet: '#635BFF',
+  lavender: '#B3A0FF',
+  sky: '#5CB5F1',
+  teal: '#35BCAE',
+  mint: '#8FE3BE',
+  lime: '#C3F073',
+  sun: '#FFD35C',
+  amber: '#FF8C38',
+  apricot: '#FFB570',
+  coral: '#E05353',
+  pink: '#F79AC0',
+  slate: '#9AA6BF',
+  charcoal: '#18191C',
 };
 
 const LIGHT_ON_BLOCKS: BlockPalette = {
   violet: '#FFFFFF',
-  lavender: '#FFFFFF',
-  sky: '#FFFFFF',
-  teal: '#FFFFFF',
-  mint: '#FFFFFF',
-  lime: '#1A2E05',
-  sun: '#422006',
-  amber: '#FFFFFF',
-  apricot: '#451A03',
+  lavender: '#241A55',
+  sky: '#073257',
+  teal: '#04332E',
+  mint: '#0E3B28',
+  lime: '#1F2A00',
+  sun: '#3B2B00',
+  amber: '#2B1600',
+  apricot: '#3A1D00',
   coral: '#FFFFFF',
-  pink: '#FFFFFF',
-  slate: '#FFFFFF',
+  pink: '#4A0D2C',
+  slate: '#1B2436',
   charcoal: '#FFFFFF',
 };
 
-/* ------------------------------------------------------------------ Dark */
-
-/** Dark: dieselben Familien eine Stufe heller, damit sie auf Slate leuchten. */
+/**
+ * Dark-Variante: gleiche Helligkeitsklasse, behutsam angehoben — so bleibt
+ * die Textfarbe aus `onBlocks` auch im Dark Theme lesbar.
+ */
 const DARK_BLOCKS: BlockPalette = {
-  violet: '#818CF8',
-  lavender: '#A78BFA',
-  sky: '#38BDF8',
-  teal: '#2DD4BF',
-  mint: '#34D399',
-  lime: '#A3E635',
-  sun: '#FACC15',
-  amber: '#FB923C',
-  apricot: '#FBBF24',
-  coral: '#FB7185',
-  pink: '#F472B6',
-  slate: '#94A3B8',
-  charcoal: '#1E293B',
+  violet: '#8C86FF',
+  lavender: '#C3B3FF',
+  sky: '#7CC6F6',
+  teal: '#55CCBF',
+  mint: '#A6EFD2',
+  lime: '#D4F78C',
+  sun: '#FFDE85',
+  amber: '#FFA05A',
+  apricot: '#FFC48E',
+  coral: '#F16C6C',
+  pink: '#F8B0D0',
+  slate: '#A9B4CB',
+  charcoal: '#232428',
 };
 
-const DARK_SURFACE = '#111A2E';
-
-/** Mischt zwei Hex-Farben (t = Anteil von `b`). */
-export function mixHex(a: string, b: string, t: number): string {
-  const pa = parseHex(a);
-  const pb = parseHex(b);
-  if (!pa || !pb) return a;
-  const ch = (i: number) => Math.round(pa[i] + (pb[i] - pa[i]) * t);
-  return `#${[ch(0), ch(1), ch(2)].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
-}
-
-function parseHex(hex: string): [number, number, number] | null {
-  const value = (hex ?? '').replace('#', '');
-  if (!/^[0-9A-Fa-f]{6}$/.test(value)) return null;
-  return [parseInt(value.slice(0, 2), 16), parseInt(value.slice(2, 4), 16), parseInt(value.slice(4, 6), 16)];
-}
-
-/** Dark-Tints: 16 % Farbton auf der dunklen Kartenfläche. */
-const DARK_TINTS: BlockPalette = Object.fromEntries(
-  (Object.keys(DARK_BLOCKS) as BlockName[]).map((name) => [name, mixHex(DARK_SURFACE, DARK_BLOCKS[name], 0.16)]),
-) as BlockPalette;
-
-const DARK_ON_BLOCKS: BlockPalette = {
-  ...LIGHT_ON_BLOCKS,
-  violet: '#0F172A',
-  lavender: '#0F172A',
-  sky: '#0F172A',
-  teal: '#0F172A',
-  mint: '#0F172A',
-  amber: '#0F172A',
-  coral: '#0F172A',
-  pink: '#0F172A',
-  slate: '#0F172A',
-  charcoal: '#FFFFFF',
-};
-
-/* ------------------------------------------------------------------ Paletten */
-
-/** Light — warmes Soft-Blue-Canvas, weiße Karten, Slate-Text. */
+/** Light — warmes Canvas, klare Weißflächen und kräftige Farbblöcke. */
 export const palette: ThemePalette = {
-  canvas: '#F6F8FD',
+  canvas: '#F6F4EE',
   surface: '#FFFFFF',
-  elevated: '#F8FAFC',
-  charcoal: '#0F172A',
-  charcoalElevated: '#1E293B',
-  ink: '#0F172A',
-  muted: '#64748B',
-  faint: '#94A3B8',
-  line: '#E2E8F0',
+  elevated: '#FFFFFF',
+  charcoal: '#18191C',
+  charcoalElevated: '#232428',
+  ink: '#18191C',
+  muted: '#5C5F66',
+  faint: '#9A9DA6',
+  line: '#E8E5DC',
   accent: {
-    amber: '#F97316',
-    amberDeep: '#EA580C',
-    violet: '#6366F1',
-    lime: '#84CC16',
-    limeDeep: '#65A30D',
-    coral: '#F43F5E',
+    amber: '#FF8C38',
+    amberDeep: '#F27244',
+    violet: '#635BFF',
+    lime: '#C3F073',
+    limeDeep: '#A3E635',
+    coral: '#E05353',
+  },
+  on: {
+    // Enthält die klassischen On-Farben (amber/lime/violet/coral/charcoal)
+    // und die On-Farben aller Farbflächen-Familien.
+    ...LIGHT_ON_BLOCKS,
+  },
+  blocks: LIGHT_BLOCKS,
+  onBlocks: LIGHT_ON_BLOCKS,
+  priority: {
+    urgent: '#E05353', // Coral — überfällig / heute / kritisch
+    soon: '#FF8C38', // Amber — morgen / in wenigen Tagen
+    ok: '#C3F073', // Lime — erledigt / entspannt
+  },
+  success: '#3E9B5A',
+  warning: '#E89C1E',
+  danger: '#E05353',
+};
+
+/**
+ * Dark — dieselben Akzentfamilien, auf dunklen neutralen Flächen leicht heller.
+ * So bleibt die visuelle Sprache identisch, ohne ein zweites Pastell-System.
+ */
+export const darkPalette: ThemePalette = {
+  canvas: '#101114',
+  surface: '#18191C',
+  elevated: '#232428',
+  charcoal: '#18191C',
+  charcoalElevated: '#232428',
+  ink: '#F7F7F5',
+  muted: '#B5B7BC',
+  faint: '#7C7F87',
+  line: '#303238',
+  accent: {
+    amber: '#FFA05A',
+    amberDeep: '#FF8555',
+    violet: '#8C86FF',
+    lime: '#D4F78C',
+    limeDeep: '#B9EA57',
+    coral: '#F16C6C',
   },
   on: {
     ...LIGHT_ON_BLOCKS,
   },
-  blocks: LIGHT_BLOCKS,
-  blockTints: LIGHT_TINTS,
+  blocks: DARK_BLOCKS,
   onBlocks: LIGHT_ON_BLOCKS,
   priority: {
-    urgent: '#EF4444',
-    soon: '#F59E0B',
-    ok: '#22C55E',
+    urgent: '#F16C6C',
+    soon: '#FFA05A',
+    ok: '#D4F78C',
   },
-  status: {
-    urgent: '#EF4444',
-    warning: '#F59E0B',
-    success: '#22C55E',
-    info: '#3B82F6',
-  },
-  success: '#22C55E',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-};
-
-/** Dark — Slate-Nacht: gleiche Familien, Flächen als 16 %-Tints. */
-export const darkPalette: ThemePalette = {
-  canvas: '#0B1220',
-  surface: DARK_SURFACE,
-  elevated: '#172038',
-  charcoal: '#0F172A',
-  charcoalElevated: '#1E293B',
-  ink: '#F1F5F9',
-  muted: '#A5B1C6',
-  faint: '#6F7D96',
-  line: '#26334D',
-  accent: {
-    amber: '#FB923C',
-    amberDeep: '#F97316',
-    violet: '#818CF8',
-    lime: '#A3E635',
-    limeDeep: '#84CC16',
-    coral: '#FB7185',
-  },
-  on: {
-    ...DARK_ON_BLOCKS,
-  },
-  blocks: DARK_BLOCKS,
-  blockTints: DARK_TINTS,
-  onBlocks: DARK_ON_BLOCKS,
-  priority: {
-    urgent: '#F87171',
-    soon: '#FBBF24',
-    ok: '#4ADE80',
-  },
-  status: {
-    urgent: '#F87171',
-    warning: '#FBBF24',
-    success: '#4ADE80',
-    info: '#60A5FA',
-  },
-  success: '#4ADE80',
-  warning: '#FBBF24',
-  danger: '#F87171',
+  success: '#6BC887',
+  warning: '#F2B44A',
+  danger: '#F16C6C',
 };
 
 /** Liefert genau die Palette des bereits aufgelösten Themes. */
@@ -307,7 +228,6 @@ const DARK_EQUIVALENTS = new Map<string, string>([
   [palette.priority.urgent, darkPalette.priority.urgent],
   [palette.priority.soon, darkPalette.priority.soon],
   [palette.priority.ok, darkPalette.priority.ok],
-  [palette.status.info, darkPalette.status.info],
   [palette.success, darkPalette.success],
   [palette.warning, darkPalette.warning],
   [palette.danger, darkPalette.danger],
@@ -319,28 +239,8 @@ export function resolveThemeColor(color: string, isDark: boolean): string {
 }
 
 /**
- * Pastell-Fläche zu einem (bereits theme-aufgelösten) Akzentton.
- * Bekannte Familien liefern ihre kuratierte 50er-Stufe; unbekannte Farben
- * (Nutzer-Overrides) werden rechnerisch auf ~10 % (Light) bzw. 16 % (Dark)
- * gemischt — so bleibt jede Karte eine ruhige Fläche.
- */
-export function blockTint(color: string, isDark = false): string {
-  const colors = paletteFor(isDark);
-  const normalised = color.toUpperCase();
-  for (const name of Object.keys(colors.blocks) as BlockName[]) {
-    if (colors.blocks[name].toUpperCase() === normalised) return colors.blockTints[name];
-  }
-  // Light-Hex im Dark-Theme? Erst übersetzen, dann noch einmal nachschlagen.
-  if (isDark) {
-    const translated = resolveThemeColor(color, true);
-    if (translated.toUpperCase() !== normalised) return blockTint(translated, true);
-  }
-  return isDark ? mixHex(colors.surface, color, 0.16) : mixHex('#FFFFFF', color, 0.1);
-}
-
-/**
  * Textfarbe mit dem höchsten Kontrast auf einer Vollton-Fläche. Die expliziten
- * On-Token werden für unsere Akzente bevorzugt; unbekannte Fachfarben
+ * On-Token werden für unsere sechs Akzente bevorzugt; unbekannte Fachfarben
  * bekommen eine berechnete, robuste Schwarz/Weiß-Antwort.
  */
 export function foregroundOn(color: string, colors: ThemePalette = palette): string {
@@ -352,12 +252,15 @@ export function foregroundOn(color: string, colors: ThemePalette = palette): str
   if (normalised === accents.coral.toUpperCase() || normalised === colors.danger.toUpperCase()) return colors.on.coral;
   if (normalised === colors.charcoal.toUpperCase() || normalised === colors.charcoalElevated.toUpperCase()) return colors.on.charcoal;
 
+  // Feste Farbflächen-Familie: explizite Vordergrundfarbe statt Heuristik.
   for (const name of Object.keys(colors.blocks) as BlockName[]) {
     if (normalised === colors.blocks[name].toUpperCase()) return colors.onBlocks[name];
   }
   for (const name of Object.keys(colors.priority) as PriorityName[]) {
     if (normalised === colors.priority[name].toUpperCase()) {
-      return name === 'soon' ? '#451A03' : '#FFFFFF';
+      if (name === 'urgent') return colors.on.coral;
+      if (name === 'soon') return colors.on.amber;
+      return colors.on.lime;
     }
   }
 
@@ -369,31 +272,32 @@ export function foregroundOn(color: string, colors: ThemePalette = palette): str
     .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
   const darkContrast = (luminance + 0.05) / 0.05;
   const lightContrast = 1.05 / (luminance + 0.05);
-  return darkContrast >= lightContrast ? '#0F172A' : '#FFFFFF';
+  return darkContrast >= lightContrast ? '#18191C' : '#FFFFFF';
 }
 
 /**
- * Radius-Skala „Playful Modern“ (verbindlich, gegen den Lego-Stein-Effekt):
- * · Outer Cards / Bento-Boxen 20 px (`lg`)
- * · Inner Widgets / Sub-Cards / Modals 14 px (`md`)
- * · Buttons & Badges 8 px (`sm`) oder voll rund (`pill`)
+ * Radius-Skala des Farbflächen-Stils (verbindlich):
+ * · Große Karten 28 px, Hero-Blöcke 32 px, kleine Kacheln 24 px.
+ * · Chips/Pills 20 px — wirkt bei Pill-Höhe voll rund, bleibt bei mehrzeiligem
+ *   Inhalt sauber gerundet. Reine Pills/Avataren/Nav: voll rund (999).
  */
 export const radius = {
-  sm: 8,
-  md: 14,
+  cardSm: 24,
+  card: 28,
+  cardLg: 32,
+  chip: 20,
+  pill: 999,
+  // Kompatible Kurzformen für Tamagui und bestehende Layout-Helfer.
+  sm: 12,
+  md: 16,
   lg: 20,
   xl: 24,
-  pill: 9999,
-  // Kompatible Aliase für bestehende Aufrufer.
-  cardSm: 14,
-  card: 20,
-  cardLg: 24,
-  chip: 9999,
-  blob: 24,
+  blob: 32,
 } as const;
 
 /**
- * Spacing-Raster: 4er-Basis. `xxl`/`xxxl` für Sektionsabstände.
+ * Spacing-Raster: 4er-Basis. `xxl`/`xxxl` für Sektionsabstände — der
+ * Farbflächen-Stil atmet großzügiger als die alte Listen-Optik.
  */
 export const space = {
   xs: 4,
@@ -406,54 +310,59 @@ export const space = {
 } as const;
 
 /**
- * Typo-Skala. Karten-Titel 18/700 (`headline`, entspricht `.card-title`),
- * Subtitles 14/500 muted.
+ * Typo-Skala (verbindlich für den Farbflächen-Stil):
+ * Screen-Titel groß & fett, Stat-Zahlen extra groß, Fließtext reduziert.
+ * `weight` ist der Ziel-Font-Weight (RN: 700 ≈ bold, 800 ≈ extrabold).
  */
 export const typeScale = {
+  /** Haupt-Headline (Onboarding, Hero). */
   display: { size: 38, lineHeight: 43, weight: '800', tracking: -1 },
+  /** Screen-Titel — jeder Screen beginnt damit. */
   title: { size: 28, lineHeight: 33, weight: '800', tracking: -0.6 },
+  /** Karten-Headline. */
   headline: { size: 18, lineHeight: 24, weight: '700', tracking: -0.2 },
+  /** Riesige Stat-Zahl. */
   stat: { size: 44, lineHeight: 47, weight: '800', tracking: -1.2 },
+  /** Noch größere Hero-Zahl (Gesamtschnitt, Countdown). */
   statLg: { size: 56, lineHeight: 58, weight: '800', tracking: -1.5 },
+  /** Fließtext — sparsam einsetzen. */
   body: { size: 15, lineHeight: 21, weight: '500', tracking: 0 },
-  subtitle: { size: 14, lineHeight: 20, weight: '500', tracking: 0 },
+  /** Sekundärtext/Hints. */
   caption: { size: 12, lineHeight: 16, weight: '600', tracking: 0 },
+  /** Uppercase-Mikro-Label (Captions unter Stat-Zahlen, Overlines). */
   label: { size: 10.5, lineHeight: 13, weight: '800', tracking: 1.4 },
 } as const;
 
 export type TypeScaleStep = keyof typeof typeScale;
 
-/** Hilfs-API für Screen-seitige Prioritäts-Legenden. */
+/** Hilfs-API für Screen-seitige Prioritäts-Legenden (Coral/Amber/Lime). */
 export function priorityLabel(name: PriorityName): string {
   if (name === 'urgent') return 'dringend';
   if (name === 'soon') return 'bald';
   return 'ok';
 }
 
-/**
- * Schatten „Playful Modern“: kaum sichtbar, kühl (Slate) statt warm-grau.
- * `card` ≈ `0 4px 20px -2px rgba(15,23,42,.04)`, `hover` ≈ `0 12px 28px -4px rgba(15,23,42,.08)`.
- */
+/** Dezente, warme Schatten: Flächen trennen sich, ohne grau oder plastisch zu wirken. */
 export const shadow = {
   card: {
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.05,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
+    shadowColor: '#18191C',
+    shadowOpacity: 0.055,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 2,
   },
   float: {
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.1,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
+    shadowColor: '#18191C',
+    shadowOpacity: 0.16,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 9,
   },
 } as const;
 
 export const duration = {
   fast: 140,
-  base: 200,
+  base: 220,
   slow: 380,
 } as const;
 

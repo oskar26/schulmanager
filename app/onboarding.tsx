@@ -262,7 +262,7 @@ function WelcomeCard({
       <View
         style={{
           flex: 1,
-          borderRadius: 20,
+          borderRadius: 28,
           backgroundColor: colors.surface,
           padding: 24,
           justifyContent: 'center',
@@ -288,7 +288,7 @@ function WelcomeCard({
 function WelcomeCTA({ colors, onNext }: { colors: ThemePalette; onNext: () => void }) {
   return (
     <View style={{ flex: 1, padding: 24, paddingTop: 12, width: '100%' }}>
-      <View style={{ flex: 1, borderRadius: 20, backgroundColor: colors.charcoal, padding: 26, justifyContent: 'space-between' }}>
+      <View style={{ flex: 1, borderRadius: 28, backgroundColor: colors.charcoal, padding: 26, justifyContent: 'space-between' }}>
         <View>
           <View style={{ width: 60, height: 60, borderRadius: 22, backgroundColor: colors.accent.amber, alignItems: 'center', justifyContent: 'center' }}>
             <Bell color={colors.on.amber} size={28} />
@@ -375,7 +375,7 @@ function ChoiceCards({ colors, onDemo, setMode }: ChoiceProps) {
       <PressableOpacity
         onPress={() => setMode('login')}
         accessibilityRole="button"
-        style={{ marginTop: 26, borderRadius: 20, backgroundColor: colors.accent.amber, padding: 24 }}
+        style={{ marginTop: 26, borderRadius: 28, backgroundColor: colors.accent.amber, padding: 24 }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: colors.charcoal, alignItems: 'center', justifyContent: 'center' }}>
@@ -397,7 +397,7 @@ function ChoiceCards({ colors, onDemo, setMode }: ChoiceProps) {
       <PressableOpacity
         onPress={onDemo}
         accessibilityRole="button"
-        style={{ marginTop: 16, borderRadius: 20, backgroundColor: colors.charcoal, padding: 24 }}
+        style={{ marginTop: 16, borderRadius: 28, backgroundColor: colors.charcoal, padding: 24 }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: colors.accent.violet, alignItems: 'center', justifyContent: 'center' }}>

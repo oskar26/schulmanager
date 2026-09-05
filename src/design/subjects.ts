@@ -1,11 +1,6 @@
 /**
- * Fach-Farben & -Emojis — „Playful Subject Palette“ (docs/playful-modern.md).
- *
- * Jedes Fach hat einen kräftigen Primärton (`subjectColor`, für 4-px-Akzent-
- * streifen, Icons und Pills) und eine Pastell-Fläche (`subjectTint`, 8–12 %
- * Tint, für Kartenhintergründe). Kuratierte Zuordnung laut Briefing:
- * Mathe/MINT → Violet · Deutsch → Coral · Englisch → Sky · Bio/Chemie →
- * Emerald · Geschichte/Erdkunde → Orange · Sport/Kunst → Magenta.
+ * Fach-Farben & -Emojis — feste Palette auf Basis der Farbflächen-Familie
+ * (`palette.blocks`, Redesign Phase 1 · docs/redesign-phasen.md).
  *
  * Deterministisch aus dem Fachnamen abgeleitet (gleiches Fach ⇒ immer gleiche
  * Farbe/Icon), mit kuratierten Treffern für die häufigsten deutschen Schulfächer.
@@ -41,7 +36,7 @@ import {
   Users,
   Wrench,
 } from 'lucide-react-native';
-import { blockTint, foregroundOn, palette, resolveThemeColor, type BlockName } from '@/design/tokens';
+import { foregroundOn, palette, resolveThemeColor, type BlockName } from '@/design/tokens';
 
 export type SubjectStyle = { color: string; emoji: string };
 
@@ -57,78 +52,40 @@ const CURATED: Record<string, { block: BlockName; emoji: string }> = {
   mathe: { block: 'violet', emoji: '📐' },
   deutsch: { block: 'coral', emoji: '📖' },
   englisch: { block: 'sky', emoji: '🇬🇧' },
-  franzosisch: { block: 'sky', emoji: '🥐' },
+  franzosisch: { block: 'pink', emoji: '🥐' },
   latein: { block: 'lavender', emoji: '🏛️' },
-  spanisch: { block: 'sky', emoji: '🌶️' },
-  physik: { block: 'teal', emoji: '🧲' },
-  chemie: { block: 'mint', emoji: '⚗️' },
+  spanisch: { block: 'apricot', emoji: '🌶️' },
+  physik: { block: 'slate', emoji: '🧲' },
+  chemie: { block: 'teal', emoji: '⚗️' },
   biologie: { block: 'mint', emoji: '🌱' },
   bio: { block: 'mint', emoji: '🌱' },
-  informatik: { block: 'violet', emoji: '💻' },
-  info: { block: 'violet', emoji: '💻' },
+  informatik: { block: 'charcoal', emoji: '💻' },
+  info: { block: 'charcoal', emoji: '💻' },
   geschichte: { block: 'amber', emoji: '🏺' },
   gesch: { block: 'amber', emoji: '🏺' },
-  politik: { block: 'amber', emoji: '🏛️' },
-  sozialkunde: { block: 'amber', emoji: '🏛️' },
-  gemeinschaftskunde: { block: 'amber', emoji: '🏛️' },
-  wirtschaft: { block: 'apricot', emoji: '📈' },
+  politik: { block: 'violet', emoji: '🏛️' },
+  sozialkunde: { block: 'violet', emoji: '🏛️' },
+  gemeinschaftskunde: { block: 'violet', emoji: '🏛️' },
+  wirtschaft: { block: 'sun', emoji: '📈' },
   religion: { block: 'lavender', emoji: '🕊️' },
   ethik: { block: 'lavender', emoji: '💭' },
   philosophie: { block: 'lavender', emoji: '💭' },
   musik: { block: 'pink', emoji: '🎵' },
-  kunst: { block: 'pink', emoji: '🎨' },
-  sport: { block: 'pink', emoji: '🏃' },
-  geographie: { block: 'amber', emoji: '🌍' },
-  geografie: { block: 'amber', emoji: '🌍' },
-  erdkunde: { block: 'amber', emoji: '🌍' },
-  sachunterricht: { block: 'teal', emoji: '🔎' },
+  kunst: { block: 'coral', emoji: '🎨' },
+  geographie: { block: 'lime', emoji: '🌍' },
+  geografie: { block: 'lime', emoji: '🌍' },
+  erdkunde: { block: 'lime', emoji: '🌍' },
+  sachunterricht: { block: 'sky', emoji: '🔎' },
   werken: { block: 'apricot', emoji: '🔨' },
   technik: { block: 'apricot', emoji: '🔨' },
   ganztag: { block: 'slate', emoji: '🧩' },
 };
 
 /**
- * Saubere Kurzformen für enge Raster (Kalender-Wochenansicht): „Mathe“ statt
- * „Math“, „Bio“ statt „Biol“. Unbekannte Fächer werden nicht mehr hart nach
- * vier Zeichen abgeschnitten, sondern bleiben ausgeschrieben (Ellipsis erst
- * im Layout).
+ * Fallback-Zyklus über die volle Farbflächen-Familie. Charcoal bleibt
+ * bewusst außen vor: ein randloser dunkler Block wäre auf dem dunklen Canvas
+ * nicht mehr erkennbar (Entscheidung #4 im Phasen-Dokument).
  */
-const SHORT_NAMES: Record<string, string> = {
-  mathematik: 'Mathe',
-  mathe: 'Mathe',
-  deutsch: 'Deutsch',
-  englisch: 'Englisch',
-  franzosisch: 'Franz.',
-  latein: 'Latein',
-  spanisch: 'Spanisch',
-  physik: 'Physik',
-  chemie: 'Chemie',
-  biologie: 'Bio',
-  bio: 'Bio',
-  informatik: 'Informatik',
-  info: 'Informatik',
-  geschichte: 'Geschichte',
-  gesch: 'Geschichte',
-  politik: 'Politik',
-  sozialkunde: 'Sozialkunde',
-  gemeinschaftskunde: 'GK',
-  wirtschaft: 'Wirtschaft',
-  religion: 'Religion',
-  ethik: 'Ethik',
-  philosophie: 'Philo',
-  musik: 'Musik',
-  kunst: 'Kunst',
-  sport: 'Sport',
-  geographie: 'Erdkunde',
-  geografie: 'Erdkunde',
-  erdkunde: 'Erdkunde',
-  sachunterricht: 'Sachkunde',
-  werken: 'Werken',
-  technik: 'Technik',
-  ganztag: 'Ganztag',
-};
-
-/** Fallback-Zyklus über die Familien; Charcoal bleibt außen vor. */
 const FALLBACK_BLOCKS: BlockName[] = [
   'violet',
   'sky',
@@ -250,27 +207,6 @@ export function subjectIcon(name?: string | null): LucideIcon {
  */
 export function subjectColor(name?: string | null, isDark = false, overrides?: Record<string, string>): string {
   return resolveThemeColor(subjectStyle(name, overrides).color, isDark);
-}
-
-/** Pastell-Fläche des Fachs (theme-aufgelöst) — für Kartenhintergründe. */
-export function subjectTint(name?: string | null, isDark = false, overrides?: Record<string, string>): string {
-  return blockTint(subjectColor(name, isDark, overrides), isDark);
-}
-
-/**
- * Kurzname eines Fachs für enge Raster („Mathe“, „Bio“). Fällt auf das vom
- * Server gelieferte Kürzel bzw. den vollen Namen zurück — nie auf einen
- * mitten im Wort abgeschnittenen String.
- */
-export function subjectShortName(name?: string | null, serverAbbr?: string | null): string {
-  const raw = (name ?? '').trim();
-  if (!raw) return serverAbbr?.trim() || '—';
-  const key = normalise(raw);
-  const curated = SHORT_NAMES[key] ?? Object.entries(SHORT_NAMES).find(([k]) => key.startsWith(k))?.[1];
-  if (curated) return curated;
-  if (raw.length <= 10) return raw;
-  if (serverAbbr && serverAbbr.trim().length >= 2) return serverAbbr.trim();
-  return raw;
 }
 
 /** Farbe + Alpha für Chips/Hintergründe (funktioniert in RN & Web). */

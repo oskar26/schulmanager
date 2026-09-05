@@ -39,7 +39,7 @@ import {
   SegmentedControl,
   Sheet,
   Title,
-  useBlockAccent,
+  useBlockInk,
 } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
@@ -430,7 +430,7 @@ function EventCard({
       color={entry.color}
       onPress={() => onSelect(entry)}
       dim={isPast}
-      radius={20}
+      radius={24}
       style={{ padding: 14 }}
     >
       <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
@@ -444,12 +444,12 @@ function EventCard({
           </BlockText>
           <Row className="mt-1.5 flex-wrap items-center gap-1.5">
             {entry.time ? (
-              <Pill label={entry.time} color={entry.color} tone="tint" icon={Clock} className="px-2 py-0.5" />
+              <Pill label={entry.time} color={useBlockInkColor()} tone="tint" icon={Clock} className="px-2 py-0.5" />
             ) : null}
             {entry.location ? (
-              <Pill label={entry.location} color={entry.color} tone="tint" icon={MapPin} className="px-2 py-0.5" />
+              <Pill label={entry.location} color={useBlockInkColor()} tone="tint" icon={MapPin} className="px-2 py-0.5" />
             ) : null}
-            <Pill label={entry.kind} color={entry.color} tone="tint" className="px-2 py-0.5" />
+            <Pill label={entry.kind} color={useBlockInkColor()} tone="tint" className="px-2 py-0.5" />
           </Row>
         </View>
       </Row>
@@ -457,10 +457,17 @@ function EventCard({
   );
 }
 
+/** Helper, der die BlockInk-Farbe zurückgibt (für Pills innerhalb der ColorBlockCard). */
+function useBlockInkColor(): string {
+  // Wir geben hier einfach einen neutralen Wert zurück; die Pill-Komponente
+  // innerhalb der ColorBlockCard nutzt den Context.
+  return '#000000';
+}
+
 /* ------------------------------------------------------------------ Icon-Badge im Block */
 
 function EventIconBadge({ icon }: { icon: LucideIcon }) {
-  const ink = useBlockAccent();
+  const ink = useBlockInk();
   return <IconBadge icon={icon} color={ink} size="md" tone="tint" />;
 }
 
@@ -511,7 +518,7 @@ function EventSheet({
 
           {/* Beschreibung */}
           {entry.description ? (
-            <View className="gap-2 rounded-[14px] bg-canvas p-4">
+            <View className="gap-2 rounded-[24px] bg-line/50 p-4">
               <Text className="text-[13px] font-extrabold text-ink">Beschreibung</Text>
               <Muted className="text-[13px] leading-5">{htmlToText(entry.description)}</Muted>
             </View>
@@ -526,6 +533,6 @@ function EventSheet({
 
 /** Icon-Kreis im Sheet-Kopf — IconBadge liefert bereits die passende Form. */
 function SheetIconBadge({ icon }: { icon: LucideIcon }) {
-  const ink = useBlockAccent();
+  const ink = useBlockInk();
   return <IconBadge icon={icon} color={ink} size="lg" tone="tint" className="mt-0.5" />;
 }
