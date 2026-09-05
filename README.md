@@ -195,7 +195,10 @@ app/
 ├── (tabs)/tasks.tsx      Hausaufgaben · Arbeiten · Lernplan
 ├── (tabs)/grades.tsx     Noten + Rechner/Simulator
 ├── (tabs)/inbox.tsx      Briefe · Nachrichten · Schwarzes Brett
-├── settings.tsx          Konto · Schule · Widgets · Notifications · Design · Datenschutz
+├── settings/             Drilldown: Kategorien + Konto/Schule/Widgets/Design …
+│   ├── index.tsx         9 Settings-Kategorien
+│   ├── _layout.tsx       gemeinsamer Settings-Stack
+│   └── *.tsx             deep-linkbare Unterseiten
 ├── calendar.tsx          Kalender (Liste/Monat)
 ├── attendance.tsx        Fehlzeiten
 ├── sick-note.tsx         Krankmeldung

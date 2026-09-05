@@ -1,61 +1,62 @@
 import ActivityKit
 import ExpoModulesCore
 
-/// Die JSI-Seite der Live-Island (iOS).
-///
-/// Kapselt ActivityKit hinter der vorhandenen JS-API (`show`/`hide` in
-/// `src/features/island/bridge.ts`), damit die JS-Seite keine
-/// Plattform-Kenntnisse braucht. Läuft nur in einem Dev-Build, in dem
-/// zusätzlich die WidgetKit-Extension „LiveIsland" gebaut wurde
-/// (`expo-apple-targets`, siehe `widgets/spec.md`) — sonst bricht
-/// `Activity.request` und wird hier geschluckt.
+/// ActivityKit is deliberately behind the JS bridge. Expo Go simply has no
+/// linked module, while a development/production build can render a genuine
+/// Live Activity without an in-app overlay.
 public class SchulflowLiveIslandModule: Module {
   public func definition() -> ModuleDefinition {
     Name("SchulflowLiveIsland")
 
     Function("isSupported") { () -> Bool in
-      Self.isActivityKitReady
+      if #available(iOS 16.1, *) {
+        return ActivityAuthorizationInfo().areActivitiesEnabled
+      }
+      return false
     }
 
     AsyncFunction("show") { (title: String, body: String, progress: Int, targetAt: Int) -> Bool in
-      guard Self.isActivityKitReady else { return false }
-      return await Self.upsert(title: title, body: body, progress: Double(progress) / 100.0, targetAtMs: targetAt)
+      guard #available(iOS 16.1, *) else { return false }
+      return await Self.upsert(title: title, body: body, progress: progress, targetAtMs: targetAt)
     }
 
     AsyncFunction("hide") { () -> Void in
-      guard Self.isActivityKitReady else { return }
-      for activity in Activity<LiveIslandAttributes>.activities {
-        try? activity.end(
-          at: Date(),
-          transition: .dismiss(LiveIslandAttributes.ContentState(title: "", body: "", progress: 0, targetAtMs: 0))
-        )
-      }
+      guard #available(iOS 16.1, *) else { return }
+      await Self.endAll()
     }
   }
 
   @available(iOS 16.1, *)
-  private static var isActivityKitReady: Bool {
-    ActivityAuthorizationInfo().areActivitiesEnabled
-  }
-
-  @available(iOS 16.1, *)
-  private static func upsert(title: String, body: String, progress: Double, targetAtMs: Int) async -> Bool {
+  private static func upsert(title: String, body: String, progress: Int, targetAtMs: Int) async -> Bool {
     let state = LiveIslandAttributes.ContentState(
-      title: title, body: body, progress: progress, targetAtMs: targetAtMs
+      title: title,
+      body: body,
+      progress: min(max(Double(progress) / 100.0, 0), 1),
+      targetAtMs: targetAtMs
     )
+    let content = ActivityContent(state: state, staleDate: nil)
 
-    // Bestehende Aktivität aktualisieren (gleiche Stunde = gleiche Zielzeit).
     if let running = Activity<LiveIslandAttributes>.activities.first(where: {
-      abs($0.contentState.targetAtMs - targetAtMs) < 60_000
+      abs($0.content.state.targetAtMs - targetAtMs) < 60_000
     }) {
-      await running.update(ActivityContentState.transition(.content, state))
+      await running.update(content)
       return true
     }
 
-    let activity = try? await Activity.request(
-      attributes: LiveIslandAttributes(),
-      content: .init(state: state, staleDate: nil)
-    )
-    return activity != nil
+    do {
+      _ = try Activity.request(attributes: LiveIslandAttributes(), content: content)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  @available(iOS 16.1, *)
+  private static func endAll() async {
+    let finalState = LiveIslandAttributes.ContentState(title: "", body: "", progress: 0, targetAtMs: 0)
+    let content = ActivityContent(state: finalState, staleDate: nil)
+    for activity in Activity<LiveIslandAttributes>.activities {
+      await activity.end(content, dismissalPolicy: .immediate)
+    }
   }
 }

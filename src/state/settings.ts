@@ -46,6 +46,8 @@ export interface Settings {
 
   /** Erscheinungsbild */
   theme: 'system' | 'light' | 'dark';
+  /** Stundenplan-Darstellung (additiv für die spätere Kalenderansicht). */
+  timetableMode: 'list' | 'calendar';
   hapticFeedback: boolean;
   compactTimetable: boolean;
   showWeekend: boolean;
@@ -96,6 +98,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboarded: false,
   activeStudentId: null,
   theme: 'system',
+  timetableMode: 'list',
   hapticFeedback: true,
   compactTimetable: false,
   showWeekend: false,
@@ -135,6 +138,8 @@ interface SettingsStore {
    * nicht gebuchtem Modul) und wirkte für Nutzer:innen wie ein Fehlklick.
    */
   moveWidget: (id: WidgetId, direction: -1 | 1, visibleIds?: WidgetId[]) => void;
+  /** Setzt die komplette Widget-Reihenfolge, ohne Sichtbarkeit zu verändern. */
+  setWidgetOrder: (ids: WidgetId[]) => void;
   /** Onboarding abgeschlossen (Welcome gesehen + Demo- oder Login-Wahl). */
   markOnboarded: () => void;
   /** Passwort landet ausschließlich im SecureStore, nie im State. */
@@ -213,6 +218,27 @@ export const useSettings = create<SettingsStore>((set, get) => ({
     }
     if (target < 0 || target >= widgets.length) return;
     [widgets[index], widgets[target]] = [widgets[target], widgets[index]];
+    const next = { ...get().settings, widgets };
+    set({ settings: next });
+    persist(next);
+  },
+
+  setWidgetOrder: (ids) => {
+    const current = get().settings.widgets;
+    const known = new Set(current.map((widget) => widget.id));
+    const requested = ids.filter((id, index) => known.has(id) && ids.indexOf(id) === index);
+    if (!requested.length) return;
+
+    // Nicht sichtbare Widgets behalten ihre Plätze: Beim Sortieren der
+    // sichtbaren Karten darf z. B. ein ausgeblendetes Noten-Widget nicht als
+    // unsichtbarer „Zwischenstopp“ in den Vordergrund rutschen.
+    let cursor = 0;
+    const requestedSet = new Set(requested);
+    const widgets = current.map((widget) => {
+      if (!requestedSet.has(widget.id)) return widget;
+      const nextId = requested[cursor++];
+      return current.find((candidate) => candidate.id === nextId)!;
+    });
     const next = { ...get().settings, widgets };
     set({ settings: next });
     persist(next);

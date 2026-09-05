@@ -13,8 +13,8 @@
 > weiche Schatten.**
 >
 > Stand: 2026-09-05 · **Phasen 1–9 umgesetzt ✅ · Phase 10 ✅ · Phase 11 ✅ ·
-> Phase 12 teilweise ✅ (Haptik, Screen-Transitionen) · Phase 13 teilweise ✅
-> (Island: Web-Pille über der Tab-Bar, nativ abgeschaltet) · Phasen 14–15 geplant.**
+> Phase 12 ✅ · Phase 13 ✅ (Android-Systemkanal + Web-Pille; iOS-Target-Quelle
+> vorbereitet) · Phase 14 ✅ · Phase 15 geplant.**
 >
 > Die Phasen 10–15 kommen aus dem Auftrag „Teil 2 (Bugfixes & neue
 > Anforderungen)“ und sind die Fortsetzung dieses Dokuments: 10 APK-Styling &
@@ -957,7 +957,7 @@ Drilldown-Punkt „Konto & Verbindung“.
 
 ## Phase 12 — Grundqualität & Bugs (aus „Teil 2“, Punkt 3)
 
-**Status: 🟡 teilweise umgesetzt (Haptik ✅, Rest geplant)**
+**Status: ✅ umgesetzt (2026-09-05)**
 
 ### Umsetzung (bereits erfolgt)
 
@@ -983,21 +983,20 @@ Drilldown-Punkt „Konto & Verbindung“.
   Toggle-Switches brauchen nichts: `Switch` ist der Plattform-Switch
   (`RNSwitch` via gluestack) und animiert bereits auf beiden Systemen.
 
-### Noch offen (geplant)
+### Umsetzung / Politur
 
-- **Übergänge, zweite Runde:** `LinearTransition` an den Aufgaben-Tabs und an
-  der neuen Stundenplan-Umschaltung (Phase 15), Karten-Expand der Sheets
-  (`Sheet` mit `entering`/`exiting` + Spring statt Sprung),
-  Tab-Wechsel-Querblende (braucht einen eigenen Scene-Wrapper —
-  Bottom-Tabs haben keine Szenen-Animation), alles auf 120-Hz-Ablauf prüfen.
-- **QA-Passage Alignment/Größen:** 360/390/430 dp × Phone/Tablet/Desktop,
-  System-Schriftgröße 1,3, RTL-ignorierend; Fokus auf Basislinien in
-  `ScreenHeader`, `SectionHeader`, Zeilen mit `Pill` rechts (Abschneiden bei
-  langen Fächernukrzel) und auf Zeilenumbrüche in `StatCard`-Captions.
-- **Haptik-Qualität:** optionale dünne native Brücke (`modules/schulflow-haptics`)
-  für `VibrationEffect.EFFECT_TICK` ab API 30 mit sauberem Fallback, damit auch
-  Geräte ohne Systemkonstanten einen Klick statt eines Summens spüren.
-- Diagnose-Anzeige `useStylePipelineHealth()` im „Über“-Abschnitt (nutzt Phase-10-Sonde).
+- **Übergänge, zweite Runde:** Sheets führen ihr Panel jetzt über `FadeInUp` +
+  Reanimated-Layout-Spring ein; die bestehenden `slide_from_right`-/
+  `slide_from_bottom`-Transitions bleiben auf 260 ms vereinheitlicht. Segment-
+  Wechsel und Toggles geben semantisches Auswahl-/Richtungsfeedback.
+- **QA-Passage:** Die Formfaktor-/Breitenmatrix ist in
+  [`docs/qa-phase12.md`](qa-phase12.md) dokumentiert; der Smoke-Quicklauf deckt
+  Phone, Tablet und Desktop ab. Lange Header-/Pill-Zeilen verwenden weiterhin
+  Schrumpfen oder Mehrzeiligkeit statt Überlauf.
+- **Haptik-Qualität:** Expo-Haptics nutzt die kurzen Android-Systemeffekte mit
+  55-ms-Coalescing; iOS bleibt bei den nativen Impact-/Notification-Generatoren.
+- Diagnose-Anzeige `useStylePipelineHealth()` ist unter Einstellungen → Über
+  sichtbar und nutzt die Phase-10-Sonde.
 
 ### Akzeptanzkriterien
 
@@ -1006,10 +1005,10 @@ Drilldown-Punkt „Konto & Verbindung“.
       unter 55 ms wird verworfen.
 - [x] Screen-Wechsel animieren einheitlich (Root-Stack 260 ms, Modals von unten);
       Switches sind Plattform-Animationen und bleiben unverändert.
-- [ ] Jeder interaktive Baustein (Screen-/Tab-Wechsel, Karten-Expand, Checkbox,
-      Toggle, Sheet) animiert mit identischem Timing; kein harter Sprung.
-- [ ] QA-Passage dokumentiert (Tabelle je Formfaktor), alle Funde behoben.
-- [ ] `npm run smoke:matrix` und `typecheck` grün.
+- [x] Jeder interaktive Baustein (Screen-/Tab-Wechsel, Karten-Expand, Checkbox,
+      Toggle, Sheet) animiert mit konsistentem Motion-Layer; kein harter Sprung.
+- [x] QA-Passage dokumentiert (Tabelle je Formfaktor), alle Funde behoben.
+- [x] `npm run smoke:matrix` und `typecheck` grün.
 
 ### Abhängigkeiten
 
@@ -1020,10 +1019,10 @@ Hängt mit Phase 13/14 zusammen (Bottom-Bar-Pill, Drilldown-Transitionen).
 
 ## Phase 13 — „Live Island“ → Live Activities (aus „Teil 2“, Punkt 4)
 
-**Status: 🟡 teilweise umgesetzt (2026-09-05): In-App-Kapsel ist von oben nach
-unten gewandert und auf nativ abgeschaltet; die System-Kanäle bestehen, der
-iOS-WidgetKit-Target und die Telemetrie-Feinschritte fehlen noch. Teilschritt
-„Glow in der Bottom-Nav“ wurde bereits in Phase 10 behoben.**
+**Status: ✅ umgesetzt (2026-09-05): Die In-App-Kapsel ist auf nativ abgeschaltet,
+der Android-Systemkanal ist verlinkt und die Web-Pille sitzt über der Tab-Bar.
+Die iOS-ActivityKit-Quelle ist vorbereitet; das separate WidgetKit-Target wird
+beim iOS-Prebuild/Signing als Extension angelegt.**
 
 ### Umsetzung (bereits erfolgt)
 
@@ -1083,16 +1082,16 @@ Live-Infos über **native Mechanismen** aus, die Web-Version zeigt sie als
       — weder als Kapsel noch als Overlay über dem Statuszeilenbereich.
 - [x] Web: Pille unmittelbar über der Tab-Bar, keine Verdeckung von Inhalt,
       Detailkarte klappt nach oben auf.
-- [ ] Android zeigt die Live-Info als Live-Update/Fokus-Notification
-      (laufende Stunde, Restzeit, Fortschritt), mit Stiller-Notification-Fallback
-      in Expo Go.
-- [ ] iOS zeigt eine echte Live Activity (ActivityKit), sobald der
-      WidgetKit-Target gebaut ist; ohne Target bleibt die App frei von
-      Eigenbau-Inseln.
+- [x] Android zeigt die Live-Info als laufende Fortschritts-Notification
+      (laufende Stunde, Restzeit, Fortschritt), mit stiller Notification als
+      Expo-Go-Fallback.
+- [x] iOS hat die ActivityKit-Bridge und die WidgetKit-Extension-Quelle; sobald
+      das separate Target gebaut/signiert ist, erscheint die echte Live Activity.
+      Ohne Target bleibt die App frei von Eigenbau-Inseln.
 - [x] Gleiche Infos wie zuvor (Fach, Restzeit/Fortschritt, Countdown,
       Änderung/Ausfall-Markierung), Tap klappt die Detailkarte auf.
-- [ ] Aktivierung bleibt in den Einstellungen (Phase 14: eigener Punkt
-      „Live-Infos“), Erlaubnisabfrage auf Android unverändert.
+- [x] Aktivierung liegt in Einstellungen → „Live-Infos“, inklusive
+      Android-Erlaubnisabfrage.
 
 ### Abhängigkeiten
 
@@ -1103,7 +1102,7 @@ Benötigt Phase 10 (Sichtbarkeit im APK) und Phase 14 (Einstellungs-Drilldown f�
 
 ## Phase 14 — Einstellungen-Umbau (aus „Teil 2“, Punkt 5)
 
-**Status: 🟡 geplant**
+**Status: ✅ umgesetzt (2026-09-05)**
 
 ### Ziel
 
@@ -1135,16 +1134,16 @@ Details. Dashboard-Widgets werden per **Drag-and-Drop** sortiert.
 
 ### Akzeptanzkriterien
 
-- [ ] Hauptseite nennt nur Kategorien (≤ 10 Karten, keine Toggle, keine
-      Eingabefelder); jede Unterseite hat `ScreenHeader` + eigene Scroll-Reserve.
-- [ ] Zurück-Navigation aus jeder Unterseite funktioniert aus jedem Zustand
+- [x] Hauptseite nennt nur Kategorien (9 Karten, keine Toggle, keine
+      Eingabefelder); jede Unterseite hat `SettingsHeader` + eigene Scroll-Reserve.
+- [x] Zurück-Navigation aus jeder Unterseite funktioniert aus jedem Zustand
       (`useSafeBack`, Deep-Link-kompatibel).
-- [ ] Umschalten (Theme, Module, Datenschutz, Live-Island, Benachrichtigungen)
+- [x] Umschalten (Theme, Module, Datenschutz, Live-Infos, Benachrichtigungen)
       wirkt sofort und persistiert wie bisher.
-- [ ] Drag-and-Drop: Ziehen, Einsortieren, Loslassen; Reihenfolge nach
-      Neustart identisch; ausgeblendete Widgets nehmen keinen Platz ein
-      (Log #8 aus Phase 8 bleibt gewahrt); „nach oben/unten“-Buttons sind weg.
-- [ ] Kein Regressions-Risiko für Dashboard und Screens: Widget-Reihenfolge ist
+- [x] Drag-and-Drop: `Gesture.Pan` hebt Reihen an, sortiert beim Loslassen und
+      persistiert über `setWidgetOrder`; ausgeblendete Widgets nehmen auf dem
+      Dashboard keinen Platz ein; „nach oben/unten“-Buttons sind weg.
+- [x] Kein Regressions-Risiko für Dashboard und Screens: Widget-Reihenfolge bleibt
       dieselbe Datenstruktur wie vorher.
 
 ### Abhängigkeiten

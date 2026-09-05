@@ -2,16 +2,16 @@
 
 > **Single Source of Truth** für den UI-Relaunch. Diese Datei wird zu Beginn jeder
 > Session gelesen und nach jeder erledigten Phase aktualisiert.
-> Letztes Update: 2026-09-04 · Status: **Farbflächen-Redesign abgeschlossen · Phasen 1–9 ✅**
+> Letztes Update: 2026-09-05 · Status: **Farbflächen-Redesign abgeschlossen · Phasen 1–14 ✅ · Phase 15 geplant**
 >
 > **Neu ab 2026-09-04:** Der weitere Fahrplan lebt in
 > [`docs/redesign-phasen.md`](docs/redesign-phasen.md) („Farbflächen-Stil“,
 > 9 Phasen mit Akzeptanzkriterien). Die dortigen Phasen 1–9 lösen die alte
 > Nummerierung unten ab; Abschnitt 2 (Tokens) wird dort fortgeschrieben.
 >
-> **Stand 2026-09-04:** Phase 9 (Politur & Regression) ist abgeschlossen —
-> damit sind **alle 9 Redesign-Phasen umgesetzt** und es sind keine bekannten
-> funktionalen Bugs mehr offen.
+> **Stand 2026-09-05:** Phase 9 (Politur & Regression) sowie die Ergänzungsphasen
+> 10–14 sind umgesetzt. Die nächste geplante Ergänzung ist Phase 15
+> (Stundenplan-Ansichten).
 
 ---
 
@@ -231,3 +231,4 @@ oder verkürzte Anzeige + Vollname im Detail. Tab-/Section-Header → nie abschn
 | 2026-09-04 | Farbflächen-Redesign Phase 7 | ✅ **Postfach & Chat** (`app/(tabs)/inbox.tsx`, `app/thread.tsx`): Brett-Karten pro Eintrag nach Kategorie eingefärbt (`categoryFromText`, neu `categoryIcon()`/`categoryLabel()`); Brief-Karten als Farbflächen mit Statuswechsel Lavendel→Coral→Mint (Log #17), Randfarbe-Only entfernt; ungelesene Threads als Charcoal-Block mit Amber-Avatar (Log #16), gelesene als Surface-Karte; Chat-Detail mit runden Bubbles (Radius 24, eigene Nachrichten Amber-Block), Slate-Empfängerkarte und randlosem Antwortfeld. Bugs: `categoryBlock()`-Fallback lieferte `undefined`-Farbe, Tab-Badges ohne `Boolean()`-Normalisierung, Bestätigungs-Race (Liste + Sheet), paralleler Anhang-Download, Brief-Detail-Race beim schnellen Wechsel, doppeltes `markThreadRead`. Typecheck ✅ · Smoke-Matrix ✅. |
 | 2026-09-04 | Farbflächen-Redesign Phase 8 | ✅ **Einstellungen** (`app/settings.tsx` neu strukturiert): `SectionBlock` (Farbkarte + `IconBadge lg` je Sektion — Konto Mint, Schule Sky, Dashboard Violet, Benachrichtigungen Apricot, Live-Island Lavendel, Erscheinungsbild Amber, Datenschutz Charcoal, Über Slate), `SettingsGroup` (Divider nur gruppenintern, Log #18) und `ToggleRow`/`InfoRow` mit ≥ 56 px Höhe; Farbschema über das gemeinsame `SegmentedControl`; Modul-/Über-Badges als fette Pills; randlose Eingabefelder (Radius 20, min-h 52). Bugs: `moveWidget` überspringt jetzt ausgeblendete Widgets (optionales `visibleIds`), „Lokale Daten löschen“ setzte `onboarded` zurück, `Switch` mit `accessibilityLabel`. Typecheck ✅ · **volle Smoke-Matrix (17 Routen × 3 Formfaktoren)** ✅ + Dark-Stichproben ✅. |
 | 2026-09-04 | Farbflächen-Redesign Phase 9 | ✅ **Politur & Regression — Redesign abgeschlossen.** Neue Illustrations-Bibliothek `src/ui/illustrations.tsx` (12 emoji-freie Inline-SVGs, zeichnen in `useBlockInk()` ⇒ Light/Dark & alle 13 Blockfarben, Log #20); `EmptyState` nimmt jetzt einen Illustrationsnamen und fadet ein — **24/24 Leerzustände** mit Illustration + fetter Headline + Hint. Motion vereinheitlicht: alle rohen `<Pressable>` in Screens/Shell auf `PressableScale`/`PressableOpacity` migriert, handgeschriebene `active:/hover:opacity`- und `({pressed})`-Styles entfernt (Log #19; rohe Pressables nur noch als unsichtbare Modal-Backdrops). Cross-Screen-Audit: letzte Ränder weg (Zahlungen-Hero jetzt Amber-Farbfläche mit Divider, randlose Textareas, randloses Suchfeld mit `shadow.card`, `Button surface` randlos) — **kein `border-line` mehr in der App**; alle 28 `rounded-xl/2xl/3xl`-Fundstellen auf die Radius-Skala (28/24/20/999) gebracht; letzte handgebaute Icon-Kacheln → `IconBadge`. Bugs: verschachtelte Press-Flächen der Stundenplan-Karte, fehlende `FadeInUp`-Staffelung bei erledigten Aufgaben/Lernblöcken, Onboarding-Buttons am JS-Thread animiert, hint-lose Leerzustände, toter Code (`gradeColor`, `ink`). Typecheck ✅ · **volle Smoke-Matrix 51/51** ✅ · Dark-Mode-Audit 17/17 ✅. |
+| 2026-09-05 | Ergänzungsphasen 12–14 | ✅ **Grundqualität, Live-Infos und Settings-Drilldown:** Sheets haben Motion-Layer und Settings → Über zeigt `useStylePipelineHealth()`; Android-Live-Info ist als natives ongoing Progress-Notification-Modul verlinkt, iOS ActivityKit-Bridge/Widget-Quelle liegt bereit, nativ bleibt die In-App-Insel abgeschaltet und Web verankert die Pille über der Tab-Bar; `app/settings/` ersetzt die lange Liste durch 9 deep-linkbare Kategorien und Unterseiten. Dashboard-Widgets sortieren per `Gesture.Pan`/Spring und persistieren über `setWidgetOrder`, ohne ausgeblendete Karten in den Dashboard-Feed zu setzen. QA-Matrix in `docs/qa-phase12.md`. Typecheck ✅ · Web-Export ✅ · Smoke-Quick 18/18 ✅. |
