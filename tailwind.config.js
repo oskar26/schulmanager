@@ -42,7 +42,23 @@ module.exports = {
           slate: 'rgb(var(--sf-block-slate) / <alpha-value>)',
           charcoal: 'rgb(var(--sf-block-charcoal) / <alpha-value>)',
         },
-        // Feste Prioritäts-Ampel: Coral = dringend, Amber = bald, Lime = ok.
+        // Pastell-Flächen der Familien (8–12 % Tint) — Kartenhintergründe.
+        tint: {
+          violet: 'rgb(var(--sf-tint-violet) / <alpha-value>)',
+          lavender: 'rgb(var(--sf-tint-lavender) / <alpha-value>)',
+          sky: 'rgb(var(--sf-tint-sky) / <alpha-value>)',
+          teal: 'rgb(var(--sf-tint-teal) / <alpha-value>)',
+          mint: 'rgb(var(--sf-tint-mint) / <alpha-value>)',
+          lime: 'rgb(var(--sf-tint-lime) / <alpha-value>)',
+          sun: 'rgb(var(--sf-tint-sun) / <alpha-value>)',
+          amber: 'rgb(var(--sf-tint-amber) / <alpha-value>)',
+          apricot: 'rgb(var(--sf-tint-apricot) / <alpha-value>)',
+          coral: 'rgb(var(--sf-tint-coral) / <alpha-value>)',
+          pink: 'rgb(var(--sf-tint-pink) / <alpha-value>)',
+          slate: 'rgb(var(--sf-tint-slate) / <alpha-value>)',
+          charcoal: 'rgb(var(--sf-tint-charcoal) / <alpha-value>)',
+        },
+        // Prioritäts-Ampel: Rot = dringend, Amber = bald, Grün = ok.
         priority: {
           urgent: 'rgb(var(--sf-priority-urgent) / <alpha-value>)',
           soon: 'rgb(var(--sf-priority-soon) / <alpha-value>)',
@@ -73,21 +89,23 @@ module.exports = {
         success: 'rgb(var(--sf-success) / <alpha-value>)',
         warning: 'rgb(var(--sf-warning) / <alpha-value>)',
         danger: 'rgb(var(--sf-danger) / <alpha-value>)',
+        info: 'rgb(var(--sf-info) / <alpha-value>)',
       },
       borderRadius: {
-        // Radius-Skala des Farbflächen-Stils (Redesign Phase 1):
-        // Karten 28, Heroes 32, kleine Kacheln 24, Chips/Pills 20, Rest voll rund.
-        cardSm: '24px',
-        card: '28px',
-        cardLg: '32px',
-        chip: '20px',
-        pill: '999px',
-        // Bestehende Utilities bleiben als Radius-Skala nutzbar, ohne die
-        // Kartenanatomie wieder auf kleine Pillows zurückzusetzen.
+        // Radius-Skala „Playful Modern“: Outer Cards 20, Sub-Cards/Modals 14,
+        // Buttons/Badges 8 oder voll rund. Aliase halten alte Utilities lebendig.
+        sm: '8px',
+        md: '14px',
+        lg: '20px',
+        cardSm: '14px',
+        card: '20px',
+        cardLg: '24px',
+        chip: '9999px',
+        pill: '9999px',
         xl: '16px',
         '2xl': '20px',
         '3xl': '24px',
-        blob: '32px',
+        blob: '24px',
       },
       fontSize: {
         display: ['34px', { lineHeight: '38px', letterSpacing: '-0.5px' }],

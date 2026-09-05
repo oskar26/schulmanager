@@ -10,7 +10,9 @@ import {
   Clock,
   MapPin,
   MoveRight,
+  User,
   UserCheck,
+  X,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -24,8 +26,9 @@ import { useLayout } from '@/lib/breakpoints';
 import {
   AdaptiveContent, BlockCaption, BlockText, Chip, ColorBlockCard, EmptyState,
   IconBadge, Muted, Pill, Row, Screen, ScreenHeader, SegmentedControl, Sheet,
-  Skeleton, useBlockInk,
+  Skeleton, useBlockAccent,
 } from '@/ui/primitives';
+import { blockTint, radius } from '@/design/tokens';
 import { FadeInUp, LivePulse, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
@@ -121,6 +124,10 @@ export default function TimetableScreen() {
 
   const allDays = useMemo(() => weeks.flatMap((week) => week.days), [weeks]);
   const todayISO = toISO(new Date());
+  const homeworkSubjects = useMemo(
+    () => new Set((data?.homework ?? []).filter((item) => !item.done).map((item) => item.subject.toLowerCase())),
+    [data?.homework],
+  );
 
   const byDay = useMemo(() => {
     const map = new Map<string, Lesson[]>();
@@ -185,20 +192,20 @@ export default function TimetableScreen() {
           timetableMode === 'list' ? (
             <PressableOpacity
               onPress={jumpToday}
-              className="min-h-[44px] items-center justify-center rounded-full bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
+              className="min-h-[44px] items-center justify-center rounded-full bg-tint-violet px-4 hover:bg-accent-violet/20"
               accessibilityRole="button"
               accessibilityLabel="Zur aktuellen Woche springen"
             >
-              <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
+              <Text className="text-[12.5px] font-extrabold text-accent-violet">Heute</Text>
             </PressableOpacity>
           ) : (
             <PressableOpacity
               onPress={jumpToday}
-              className="min-h-[44px] items-center justify-center rounded-full bg-accent-amber/15 px-3.5 hover:bg-accent-amber/25"
+              className="min-h-[44px] items-center justify-center rounded-full bg-tint-violet px-4 hover:bg-accent-violet/20"
               accessibilityRole="button"
               accessibilityLabel="Zur aktuellen Woche springen"
             >
-              <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
+              <Text className="text-[12.5px] font-extrabold text-accent-violet">Heute</Text>
             </PressableOpacity>
           )
         }
@@ -226,13 +233,13 @@ export default function TimetableScreen() {
         /* Kalenderansicht */
         <View
           className="w-full flex-1"
-          style={wide ? { alignSelf: 'center', maxWidth: 780 } : undefined}
+          style={wide ? { alignSelf: 'center', maxWidth: 1200 } : undefined}
         >
           {/* Wochen-Navigation */}
           <View className="flex-row items-center justify-between px-4 pb-2">
             <PressableOpacity
               onPress={() => setCalendarWeekOffset((offset) => offset - 1)}
-              className="h-10 w-10 items-center justify-center rounded-full bg-line/50"
+              className="h-10 w-10 items-center justify-center rounded-full border border-line bg-surface"
               accessibilityRole="button"
               accessibilityLabel="Vorherige Woche"
             >
@@ -243,7 +250,7 @@ export default function TimetableScreen() {
             </Text>
             <PressableOpacity
               onPress={() => setCalendarWeekOffset((offset) => offset + 1)}
-              className="h-10 w-10 items-center justify-center rounded-full bg-line/50"
+              className="h-10 w-10 items-center justify-center rounded-full border border-line bg-surface"
               accessibilityRole="button"
               accessibilityLabel="Nächste Woche"
             >
@@ -252,12 +259,15 @@ export default function TimetableScreen() {
           </View>
 
           {/* Kalender-Raster */}
-          <TimetableWeekGrid
-            days={calendarWeek.days}
-            lessons={calendarWeek.days.flatMap((day) => byDay.get(day) ?? [])}
-            onSelectLesson={setDetail}
-            showWeekend={showWeekend}
-          />
+          <View className="flex-1 px-4">
+            <TimetableWeekGrid
+              days={calendarWeek.days}
+              lessons={calendarWeek.days.flatMap((day) => byDay.get(day) ?? [])}
+              onSelectLesson={setDetail}
+              showWeekend={showWeekend}
+              homeworkSubjects={homeworkSubjects}
+            />
+          </View>
         </View>
       ) : (
         /* Listenansicht (Phase 4) */
@@ -344,10 +354,10 @@ function WeekStrip({
     last.getDate()}.${String(last.getMonth() + 1).padStart(2, '0')}.`;
 
   return (
-    <View className="overflow-hidden rounded-[24px] bg-surface p-3" style={{ shadowColor: colors.charcoal, shadowOpacity: 0.05, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 2 }}>
+    <View className="overflow-hidden rounded-[20px] border border-line bg-surface p-3" style={{ shadowColor: colors.charcoal, shadowOpacity: 0.04, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 1 }}>
       <Row className="justify-between pb-2 pl-1 pr-1">
         <Row className="gap-2">
-          <IconBadge icon={CalendarDays} color={colors.accent.amber} size="sm" tone="tint" />
+          <IconBadge icon={CalendarDays} color={colors.accent.violet} size="sm" tone="tint" />
           <Text className="text-[13.5px] font-extrabold tracking-[-0.2px] text-ink">{label}</Text>
         </Row>
         <Text className="text-[11px] font-bold text-faint" style={{ fontVariant: ['tabular-nums'] }}>
@@ -372,10 +382,10 @@ function WeekStrip({
               key={day}
               onPress={() => onSelectDay(day)}
               scale={0.94}
-              className={`h-[64px] w-[58px] items-center justify-center rounded-[20px] ${
+              className={`h-[64px] w-[58px] items-center justify-center rounded-[14px] ${
                 isActive
-                  ? 'bg-accent-amber hover:bg-accent-amber'
-                  : 'bg-line/50 hover:bg-line/70'
+                  ? 'bg-accent-violet hover:bg-accent-violet'
+                  : 'bg-canvas hover:bg-line/60'
               }`}
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
@@ -383,7 +393,7 @@ function WeekStrip({
             >
               <Text
                 className={`text-[10px] font-extrabold uppercase tracking-wide ${
-                  isActive ? 'text-on-amber/70' : 'text-faint'
+                  isActive ? 'text-white/75' : 'text-muted'
                 }`}
               >
                 {WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}
@@ -392,10 +402,10 @@ function WeekStrip({
                   andere Streifen/die andere Woche ausgewählt ist. */}
               <View
                 className={`mt-0.5 h-7 w-7 items-center justify-center rounded-full border-[1.6px] ${
-                  isToday ? (isActive ? 'border-white/70' : 'border-accent-amber') : 'border-transparent'
+                  isToday ? (isActive ? 'border-white/70' : 'border-accent-violet') : 'border-transparent'
                 }`}
               >
-                <Text className={`text-[17px] font-extrabold leading-6 ${isActive ? 'text-on-amber' : 'text-ink'}`}>
+                <Text className={`text-[17px] font-extrabold leading-6 ${isActive ? 'text-white' : 'text-ink'}`}>
                   {date.getDate()}
                 </Text>
               </View>
@@ -406,11 +416,11 @@ function WeekStrip({
                     <View
                       key={`${color}-${index}`}
                       className="h-[6px] w-[6px] rounded-full"
-                      style={{ backgroundColor: isActive ? 'rgba(0,0,0,0.35)' : color }}
+                      style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.8)' : color }}
                     />
                   ))
                 ) : (
-                  <View className="h-[2px] w-4 rounded-full" style={{ backgroundColor: isActive ? 'rgba(0,0,0,0.18)' : 'transparent' }} />
+                  <View className="h-[2px] w-4 rounded-full" style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.35)' : 'transparent' }} />
                 )}
               </View>
             </PressableScale>
@@ -457,7 +467,7 @@ function DayList({
           {formatLongDay(day)}
         </Text>
         <Row className="flex-shrink flex-wrap justify-end gap-1.5">
-          {runningCount > 0 ? <Chip label={`${runningCount} jetzt`} color={colors.accent.amber} tone="solid" /> : null}
+          {runningCount > 0 ? <Chip label={`${runningCount} jetzt`} color={colors.accent.violet} tone="solid" /> : null}
           {cancelledCount > 0 ? <Chip label={`${cancelledCount} Entfall`} color={colors.priority.urgent} tone="solid" icon={Ban} /> : null}
           {substitutionCount > 0 ? <Chip label={`${substitutionCount} Vertretung`} color={colors.success} tone="solid" icon={UserCheck} /> : null}
           {changeCount > 0 ? <Chip label={`${changeCount} Raumwechsel`} color={colors.warning} tone="solid" icon={MoveRight} /> : null}
@@ -520,16 +530,14 @@ function LessonBlockCard({
         : null;
 
   return (
-    /* Vollflächige Farbblock-Karte in Fachfarbe — kein Rand, kein linker Streifen.
-       Entfall als Coral-Block, damit der freie Tag auf den ersten Blick klar ist.
-       Der Press-Scale kommt aus `ColorBlockCard` selbst (Phase 9: eine einzige
-       Press-Interaktion pro Karte statt verschachtelter Pressables). */
+    /* Pastell-Karte in Fachfarbe mit 4-px-Akzentstreifen links; Entfall in
+       Rot-Tint. Der Press-Scale kommt aus `ColorBlockCard` selbst. */
     <ColorBlockCard
       color={blockColor}
       onPress={onPress}
       accessibilityLabel={`${displaySubject}, ${lesson.start} Uhr`}
       dim={past && !running && !cancelled}
-      radius={28}
+      radius={radius.lg}
       style={{ padding: compact ? 12 : 14 }}
     >
       <BlockCardContent
@@ -559,12 +567,11 @@ function BlockCardContent({
   running: boolean;
   compact: boolean;
 }) {
-  const ink = useBlockInk();
+  const fg = useBlockAccent();
   const { colors } = useThemeColors();
   const cancelled = lesson.state === 'cancelled';
   const substitution = lesson.state === 'substitution';
   const roomChange = lesson.state === 'room-change';
-  const fg = ink;
 
   return (
     <View className="gap-2.5">
@@ -633,6 +640,12 @@ function BlockCardContent({
 
 /* ------------------------------------------------------------------ Detail-Sheet */
 
+/**
+ * Detail-Pop-up einer Stunde. Der Titel liegt jetzt **im** Header-Banner
+ * (Fachfarbe als dezenter Verlauf, padding 20, flex space-between), der
+ * Close-Button sitzt oben rechts im Banner mit transparentem Kreis — kein
+ * Herausbrechen mehr auf den Backdrop (Sheet-Wrapper: overflow hidden).
+ */
 function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () => void }) {
   const { colors, isDark } = useThemeColors();
   const { data } = useSnapshot();
@@ -645,9 +658,134 @@ function LessonSheet({ lesson, onClose }: { lesson: Lesson | null; onClose: () =
   );
 
   return (
-    <Sheet open={Boolean(lesson)} onClose={onClose} title={lesson?.subject}>
+    <Sheet
+      open={Boolean(lesson)}
+      onClose={onClose}
+      header={lesson ? <LessonSheetHeader lesson={lesson} isDark={isDark} colors={colors} onClose={onClose} /> : undefined}
+    >
       {lesson ? <LessonSheetBody lesson={lesson} relatedHomework={relatedHomework} relatedExams={relatedExams} isDark={isDark} colors={colors} /> : null}
     </Sheet>
+  );
+}
+
+function LessonSheetHeader({
+  lesson,
+  isDark,
+  colors,
+  onClose,
+}: {
+  lesson: Lesson;
+  isDark: boolean;
+  colors: ReturnType<typeof useThemeColors>['colors'];
+  onClose: () => void;
+}) {
+  const cancelled = lesson.state === 'cancelled';
+  const displaySubject = lessonMainSubject(lesson);
+  const SubjectIcon = subjectIcon(displaySubject);
+  const accent = cancelled ? colors.status.urgent : subjectColor(displaySubject, isDark);
+  const state =
+    lesson.state === 'cancelled'
+      ? { label: 'Entfall', icon: Ban }
+      : lesson.state === 'substitution'
+        ? { label: 'Vertretung', icon: UserCheck }
+        : lesson.state === 'room-change'
+          ? { label: 'Raumwechsel', icon: MoveRight }
+          : null;
+
+  return (
+    <View style={{ backgroundColor: accent, position: 'relative', overflow: 'hidden' }}>
+      {/* Dezenter Verlauf: hellerer Licht-Blob rechts oben. */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: -90,
+          right: -50,
+          width: 220,
+          height: 220,
+          borderRadius: 110,
+          backgroundColor: 'rgba(255,255,255,0.16)',
+        }}
+      />
+      <View style={{ padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <Row className="min-w-0 flex-1 gap-3">
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <SubjectIcon size={22} strokeWidth={2.2} color="#FFFFFF" />
+          </View>
+          <View className="min-w-0 flex-1">
+            <Text className="text-[20px] font-extrabold leading-[24px] tracking-[-0.3px] text-white" numberOfLines={1} ellipsizeMode="tail">
+              {displaySubject}
+            </Text>
+            <Text className="mt-0.5 text-[12.5px] font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }} numberOfLines={1}>
+              {lesson.hour}. Stunde · {lesson.start}–{lesson.end} Uhr
+            </Text>
+          </View>
+        </Row>
+        <PressableScale
+          onPress={onClose}
+          scale={0.9}
+          accessibilityRole="button"
+          accessibilityLabel="Schließen"
+          hitSlop={8}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <X size={18} strokeWidth={2.6} color="#FFFFFF" />
+        </PressableScale>
+      </View>
+      {state ? (
+        <View style={{ paddingHorizontal: 20, paddingBottom: 16, marginTop: -6 }}>
+          <View
+            className="flex-row items-center gap-1.5 self-start rounded-full px-3 py-1"
+            style={{ backgroundColor: 'rgba(255,255,255,0.22)' }}
+          >
+            <state.icon size={13} strokeWidth={2.6} color="#FFFFFF" />
+            <Text className="text-[12px] font-extrabold text-white">{state.label}</Text>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** Unterkarte im Modal-Inhalt: App-Hintergrund, Radius 14, Icon-Container. */
+function SheetSection({
+  icon: Icon,
+  color,
+  title,
+  children,
+}: {
+  icon: LucideIcon;
+  color: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const { colors, isDark } = useThemeColors();
+  return (
+    <View style={{ backgroundColor: colors.canvas, borderRadius: radius.md, padding: 14, gap: 8 }}>
+      <Row className="gap-2.5">
+        <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: blockTint(color, isDark), alignItems: 'center', justifyContent: 'center' }}>
+          <Icon size={16} strokeWidth={2.3} color={color} />
+        </View>
+        <Text className="flex-1 text-[14px] font-bold text-ink" numberOfLines={1}>{title}</Text>
+      </Row>
+      {children}
+    </View>
   );
 }
 
@@ -659,7 +797,7 @@ function LessonSheetBody({
   colors,
 }: {
   lesson: Lesson;
-  relatedHomework?: { id: string; text: string }[];
+  relatedHomework?: { id: string; text: string; due?: string }[];
   relatedExams?: { id: string; date: string; type?: string }[];
   isDark: boolean;
   colors: ReturnType<typeof useThemeColors>['colors'];
@@ -668,50 +806,36 @@ function LessonSheetBody({
   const substitution = lesson.state === 'substitution';
   const roomChange = lesson.state === 'room-change';
   const displaySubject = lessonMainSubject(lesson);
-  const SubjectIcon = subjectIcon(displaySubject);
-  const blockColor = cancelled ? colors.priority.urgent : subjectColor(displaySubject, isDark);
-  const state =
-    lesson.state === 'cancelled'
-      ? { label: 'Entfall', icon: Ban, color: colors.priority.urgent }
-      : lesson.state === 'substitution'
-        ? { label: 'Vertretung', icon: UserCheck, color: colors.success }
-        : lesson.state === 'room-change'
-          ? { label: 'Raumwechsel', icon: MoveRight, color: colors.warning }
-          : null;
+  const accent = cancelled ? colors.status.urgent : subjectColor(displaySubject, isDark);
+
+  const facts: { icon: LucideIcon; label: string }[] = [
+    { icon: Clock, label: `${lesson.start}–${lesson.end} Uhr` },
+    ...(lesson.room ? [{ icon: MapPin, label: `Raum ${lesson.room}` }] : []),
+    ...(lesson.teacher ? [{ icon: User, label: lesson.teacher }] : []),
+  ];
 
   return (
-    <View className="gap-3">
-      {/* Kopf im neuen Stil: ColorBlockCard in Fachfarbe */}
-      <ColorBlockCard color={blockColor} style={{ padding: 16 }}>
-        <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
-          <SheetIconBadge icon={SubjectIcon} />
-          <View className="min-w-0 flex-1">
-            <BlockText className="text-[19px] font-extrabold leading-[23px] tracking-[-0.3px]" numberOfLines={2}>
-              {displaySubject}
-            </BlockText>
-            <BlockCaption className="mt-1 text-[13px] font-bold">
-              {lesson.hour}. Stunde · {lesson.start}–{lesson.end} Uhr
-            </BlockCaption>
-            {state ? (
-              <View className="mt-2 self-start">
-                <Pill label={state.label} icon={state.icon} color={state.color} tone="solid" />
-              </View>
-            ) : null}
-            {lesson.teacher || lesson.room ? (
-              <BlockCaption className="mt-1.5" numberOfLines={1}>
-                {[lesson.teacher, lesson.room ? `Raum ${lesson.room}` : ''].filter(Boolean).join(' · ')}
-              </BlockCaption>
-            ) : null}
-            {lesson.comment ? (
-              <BlockCaption className="mt-2 text-[13px] leading-5" numberOfLines={3}>{lesson.comment}</BlockCaption>
-            ) : null}
+    <View className="gap-3 pt-4">
+      {/* Fakten als Badges */}
+      <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+        {facts.map((fact) => (
+          <View
+            key={fact.label}
+            className="flex-row items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+            style={{ backgroundColor: blockTint(accent, isDark) }}
+          >
+            <fact.icon size={13} strokeWidth={2.4} color={accent} />
+            <Text className="text-[12.5px] font-bold text-ink" numberOfLines={1}>{fact.label}</Text>
           </View>
-        </Row>
-      </ColorBlockCard>
+        ))}
+      </View>
+
+      {lesson.comment ? (
+        <Muted className="text-[13px] leading-5">{lesson.comment}</Muted>
+      ) : null}
 
       {lesson.state !== 'regular' ? (
-        <View className="gap-2 rounded-[24px] bg-line/50 p-4">
-          <Text className="text-[13px] font-extrabold text-ink">Änderung</Text>
+        <SheetSection icon={AlertTriangle} color={cancelled ? colors.status.urgent : colors.status.warning} title="Änderung">
           <Muted className="text-[13px] leading-5">
             {cancelled
               ? `${lesson.originalSubject ?? lesson.subject} entfällt.`
@@ -721,40 +845,35 @@ function LessonSheetBody({
                   ? `Raum geändert: ${lesson.originalRoom ?? '—'} → ${lesson.room ?? '—'}`
                   : null}
           </Muted>
-        </View>
+        </SheetSection>
       ) : null}
 
       {relatedHomework && relatedHomework.length > 0 ? (
-        <View className="gap-2 rounded-[24px] bg-line/50 p-4">
-          <Row className="gap-2">
-            <IconBadge icon={BookOpen} color={colors.success} size="sm" />
-            <Text className="text-[13px] font-extrabold text-ink">Hausaufgaben in diesem Fach</Text>
-          </Row>
+        <SheetSection icon={BookOpen} color={colors.status.success} title="Hausaufgaben in diesem Fach">
           {relatedHomework.slice(0, 3).map((item) => (
-            <Muted key={item.id} className="mt-1 text-[13px] leading-5">{item.text}</Muted>
+            <Row key={item.id} className="gap-2.5" style={{ alignItems: 'flex-start' }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.status.success, marginTop: 7 }} />
+              <View className="min-w-0 flex-1">
+                <Text className="text-[13px] leading-5 text-ink" numberOfLines={3}>{item.text}</Text>
+                {item.due ? <Muted className="text-[11.5px]">{formatLongDay(item.due)}</Muted> : null}
+              </View>
+            </Row>
           ))}
-        </View>
+        </SheetSection>
       ) : null}
 
       {relatedExams && relatedExams.length > 0 ? (
-        <View className="gap-2 rounded-[24px] bg-line/50 p-4">
-          <Row className="gap-2">
-            <IconBadge icon={AlertTriangle} color={colors.warning} size="sm" />
-            <Text className="text-[13px] font-extrabold text-ink">Anstehende Arbeiten</Text>
-          </Row>
+        <SheetSection icon={AlertTriangle} color={colors.status.warning} title="Anstehende Arbeiten">
           {relatedExams.map((exam) => (
-            <Muted key={exam.id} className="mt-1 text-[13px]">
-              {exam.date} · {exam.type ?? 'Arbeit'}
-            </Muted>
+            <Row key={exam.id} className="gap-2.5">
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.status.warning }} />
+              <Text className="flex-1 text-[13px] text-ink" numberOfLines={1}>
+                {formatLongDay(exam.date)} · {exam.type ?? 'Arbeit'}
+              </Text>
+            </Row>
           ))}
-        </View>
+        </SheetSection>
       ) : null}
     </View>
   );
-}
-
-/** Icon-Kreis im Sheet-Kopf — IconBadge liefert bereits die passende Form. */
-function SheetIconBadge({ icon }: { icon: LucideIcon }) {
-  const ink = useBlockInk();
-  return <IconBadge icon={icon} color={ink} size="lg" tone="tint" className="mt-0.5" />;
 }

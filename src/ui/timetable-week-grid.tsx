@@ -1,93 +1,72 @@
 /**
- * Phase 15 · Kalenderansicht — Wochenraster mit Zeitachse.
+ * Kalenderansicht — Wochenraster mit Zeitachse („Playful Modern“, docs/playful-modern.md §2.1).
  *
- * Wochentage als Spalten (Mo–Fr, optional Sa/So), Zeitachse sticky links,
- * farbige vertikale Blöcke exakt über ihrer Zeitspanne. Kompakte Kürzel
- * für Fach/Lehrer/Raum. Freistunden bleiben als Lücke sichtbar.
+ * · Zeitachse 07:00–16:00 links (50 px), Stundenmarker linksbündig, dezente
+ *   gestrichelte Horizontallinien.
+ * · Fach-Karten: Pastell-Hintergrund des Fachs + 4-px-Akzentstreifen links.
+ *   Zeile 1 fett: sauber abgekürzter Fachname („Mathe“ statt „Math“);
+ *   Zeile 2 muted 11 px: Raum · Zeit. Nichts wird mehr mitten im Wort
+ *   abgeschnitten — bei wenig Platz greift Ellipsis am Wortende.
+ * · Status-Dots oben rechts: rot pulsierend = Entfall/Vertretung,
+ *   grün = Hausaufgabe in diesem Fach.
+ * · Hover: translateY(-2px) scale(1.02).
  *
  * Überlappungen (z. B. Vertretung direkt nach Originalstunde) werden
  * nebeneinander statt übereinander gelegt.
  */
 import React, { useMemo } from 'react';
 import { ScrollView, Text, View, type ViewStyle } from 'react-native';
-import { Ban, MoveRight, UserCheck, type LucideIcon } from 'lucide-react-native';
 
 import type { Lesson } from '@/api/types';
-import { subjectColor } from '@/design/subjects';
-import { minutesOf, WEEKDAYS_SHORT } from '@/lib/date';
+import { subjectColor, subjectShortName, subjectTint } from '@/design/subjects';
+import { minutesOf, WEEKDAYS, WEEKDAYS_SHORT } from '@/lib/date';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn, resolveThemeColor } from '@/design/tokens';
-import { tint } from '@/design/subjects';
-import { PressableScale } from '@/ui/motion';
+import { radius, shadow } from '@/design/tokens';
+import { LivePulse, PressableScale } from '@/ui/motion';
 
 /* ------------------------------------------------------------------ Konstanten */
 
-/** Pixel pro Stunde — Basisraster. */
-const HOUR_HEIGHT = 44;
+/** Pixel pro Stunde — großzügiger als vorher, damit zwei Textzeilen passen. */
+const HOUR_HEIGHT = 64;
 /** Breite der Zeitachse links. */
-const TIME_AXIS_WIDTH = 44;
-/** Oberer/unterer Puffer im Raster (Minuten). */
-const AXIS_PADDING_MINUTES = 30;
-/** Mindestens angezeigte Stundenachse, damit leere Tage nicht komisch wirken. */
-const DEFAULT_AXIS_START = 7 * 60; // 07:00
-const DEFAULT_AXIS_END = 15 * 60;   // 15:00
+const TIME_AXIS_WIDTH = 50;
+/** Abstand zwischen Tagesspalten. */
+const COLUMN_GAP = 6;
+/** Feste Zeitachse 07:00–16:00; wird nur erweitert, wenn Stunden außerhalb liegen. */
+const DEFAULT_AXIS_START = 7 * 60;
+const DEFAULT_AXIS_END = 16 * 60;
 
 /* ------------------------------------------------------------------ Helpers */
 
-/** `HH:MM` in Minuten seit Mitternacht; leere Strings → 0. */
-const safeMinutes = (hhmm: string): number => {
-  if (!hhmm) return 0;
-  return minutesOf(hhmm);
-};
+const safeMinutes = (hhmm: string): number => (hhmm ? minutesOf(hhmm) : 0);
 
 interface PlacedLesson {
   lesson: Lesson;
   top: number;
   height: number;
-  /** Spalte innerhalb der Überlappungsgruppe (0 = links). */
   column: number;
-  /** Anzahl der Spalten in der Überlappungsgruppe. */
   columnCount: number;
 }
 
-/**
- * Ermittelt die Zeitachse (Start/Ende in Minuten) aus den vorhandenen Stunden.
- * Fällt auf sinnvolle Defaults zurück, wenn keine Stunden vorhanden sind.
- */
 function computeAxisRange(lessons: Lesson[]): { start: number; end: number } {
-  if (lessons.length === 0) {
-    return { start: DEFAULT_AXIS_START, end: DEFAULT_AXIS_END };
-  }
   let earliest = DEFAULT_AXIS_START;
   let latest = DEFAULT_AXIS_END;
   for (const lesson of lessons) {
     const s = safeMinutes(lesson.start);
     const e = safeMinutes(lesson.end);
-    if (s > 0 && s < earliest) earliest = s;
-    if (e > 0 && e > latest) latest = e;
+    if (s > 0 && s < earliest) earliest = Math.floor(s / 60) * 60;
+    if (e > 0 && e > latest) latest = Math.ceil(e / 60) * 60;
   }
-  return {
-    start: Math.max(0, earliest - AXIS_PADDING_MINUTES),
-    end: latest + AXIS_PADDING_MINUTES,
-  };
+  return { start: earliest, end: latest };
 }
 
-/**
- * Legt Stunden pixelgenau in ihre Zeitspanne und löst Überlappungen in Spalten auf.
- * Pro Tag separat aufrufen.
- */
-function placeLessons(
-  lessons: Lesson[],
-  axisStart: number,
-  hourHeight: number,
-): PlacedLesson[] {
+function placeLessons(lessons: Lesson[], axisStart: number, hourHeight: number): PlacedLesson[] {
   if (lessons.length === 0) return [];
 
   const sorted = [...lessons].sort(
     (a, b) => safeMinutes(a.start) - safeMinutes(b.start) || safeMinutes(a.end) - safeMinutes(b.end),
   );
 
-  // Überlappungsgruppen finden (Greedy-Intervallfärbung).
   type Item = { lesson: Lesson; start: number; end: number; col: number };
   const items: Item[] = sorted.map((lesson) => ({
     lesson,
@@ -96,7 +75,6 @@ function placeLessons(
     col: 0,
   }));
 
-  // Jede Gruppe von sich überlappenden Intervallen bekommt Spalten.
   const groups: Item[][] = [];
   let currentGroup: Item[] = [];
   let groupEnd = -1;
@@ -107,7 +85,6 @@ function placeLessons(
       currentGroup = [];
       groupEnd = -1;
     }
-    // Nächste freie Spalte in der aktuellen Gruppe finden.
     const usedCols = new Set(currentGroup.filter((g) => g.end > item.start).map((g) => g.col));
     let col = 0;
     while (usedCols.has(col)) col += 1;
@@ -117,32 +94,23 @@ function placeLessons(
   }
   if (currentGroup.length > 0) groups.push(currentGroup);
 
-  // Spaltenanzahl pro Gruppe bestimmen und Positionen berechnen.
   const placed: PlacedLesson[] = [];
   for (const group of groups) {
     const columnCount = Math.max(...group.map((g) => g.col)) + 1;
     for (const item of group) {
-      const duration = Math.max(item.end - item.start, 15); // Mindesthöhe
+      const duration = Math.max(item.end - item.start, 15);
       const top = ((item.start - axisStart) / 60) * hourHeight;
       const height = (duration / 60) * hourHeight;
       placed.push({
         lesson: item.lesson,
         top,
-        height: Math.max(height, 28),
+        height: Math.max(height, 34),
         column: item.col,
         columnCount,
       });
     }
   }
   return placed;
-}
-
-/** Kürzt einen Fächernamen auf max. 4 Zeichen für das Raster. */
-function subjectAbbr(lesson: Lesson): string {
-  if (lesson.subjectAbbr && lesson.subjectAbbr.length <= 5) return lesson.subjectAbbr;
-  const name = lesson.subject;
-  if (name.length <= 4) return name;
-  return name.slice(0, 4);
 }
 
 /* ------------------------------------------------------------------ Komponente */
@@ -152,6 +120,7 @@ export function TimetableWeekGrid({
   lessons,
   onSelectLesson,
   showWeekend = false,
+  homeworkSubjects,
 }: {
   /** ISO-Datums-Strings der anzuzeigenden Tage (Mo–Fr oder Mo–So). */
   days: string[];
@@ -159,17 +128,17 @@ export function TimetableWeekGrid({
   lessons: Lesson[];
   onSelectLesson: (lesson: Lesson) => void;
   showWeekend?: boolean;
+  /** Fächer (lowercase), zu denen offene Hausaufgaben existieren → grüner Dot. */
+  homeworkSubjects?: Set<string>;
 }) {
   const { colors, isDark } = useThemeColors();
 
   const visibleDays = showWeekend ? days : days.filter((_, i) => i < 5);
-  const dayCount = visibleDays.length;
 
   const axis = useMemo(() => computeAxisRange(lessons), [lessons]);
   const totalHours = (axis.end - axis.start) / 60;
   const gridHeight = totalHours * HOUR_HEIGHT;
 
-  // Stunden pro Tag gruppieren und platzieren.
   const placedByDay = useMemo(() => {
     const map = new Map<string, PlacedLesson[]>();
     for (const day of visibleDays) {
@@ -179,13 +148,10 @@ export function TimetableWeekGrid({
     return map;
   }, [lessons, visibleDays, axis.start]);
 
-  // Stundenmarkierungen für die Zeitachse.
   const hourMarks = useMemo(() => {
     const marks: { minute: number; label: string }[] = [];
-    const startHour = Math.ceil(axis.start / 60);
-    const endHour = Math.floor(axis.end / 60);
-    for (let h = startHour; h <= endHour; h++) {
-      marks.push({ minute: h * 60, label: `${h}` });
+    for (let h = Math.ceil(axis.start / 60); h <= Math.floor(axis.end / 60); h++) {
+      marks.push({ minute: h * 60, label: `${String(h).padStart(2, '0')}:00` });
     }
     return marks;
   }, [axis]);
@@ -196,75 +162,81 @@ export function TimetableWeekGrid({
     return copy.toISOString().slice(0, 10);
   })();
 
+  const columnWidthStyle: ViewStyle = { flex: 1, minWidth: 0 };
+
   return (
-    <View className="flex-1">
+    <View
+      className="flex-1"
+      style={{
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        borderColor: colors.line,
+        overflow: 'hidden',
+        ...shadow.card,
+      }}
+    >
       {/* Kopfzeile: Wochentage */}
-      <View style={{ flexDirection: 'row', paddingLeft: TIME_AXIS_WIDTH }}>
-        {visibleDays.map((day, index) => {
+      <View
+        style={{
+          flexDirection: 'row',
+          paddingLeft: TIME_AXIS_WIDTH,
+          paddingRight: 10,
+          paddingTop: 12,
+          paddingBottom: 10,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.line,
+          gap: COLUMN_GAP,
+        }}
+      >
+        {visibleDays.map((day) => {
           const date = new Date(day);
           const isToday = day === todayISO;
           const dayIndex = (date.getDay() + 6) % 7;
           return (
-            <View
-              key={day}
-              style={{ flex: 1, alignItems: 'center', paddingBottom: 6, paddingTop: 4 }}
-            >
-              <Text
-                className="text-[10px] font-extrabold uppercase tracking-wide"
-                style={{ color: isToday ? colors.accent.amber : colors.faint }}
-              >
-                {WEEKDAYS_SHORT[dayIndex]}
-              </Text>
+            <View key={day} style={[columnWidthStyle, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
               <View
                 style={{
-                  width: 28,
+                  minWidth: 28,
                   height: 28,
-                  borderRadius: 14,
+                  paddingHorizontal: 6,
+                  borderRadius: 8,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginTop: 2,
-                  backgroundColor: isToday ? colors.accent.amber : 'transparent',
-                  borderWidth: isToday ? 0 : 1.5,
-                  borderColor: isToday ? 'transparent' : colors.faint + '40',
+                  backgroundColor: isToday ? colors.accent.violet : colors.canvas,
                 }}
               >
                 <Text
                   className="text-[13px] font-extrabold"
-                  style={{ color: isToday ? colors.on.amber : colors.ink }}
+                  style={{ color: isToday ? '#FFFFFF' : colors.ink, fontVariant: ['tabular-nums'] }}
                 >
                   {date.getDate()}
                 </Text>
               </View>
+              <Text
+                className="flex-shrink text-[11px] font-extrabold uppercase tracking-[0.8px]"
+                style={{ color: isToday ? colors.accent.violet : colors.muted }}
+                numberOfLines={1}
+              >
+                {visibleDays.length <= 5 ? WEEKDAYS[dayIndex] : WEEKDAYS_SHORT[dayIndex]}
+              </Text>
             </View>
           );
         })}
       </View>
 
       {/* Scrollbarer Raster-Bereich */}
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 16 }}
-      >
-        <View style={{ flexDirection: 'row', minHeight: gridHeight }}>
-          {/* Zeitachse (sticky links über separate View) */}
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 10 }}>
+        <View style={{ flexDirection: 'row', minHeight: gridHeight + 12 }}>
+          {/* Zeitachse */}
           <View style={{ width: TIME_AXIS_WIDTH, position: 'relative' }}>
             {hourMarks.map((mark) => {
               const top = ((mark.minute - axis.start) / 60) * HOUR_HEIGHT;
               return (
-                <View
-                  key={mark.minute}
-                  style={{
-                    position: 'absolute',
-                    top: top - 7,
-                    left: 0,
-                    right: 4,
-                    alignItems: 'flex-end',
-                  }}
-                >
+                <View key={mark.minute} style={{ position: 'absolute', top: top - 7, left: 10 }}>
                   <Text
-                    className="text-[10px] font-bold"
-                    style={{ color: colors.faint, fontVariant: ['tabular-nums'] }}
+                    className="text-[10.5px] font-bold"
+                    style={{ color: colors.muted, fontVariant: ['tabular-nums'] }}
                   >
                     {mark.label}
                   </Text>
@@ -274,20 +246,23 @@ export function TimetableWeekGrid({
           </View>
 
           {/* Spalten-Bereich */}
-          <View style={{ flex: 1, flexDirection: 'row', position: 'relative' }}>
-            {/* Horizontale Stundenlinien */}
+          <View style={{ flex: 1, flexDirection: 'row', position: 'relative', paddingRight: 10, gap: COLUMN_GAP }}>
+            {/* Gestrichelte Stundenlinien */}
             {hourMarks.map((mark) => {
               const top = ((mark.minute - axis.start) / 60) * HOUR_HEIGHT;
               return (
                 <View
                   key={`line-${mark.minute}`}
+                  pointerEvents="none"
                   style={{
                     position: 'absolute',
                     top,
                     left: 0,
-                    right: 0,
-                    height: 1,
-                    backgroundColor: colors.line,
+                    right: 10,
+                    height: 0,
+                    borderTopWidth: 1,
+                    borderStyle: 'dashed',
+                    borderColor: colors.line,
                   }}
                 />
               );
@@ -296,16 +271,26 @@ export function TimetableWeekGrid({
             {/* Tagesspalten */}
             {visibleDays.map((day) => {
               const placed = placedByDay.get(day) ?? [];
+              const isToday = day === todayISO;
               return (
                 <View
                   key={day}
-                  style={{ flex: 1, position: 'relative', minHeight: gridHeight }}
+                  style={[
+                    columnWidthStyle,
+                    {
+                      position: 'relative',
+                      minHeight: gridHeight,
+                      borderRadius: radius.md,
+                      backgroundColor: isToday ? (isDark ? 'rgba(129,140,248,0.06)' : 'rgba(99,102,241,0.035)') : 'transparent',
+                    },
+                  ]}
                 >
                   {placed.map((item) => (
                     <CalendarLessonBlock
                       key={item.lesson.id}
                       placed={item}
                       isDark={isDark}
+                      hasHomework={Boolean(homeworkSubjects?.has(item.lesson.subject.toLowerCase()))}
                       onPress={() => onSelectLesson(item.lesson)}
                     />
                   ))}
@@ -324,10 +309,12 @@ export function TimetableWeekGrid({
 function CalendarLessonBlock({
   placed,
   isDark,
+  hasHomework,
   onPress,
 }: {
   placed: PlacedLesson;
   isDark: boolean;
+  hasHomework: boolean;
   onPress: () => void;
 }) {
   const { colors } = useThemeColors();
@@ -342,125 +329,98 @@ function CalendarLessonBlock({
       ? lesson.originalSubject
       : lesson.subject;
 
-  const blockColor = cancelled
-    ? colors.priority.urgent
-    : subjectColor(displaySubject, isDark);
-  const resolved = resolveThemeColor(blockColor, isDark);
-  const fg = foregroundOn(resolved, colors);
+  const accent = cancelled ? colors.status.urgent : subjectColor(displaySubject, isDark);
+  const background = cancelled ? (isDark ? 'rgba(248,113,113,0.14)' : '#FEF2F2') : subjectTint(displaySubject, isDark);
 
-  // Breite bei Überlappungen aufteilen.
   const widthPercent = 100 / columnCount;
   const leftPercent = column * widthPercent;
 
-  const stateIcon: LucideIcon | null = cancelled
-    ? Ban
-    : substitution
-      ? UserCheck
-      : roomChange
-        ? MoveRight
-        : null;
+  const name = subjectShortName(displaySubject, lesson.subjectAbbr);
+  const meta = [lesson.room, lesson.start].filter(Boolean).join(' · ');
 
-  const stateColor = cancelled
-    ? colors.priority.urgent
-    : substitution
-      ? colors.success
-      : roomChange
-        ? colors.warning
-        : null;
-
-  // Kompakte Kürzel
-  const abbr = subjectAbbr(lesson);
-  const teacher = lesson.teacher ? lesson.teacher.slice(0, 6) : '';
-  const room = lesson.room ? lesson.room.slice(0, 8) : '';
-
-  const isCompact = height < 52;
+  const isCompact = height < 46;
+  const tight = columnCount > 1;
 
   const containerStyle: ViewStyle = {
     position: 'absolute',
-    top,
-    left: `${leftPercent + 0.5}%`,
-    width: `${widthPercent - 1}%`,
-    height,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: resolved,
-    paddingHorizontal: 4,
-    paddingVertical: 3,
-    justifyContent: 'center',
+    top: top + 1,
+    left: `${leftPercent}%`,
+    width: `${widthPercent}%`,
+    height: height - 3,
+    paddingRight: column < columnCount - 1 ? 3 : 0,
   };
 
   return (
-    <PressableScale
-      onPress={onPress}
-      scale={0.95}
-      style={containerStyle}
-      accessibilityRole="button"
-      accessibilityLabel={`${displaySubject}, ${lesson.start} Uhr${cancelled ? ', entfällt' : ''}`}
-    >
-      {/* Fach-Kürzel */}
-      <Text
-        numberOfLines={1}
-        style={{
-          color: fg,
-          fontSize: isCompact ? 10 : 12,
-          fontWeight: '800',
-          letterSpacing: -0.2,
-          textDecorationLine: cancelled ? 'line-through' : 'none',
-          opacity: cancelled ? 0.8 : 1,
-        }}
+    <View style={containerStyle} pointerEvents="box-none">
+      <PressableScale
+        onPress={onPress}
+        scale={0.96}
+        hoverScale={1.02}
+        hoverLift
+        style={{ flex: 1, borderRadius: radius.sm + 2 }}
+        accessibilityRole="button"
+        accessibilityLabel={`${displaySubject}, ${lesson.start} Uhr${lesson.room ? `, Raum ${lesson.room}` : ''}${cancelled ? ', entfällt' : ''}`}
       >
-        {abbr}
-      </Text>
-
-      {!isCompact ? (
-        <>
-          {/* Lehrer + Raum */}
+        <View
+          style={{
+            flex: 1,
+            borderRadius: radius.sm + 2,
+            overflow: 'hidden',
+            backgroundColor: background,
+            borderLeftWidth: 4,
+            borderLeftColor: accent,
+            paddingLeft: tight ? 6 : 8,
+            paddingRight: 16,
+            paddingVertical: isCompact ? 4 : 6,
+            justifyContent: 'center',
+            opacity: cancelled ? 0.85 : 1,
+          }}
+        >
           <Text
             numberOfLines={1}
+            ellipsizeMode="tail"
             style={{
-              color: fg,
-              fontSize: 9,
-              fontWeight: '600',
-              opacity: 0.75,
-              marginTop: 1,
+              color: colors.ink,
+              fontSize: isCompact || tight ? 11.5 : 13,
+              fontWeight: '800',
+              letterSpacing: -0.2,
+              lineHeight: isCompact || tight ? 14 : 16,
+              textDecorationLine: cancelled ? 'line-through' : 'none',
             }}
           >
-            {[teacher, room].filter(Boolean).join(' · ')}
+            {name}
           </Text>
 
-          {/* Status-Punkt */}
-          {stateIcon && stateColor ? (
-            <View
+          {!isCompact && meta ? (
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
               style={{
-                position: 'absolute',
-                top: 3,
-                right: 3,
-                width: 7,
-                height: 7,
-                borderRadius: 3.5,
-                backgroundColor: stateColor,
+                color: colors.muted,
+                fontSize: 11,
+                lineHeight: 14,
+                fontWeight: '600',
+                marginTop: 1,
+                fontVariant: ['tabular-nums'],
               }}
-            />
+            >
+              {meta}
+            </Text>
           ) : null}
-        </>
-      ) : (
-        <>
-          {/* Kompakter Status-Punkt */}
-          {stateIcon && stateColor ? (
-            <View
-              style={{
-                position: 'absolute',
-                top: 2,
-                right: 2,
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: stateColor,
-              }}
-            />
-          ) : null}
-        </>
-      )}
-    </PressableScale>
+
+          {/* Status-Dots oben rechts */}
+          <View style={{ position: 'absolute', top: 5, right: 5, flexDirection: 'row', gap: 3, alignItems: 'center' }}>
+            {cancelled || substitution ? (
+              <LivePulse color={colors.status.urgent} size={7} />
+            ) : roomChange ? (
+              <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: colors.status.warning }} />
+            ) : null}
+            {hasHomework && !cancelled ? (
+              <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: colors.status.success }} />
+            ) : null}
+          </View>
+        </View>
+      </PressableScale>
+    </View>
   );
 }

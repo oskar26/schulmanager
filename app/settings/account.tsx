@@ -60,7 +60,7 @@ export default function AccountSettings() {
       <SettingsNote>
         E-Mail und Passwort werden verschlüsselt auf dem Gerät gespeichert ({Platform.OS === 'web' ? 'Browser-Speicher' : 'Keychain / Keystore'}) und ausschließlich an login.schulmanager-online.de gesendet.
       </SettingsNote>
-      <View className="mb-2.5 rounded-[28px] bg-surface p-[18px]">
+      <View className="mb-2.5 rounded-[20px] border border-line bg-surface p-[18px]">
         <View className="flex-row items-center gap-3">
           <Lock color={colors.blocks.mint} size={20} strokeWidth={2.4} />
           <Text className="flex-1 text-[16px] font-extrabold text-ink">Schulmanager-Login</Text>

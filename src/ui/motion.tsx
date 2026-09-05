@@ -72,6 +72,7 @@ export function PressableScale({
   children,
   scale = 0.97,
   hoverScale,
+  hoverLift = false,
   className,
   style,
   disabled,
@@ -84,15 +85,18 @@ export function PressableScale({
 }: PressableProps & {
   children: React.ReactNode;
   scale?: number;
-  /** Zusätzliches Hover-Lift auf Web (z. B. 1.01 für Karten). Default: aus. */
+  /** Zusätzliches Hover-Scale auf Web (z. B. 1.02 für Karten). Default: aus. */
   hoverScale?: number;
+  /** Hebt die Karte bei Hover um 2 px an (`translateY(-2px)`, Playful-Modern-Hover). */
+  hoverLift?: boolean;
   className?: string;
 }) {
   const pressed = useSharedValue(1);
   const hovered = useSharedValue(1);
+  const lift = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pressed.value * hovered.value }],
+    transform: [{ translateY: lift.value }, { scale: pressed.value * hovered.value }],
   }));
 
   const canInteract = !disabled;
@@ -114,12 +118,14 @@ export function PressableScale({
         if (canInteract && hoverScale != null) {
           hovered.value = withSpring(hoverScale, { damping: 18, stiffness: 260 });
         }
+        if (canInteract && hoverLift) lift.value = withTiming(-2, { duration: 200 });
         onHoverIn?.(event);
       }}
       onHoverOut={(event) => {
         if (canInteract && hoverScale != null) {
           hovered.value = withSpring(1, { damping: 18, stiffness: 260 });
         }
+        if (canInteract && hoverLift) lift.value = withTiming(0, { duration: 200 });
         onHoverOut?.(event);
       }}
       style={style}
