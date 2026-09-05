@@ -195,14 +195,14 @@ function Bubble({ message }: { message: ChatMessage }) {
   const { colors, isDark } = useThemeColors();
 
   if (message.isOwn) {
-    const tone = resolveThemeColor(colors.blocks.violet, isDark);
+    const tone = resolveThemeColor(colors.blocks.amber, isDark);
     const ink = foregroundOn(tone, colors);
     return (
       <View
         className="mb-2 ml-auto max-w-[85%] px-4 py-3"
         style={{
           backgroundColor: tone,
-          borderRadius: 20,
+          borderRadius: 24,
           borderBottomRightRadius: 8,
           ...shadow.card,
         }}
@@ -220,7 +220,7 @@ function Bubble({ message }: { message: ChatMessage }) {
   return (
     <View
       className="mb-2 mr-auto max-w-[85%] bg-surface px-4 py-3"
-      style={{ borderRadius: 20, borderBottomLeftRadius: 8, ...shadow.card }}
+      style={{ borderRadius: 24, borderBottomLeftRadius: 8, ...shadow.card }}
     >
       {message.sender ? (
         <Text
