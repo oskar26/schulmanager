@@ -18,6 +18,7 @@ import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import { useLayout } from '@/lib/breakpoints';
 import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
+import { hapticSelection } from '@/lib/haptics';
 import { Illustration, type IllustrationName } from '@/ui/illustrations';
 
 /**
@@ -713,7 +714,10 @@ export function SegmentedControl<T extends string>({
         return (
           <PressableOpacity
             key={option.value}
-            onPress={() => onChange(option.value)}
+            onPress={() => {
+              if (!active) hapticSelection();
+              onChange(option.value);
+            }}
             className={`min-h-[48px] flex-1 flex-row items-center justify-center gap-1.5 rounded-full px-2 py-1.5 ${
               active ? 'bg-surface hover:bg-surface' : 'hover:bg-line/60'
             }`}
@@ -840,7 +844,7 @@ export function Sheet({
       <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
         <View className="flex-1 items-center justify-center bg-black/45 p-6">
           <Pressable accessibilityLabel="Schließen" onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-          <View
+          <FadeInUp
             className="max-h-[86%] w-full max-w-[560px] rounded-[28px] bg-surface pb-6"
             style={shadow.float}
           >
@@ -853,7 +857,7 @@ export function Sheet({
             <ScrollView className="px-5" contentContainerClassName="pb-6">
               {children}
             </ScrollView>
-          </View>
+          </FadeInUp>
         </View>
       </Modal>
     );
@@ -862,7 +866,7 @@ export function Sheet({
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 bg-black/40" />
-      <View className="max-h-[82%] rounded-t-[30px] bg-surface pb-8" style={shadow.float}>
+      <FadeInUp className="max-h-[82%] rounded-t-[30px] bg-surface pb-8" style={shadow.float}>
         <View className="items-center py-3">
           <View className="h-1.5 w-11 rounded-full bg-line" />
         </View>
@@ -875,7 +879,7 @@ export function Sheet({
         <ScrollView className="px-5" contentContainerClassName="pb-6">
           {children}
         </ScrollView>
-      </View>
+      </FadeInUp>
     </Modal>
   );
 }

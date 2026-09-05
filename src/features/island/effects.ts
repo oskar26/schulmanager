@@ -19,7 +19,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import type { IslandState } from '@/features/island/use-island';
-import { getNativeIsland } from '@/features/island/bridge';
+import { getNativeIsland, type LiveIslandNative } from '@/features/island/bridge';
 import { useSettings } from '@/state/settings';
 import { palette } from '@/design/tokens';
 
@@ -132,14 +132,41 @@ async function dismissFallback(): Promise<void> {
   }
 }
 
+/* ------------------------------------------------------------------ iOS Live Activity */
+
+/**
+ * iOS nutzt dieselbe Bridge wie Android, wenn ein WidgetKit-Target verlinkt
+ * wurde. Ohne Target liefert `isSupported()` false und es bleibt bewusst keine
+ * eigene In-App-Insel zurück. So ist Expo Go weiterhin sicher.
+ */
+function useIOSLiveActivity(state: IslandState | null, enabled: boolean) {
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    const nativeIsland = getNativeIsland();
+    if (!nativeIsland) return;
+    const liveIsland: LiveIslandNative = nativeIsland;
+
+    async function sync() {
+      if (!enabled || !state) {
+        await liveIsland.hide().catch(() => undefined);
+        return;
+      }
+      const body = `${state.statusLabel} — ${state.lesson.start}–${state.lesson.end} Uhr`;
+      await liveIsland.show(`${state.emoji} ${state.title}`, body, Math.round(state.progress * 100), state.targetAtMs).catch(() => false);
+    }
+    void sync();
+  }, [enabled, state?.kind, state?.title, state?.statusLabel, state?.progress]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 /* ------------------------------------------------------------------ Orchestrierung */
 
 /**
- * Einmal in der Root-Layout aufrufen — hält Tab-Titel und System-Notification
- * mit dem Insel-State synchron.
+ * Einmal in der Root-Layout aufrufen — hält Tab-Titel und System-Kanäle
+ * synchron. Auf nativ wird nie ein eigenes Overlay gerendert.
  */
 export function useLiveIslandEffects(state: IslandState | null): void {
   const enabled = useSettings((store) => store.settings.liveIsland);
   useWebTitle(state, enabled);
   useAndroidIsland(state, enabled);
+  useIOSLiveActivity(state, enabled);
 }

@@ -158,7 +158,7 @@ Bestandteile (`src/features/island/`):
 | Baustein | Datei | Aufgabe |
 |---|---|---|
 | State | `use-island.ts` | „Was zeigt die Insel?" — laufende Stunde (Restzeit) oder nächste ≤ 60 min (Countdown) |
-| In-App-UI | `LiveIsland.tsx` | Kapsel oben mittig, Tap → Detailkarte (Fach, Raum, Lehrkraft, Änderungen, Fortschritt, Sprung zum Stundenplan) |
+| In-App-UI | `LiveIsland.tsx` | Web-Pille unmittelbar über der Tab-Bar, Tap → Detailkarte; nativ kein eigenes Overlay (Systemkanal) |
 | System-Effekte | `effects.ts` | Web-Tab-Titel, Android-Notification, Deduplizierung |
 | Native Brücke | `bridge.ts` / `bridge.web.ts` | Optional native Insel; Web-Stub hält Natives aus dem Web-Bundle |
 | Android-Modul | `modules/schulflow-live-island/` | Lokales Expo-Modul (Kotlin): dauerhafte Fortschritts-Notification |
@@ -203,7 +203,7 @@ aktiviert lassen (Standard: an).
 
 ### iOS (iPhone ab 14, iPad)
 
-* In der App ist die Kapsel da — Countdown, Fortschritt, Detailkarte.
+* In der installierten App gibt es kein eigenes Overlay: Android nutzt die ongoing Progress-Notification, iOS die ActivityKit-Bridge (mit WidgetKit-Target). Countdown und Fortschritt bleiben identisch.
 * **Echte Live Activities** (Lockscreen, Dynamic Island auf iPhone 14 Pro+) brauchen
   eine **WidgetKit-Extension** (eigenes Native-Target mit `ActivityKit`) — die lässt
   sich nicht in ein Expo-Modul packen, weil sie ein separates App-Extension-Binary mit
@@ -224,7 +224,7 @@ aktiviert lassen (Standard: an).
   siehe Emoji-Regel in `docs/UI-REBUILD.md` §0.)*
 * Installiert als PWA (siehe 2.4) macht das aus dem Browser-Tab eine Insel-App.
 
-Einstellung: **Einstellungen → Live-Island** (an/aus). Unter Android fragt der
+Einstellung: **Einstellungen → Live-Infos** (an/aus). Unter Android fragt der
 Schalter beim Aktivieren die Benachrichtigungs-Erlaubnis an.
 
 ---
