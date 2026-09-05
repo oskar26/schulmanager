@@ -1,15 +1,12 @@
 /** gluestack-ui Progress + Spinner + Switch + Avatar, NativeWind-gestylt. */
 import React from 'react';
 import { ActivityIndicator, Image, Switch as RNSwitch, Text, View } from 'react-native';
-import { createProgress } from '@gluestack-ui/progress';
 import { createSpinner } from '@gluestack-ui/spinner';
 import { createSwitch } from '@gluestack-ui/switch';
 import { createAvatar } from '@gluestack-ui/avatar';
 
 import { foregroundOn, resolveThemeColor } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
-
-const UIProgress = createProgress({ Root: View, FilledTrack: View });
 
 export type ProgressProps = {
   value: number;
@@ -18,18 +15,33 @@ export type ProgressProps = {
   color?: string;
 };
 
+/**
+ * Standard-Fortschrittsbalken (Phase 17). Eigene Implementierung statt
+ * gluestack-`createProgress`: Deren FilledTrack mit ungestyltem View-Root
+ * ignorierte `value` und zeigte bei 0 % einen vollflächigen Balken, der wie
+ * ein Lade-Fehler wirkte. Hier wird die Breite explizit gesetzt — bei 0 %
+ * bleibt ausschließlich der neutrale Track sichtbar.
+ */
 export function Progress({ value, className, trackClassName, color }: ProgressProps) {
   const { colors, isDark } = useThemeColors();
+  const clamped = Math.max(0, Math.min(100, value));
+  const fill = resolveThemeColor(color ?? colors.accent.amber, isDark);
   return (
-    <UIProgress
-      value={Math.max(0, Math.min(100, value))}
-      className={`h-2 w-full overflow-hidden rounded-full bg-line ${className ?? ''}`}
+    <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped) }}
+      className={`h-2 w-full flex-row overflow-hidden rounded-full bg-line ${trackClassName ?? ''} ${className ?? ''}`}
     >
-      <UIProgress.FilledTrack
-        className={`h-full rounded-full ${trackClassName ?? 'bg-accent-amber'}`}
-        style={color ? { backgroundColor: resolveThemeColor(color, isDark) } : undefined}
+      <View
+        style={{
+          width: `${clamped}%`,
+          height: '100%',
+          borderRadius: 999,
+          backgroundColor: fill,
+          opacity: clamped <= 0 ? 0 : 1,
+        }}
       />
-    </UIProgress>
+    </View>
   );
 }
 

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
-import { radius, shadow } from '@/design/tokens';
+import { radius, readableInk, resolveThemeColor, shadow, whiteOn } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
 import { tint } from '@/design/subjects';
 import type { LayoutInfo } from '@/lib/breakpoints';
@@ -64,32 +64,59 @@ const ICONS: Record<string, LucideIcon> = {
   inbox: Inbox,
 };
 
-/** Kleiner, positionssicherer Zähler für Navigationseinträge (max. 99+). */
+/**
+ * Kleiner, positionssicherer Zähler für Navigationseinträge (max. 99+).
+ * Phase 17: In der vollen Sidebar ist das Badge ein **Inline-Flex-Kind mit
+ * flexShrink 0** am Ende der Zeile — es kann weder Text noch Icon überdecken
+ * (gemeldeter Bug) und bleibt auch bei „99+“ rechtsbündig. Die Fläche wird
+ * automatisch so abgedunkelt, dass Weiß AA-Kontrast hält.
+ */
 function NavBadge({ count, compact = false }: { count: number; compact?: boolean }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const label = formatNavBadge(count);
   if (!label) return null;
+  const bg = whiteOn(resolveThemeColor(colors.accent.coral, isDark), isDark);
+
+  if (compact) {
+    return (
+      <View
+        accessibilityLabel={`${label} neue Einträge`}
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: -6,
+          right: -10,
+          minWidth: label === '99+' ? 30 : 20,
+          height: 20,
+          paddingHorizontal: label === '99+' ? 5 : 4,
+          borderRadius: radius.pill,
+          backgroundColor: bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700', lineHeight: 12 }}>{label}</Text>
+      </View>
+    );
+  }
 
   return (
     <View
       accessibilityLabel={`${label} neue Einträge`}
       style={{
-        position: compact ? 'absolute' : 'relative',
-        top: compact ? -7 : undefined,
-        right: compact ? -12 : undefined,
         minWidth: label === '99+' ? 30 : 20,
         height: 20,
         paddingHorizontal: label === '99+' ? 5 : 4,
         borderRadius: radius.pill,
-        backgroundColor: colors.accent.coral,
+        backgroundColor: bg,
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: compact ? 0 : 8,
+        marginLeft: 8,
+        flexShrink: 0,
+        alignSelf: 'center',
       }}
     >
-      <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800', lineHeight: 12 }}>
-        {label}
-      </Text>
+      <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700', lineHeight: 12 }}>{label}</Text>
     </View>
   );
 }
@@ -98,7 +125,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
   const { state, navigation, layout } = props;
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { data, isDemo } = useSnapshot();
 
   const full = layout.navigation === 'sidebar';
@@ -217,7 +244,10 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
                 ...(active ? shadow.card : undefined),
               }}
             >
-              <View style={{ position: 'relative' }}>
+              {/* Icon-Slot mit fester Größe: Der Zähler im Rail-Modus hängt
+                  absolut an dieser Kachel, im Sidebar-Modus bleibt sie dadurch
+                  unverrückbar links — Text und Badge können sich nicht schieben. */}
+              <View style={{ position: 'relative', width: 36, height: 36, flexShrink: 0 }}>
                 <IconBadge
                   icon={Icon}
                   color={active ? colors.accent.amber : colors.muted}
@@ -231,9 +261,10 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
                 <Text
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     fontSize: 14.5,
-                    fontWeight: active ? '800' : '600',
-                    color: active ? colors.accent.amberDeep : colors.muted,
+                    fontWeight: active ? '700' : '600',
+                    color: active ? readableInk(colors.accent.amber, isDark) : colors.muted,
                   }}
                   numberOfLines={1}
                 >
@@ -291,7 +322,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
 
 function DemoPill() {
   const { colors } = useThemeColors();
-  return <Pill label="DEMO" color={colors.accent.amber} tone="solid" className="px-2 py-1" />;
+  return <Pill label="DEMO" color={colors.accent.amber} tone="solid" />;
 }
 
 function ToolButton({

@@ -1,7 +1,7 @@
 import React from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Search, Settings } from 'lucide-react-native';
+import { ChevronRight, Search, Settings } from 'lucide-react-native';
 
 import { useSnapshot } from '@/data/queries';
 import { WIDGET_COMPONENTS } from '@/features/dashboard/widgets';
@@ -10,8 +10,6 @@ import { useLayout } from '@/lib/breakpoints';
 import { Avatar } from '@/ui/gluestack/feedback';
 import {
   AdaptiveContent,
-  BlockCaption,
-  BlockText,
   ColorBlockCard,
   IconBadge,
   Pill,
@@ -24,7 +22,7 @@ import {
 } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
-import { shadow } from '@/design/tokens';
+import { radius, shadow } from '@/design/tokens';
 import { useTabNavReserve } from '@/ui/nav-reserve';
 import { useSettings } from '@/state/settings';
 
@@ -54,7 +52,9 @@ function WelcomeBanner({
 }) {
   const { colors } = useThemeColors();
   const hasHomework = hwTotal > 0;
-  const whiteDim = 'rgba(255,255,255,0.58)';
+  // AA (Phase 17): 58 % Weiß auf Charcoal erreichte nur ~4,3:1 — 74 % hält
+  // komfortabel über 4,5:1 und bleibt dabei sekundär.
+  const whiteDim = 'rgba(255,255,255,0.74)';
 
   return (
     <View className="overflow-hidden rounded-[32px]" style={{ backgroundColor: colors.charcoal, ...shadow.float }}>
@@ -102,10 +102,16 @@ function WelcomeBanner({
 
         {hasHomework ? (
           <>
+            {/* Fortschritt: Bei 0 % bleibt nur der Track sichtbar — keine
+                Mini-Füllung mehr, die wie ein Lade-Fehler wirkte. */}
             <View className="h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
               <View
                 className="h-full rounded-full"
-                style={{ backgroundColor: colors.accent.amber, width: `${Math.max(2, progress)}%` }}
+                style={{
+                  backgroundColor: colors.accent.amber,
+                  width: `${progress}%`,
+                  opacity: progress <= 0 ? 0 : 1,
+                }}
               />
             </View>
             <Row className="justify-between gap-3">
@@ -175,7 +181,7 @@ function SchoolStatusPill({
       </Text>
       <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.line }} />
       {isDemo ? (
-        <Pill label="DEMO" color={colors.accent.amber} tone="solid" className="px-2 py-1" />
+        <Pill label="DEMO" color={colors.accent.amber} tone="solid" />
       ) : (
         <Text className="text-[11px] font-medium text-muted" numberOfLines={1}>{formatTimeAgo(fetchedAt)}</Text>
       )}
@@ -200,6 +206,84 @@ function DashboardSkeletonLines() {
       <View style={{ width: '78%', height: 28, borderRadius: 12, backgroundColor: `${ink}24` }} />
       <View style={{ width: '60%', height: 12, borderRadius: 8, backgroundColor: `${ink}1F` }} />
     </View>
+  );
+}
+
+
+/** Zellenstil des Dashboard-Rasters: gleichbreit, schrumpfbar, volle Zeilenhöhe. */
+const cellStyle = { flex: 1, minWidth: 0 } as const;
+
+/**
+ * Raster-Wrapper (Phase 17): teilt die Zellen in Zeilen fester Spaltenzahl.
+ * Alle Spalten einer Zeile sind gleich breit und equally hoch (alignItems:
+ * stretch ist Yoga-Default); unvollständige letzte Zeilen bekommen unsichtbare
+ * Füller, damit die Kartenreihe bündig mit dem Rest abschließt.
+ */
+function DashboardGrid({
+  columns,
+  children,
+}: {
+  columns: 1 | 2 | 3;
+  children: React.ReactNode[];
+}) {
+  const cells = React.Children.toArray(children).filter(Boolean);
+  const rows: React.ReactNode[][] = [];
+  for (let index = 0; index < cells.length; index += columns) {
+    rows.push(cells.slice(index, index + columns));
+  }
+  return (
+    <View style={{ gap: 16 }}>
+      {rows.map((row, rowIndex) => (
+        <View key={`row-${rowIndex}`} style={{ flexDirection: 'row', gap: 16 }}>
+          {row.map((cell, cellIndex) => (
+            <View key={`cell-${rowIndex}-${cellIndex}`} style={{ flex: 1, minWidth: 0 }}>
+              {cell}
+            </View>
+          ))}
+          {Array.from({ length: columns - row.length }, (_, padIndex) => (
+            <View key={`pad-${rowIndex}-${padIndex}`} style={{ flex: 1 }} pointerEvents="none" />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Kompakte „Dashboard anpassen“-Karte (Phase 17): statt einer riesigen Kachel
+ * eine schlanke Listenkarte (eine Zeile, Icon + Titel + Hinweis + Chevron) —
+    der Informationsgehalt rechtfertigt keine große Fläche.
+ */
+function CustomizeCard({ onPress }: { onPress: () => void }) {
+  const { colors } = useThemeColors();
+  return (
+    <PressableOpacity
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Dashboard anpassen"
+      className="hover:bg-line/30 active:bg-line/50"
+      style={{
+        borderRadius: radius.cardSm,
+        backgroundColor: colors.surface,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        ...shadow.card,
+      }}
+    >
+      <IconBadge icon={Settings} color={colors.accent.amber} size="md" tone="tint" />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text className="text-[15px] font-bold text-ink" numberOfLines={1}>
+          Dashboard anpassen
+        </Text>
+        <Text className="text-[12px] text-muted" numberOfLines={1}>
+          Karten ein- und ausblenden, Reihenfolge ändern
+        </Text>
+      </View>
+      <ChevronRight size={18} strokeWidth={2.2} color={colors.faint} />
+    </PressableOpacity>
   );
 }
 
@@ -273,7 +357,7 @@ export default function DashboardScreen() {
             />
           )}
         >
-          <View style={{ width: '100%', maxWidth: 980, alignSelf: 'center' }}>
+          <View style={{ width: '100%' }}>
             <WelcomeBanner
               name={name}
               weekdayLabel={weekdayLabel}
@@ -302,52 +386,25 @@ export default function DashboardScreen() {
               <DashboardSkeleton color={colors.blocks.mint} height={224} />
             </View>
           ) : (
-            <View
-              style={{
-                flexDirection: layout.columns > 1 ? 'row' : 'column',
-                flexWrap: layout.columns > 1 ? 'wrap' : 'nowrap',
-                gap: 16,
-              }}
-            >
+            /* Phase 17: Echtes Raster statt flex-wrap-Masonry — Zeilen mit
+               fester Spaltenzahl (layout.columns), gleichbreite Spalten (flex: 1)
+               und ein fester Gap von 16 px. Die letzte Zeile wird mit unsichtbaren
+               Platzhaltern aufgefüllt, damit Karten immer bündig abschließen und
+               keine schwimmenden Breiten entstehen. */
+            <DashboardGrid columns={layout.columns}>
               {enabled.map((widget, index) => {
                 const Component = WIDGET_COMPONENTS[widget.id as keyof typeof WIDGET_COMPONENTS];
                 if (!Component) return null;
                 return (
-                  <FadeInUp
-                    key={widget.id}
-                    delay={Math.min(index, 10) * 45}
-                    style={
-                      layout.columns > 1
-                        ? { flexGrow: 1, flexBasis: layout.columns === 3 ? 300 : 360, maxWidth: '100%' }
-                        : { width: '100%' }
-                    }
-                  >
-                    <View className="h-full"><Component snapshot={data} /></View>
+                  <FadeInUp key={widget.id} delay={Math.min(index, 10) * 45} style={cellStyle}>
+                    <View className="h-full w-full"><Component snapshot={data} /></View>
                   </FadeInUp>
                 );
               })}
-
-              <View
-                style={
-                  layout.columns > 1
-                    ? { flexGrow: 1, flexBasis: layout.columns === 3 ? 300 : 360, maxWidth: '100%' }
-                    : { width: '100%' }
-                }
-              >
-                <ColorBlockCard
-                  color={colors.blocks.amber}
-                  onPress={() => router.push('/settings')}
-                  accessibilityLabel="Dashboard anpassen"
-                  className="items-center py-6"
-                >
-                  <IconBadge icon={Settings} color={colors.onBlocks.amber} size="lg" tone="tint" />
-                  <BlockText className="mt-3 text-center text-[17px] font-extrabold">Dashboard anpassen</BlockText>
-                  <BlockCaption className="mt-1 text-center text-[13px] leading-5">
-                    Bestimme, welche Karten hier erscheinen und in welcher Reihenfolge.
-                  </BlockCaption>
-                </ColorBlockCard>
-              </View>
-            </View>
+              <FadeInUp delay={Math.min(enabled.length, 10) * 45} style={cellStyle}>
+                <CustomizeCard onPress={() => router.push('/settings')} />
+              </FadeInUp>
+            </DashboardGrid>
           )}
         </ScrollView>
       </AdaptiveContent>

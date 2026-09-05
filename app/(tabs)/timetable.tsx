@@ -189,7 +189,7 @@ export default function TimetableScreen() {
               accessibilityRole="button"
               accessibilityLabel="Zur aktuellen Woche springen"
             >
-              <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
+              <Text className="text-[12px] font-bold text-accent-amber-ink">Heute</Text>
             </PressableOpacity>
           ) : (
             <PressableOpacity
@@ -198,7 +198,7 @@ export default function TimetableScreen() {
               accessibilityRole="button"
               accessibilityLabel="Zur aktuellen Woche springen"
             >
-              <Text className="text-[12px] font-extrabold text-on-amber">Heute</Text>
+              <Text className="text-[12px] font-bold text-accent-amber-ink">Heute</Text>
             </PressableOpacity>
           )
         }
@@ -382,8 +382,8 @@ function WeekStrip({
               accessibilityLabel={`${formatLongDay(day)}${isToday ? ', heute' : ''}`}
             >
               <Text
-                className={`text-[10px] font-extrabold uppercase tracking-wide ${
-                  isActive ? 'text-on-amber/70' : 'text-faint'
+                className={`text-[10px] font-bold uppercase tracking-wide ${
+                  isActive ? 'text-on-amber' : 'text-faint'
                 }`}
               >
                 {WEEKDAYS_SHORT[(date.getDay() + 6) % 7]}
@@ -577,7 +577,7 @@ function BlockCardContent({
         >
           {displaySubject}
         </BlockText>
-        <Pill label={`${lesson.hour}. Std`} color={fg} tone="tint" className="mt-0.5 px-2.5 py-1" />
+        <Pill label={`${lesson.hour}. Std`} color={fg} tone="tint" className="mt-0.5" />
       </Row>
 
       {/* Status-Badge + Kommentar (auffällige Pill mit Icon statt Textzeile) */}
@@ -598,9 +598,9 @@ function BlockCardContent({
       ) : null}
 
       <Row className="flex-wrap items-center gap-1.5">
-        <Pill label={`${lesson.start}–${lesson.end}`} color={fg} tone="tint" icon={Clock} className="px-2.5 py-1" />
+        <Pill label={`${lesson.start}–${lesson.end}`} color={fg} tone="tint" icon={Clock} />
         {lesson.room ? (
-          <Pill label={`Raum ${lesson.room}`} color={fg} tone="tint" icon={MapPin} className="px-2.5 py-1" />
+          <Pill label={`Raum ${lesson.room}`} color={fg} tone="tint" icon={MapPin} />
         ) : null}
         {roomChange && lesson.originalRoom ? (
           <BlockCaption className="text-[12px] font-bold" numberOfLines={1}>

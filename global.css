@@ -45,12 +45,13 @@
     --sf-charcoal-elevated: 35 36 40;      /* #232428 */
     --sf-ink: 24 25 28;
     --sf-muted: 92 95 102;                 /* #5C5F66 */
-    --sf-faint: 154 157 166;               /* #9A9DA6 */
+    --sf-faint: 110 113 122;               /* #6E717A — AA (≥ 4,5:1) auf Surface */
     --sf-line: 232 229 220;                /* #E8E5DC */
 
     /* Farbblöcke */
     --sf-accent-amber: 255 140 56;         /* #FF8C38 */
     --sf-accent-amber-deep: 242 114 68;    /* #F27244 */
+    --sf-accent-amber-ink: 154 91 33;      /* #9A5B21 — AA-Text auf Amber-Tints */
     --sf-accent-violet: 99 91 255;         /* #635BFF */
     --sf-accent-lime: 195 240 115;         /* #C3F073 */
     --sf-accent-lime-deep: 163 230 53;     /* #A3E635 */
@@ -100,10 +101,11 @@
     --sf-priority-soon: 255 140 56;        /* #FF8C38 */
     --sf-priority-ok: 195 240 115;         /* #C3F073 */
 
-    /* Semantik */
-    --sf-success: 62 155 90;               /* #3E9B5A */
-    --sf-warning: 232 156 30;              /* #E89C1E */
-    --sf-danger: 224 83 83;                /* #E05353 */
+    /* Semantik — seit Phase 17 AA-sicher als Textfarbe auf Surface */
+    --sf-success: 47 125 74;               /* #2F7D4A */
+    --sf-warning: 180 83 9;                /* #B45309 */
+    --sf-danger: 194 55 55;                /* #C23737 */
+    --sf-on-success: 255 255 255;
   }
 
   .dark:root,
@@ -116,12 +118,13 @@
     --sf-charcoal-elevated: 35 36 40;
     --sf-ink: 247 247 245;                 /* #F7F7F5 */
     --sf-muted: 181 183 188;               /* #B5B7BC */
-    --sf-faint: 124 127 135;               /* #7C7F87 */
+    --sf-faint: 143 147 156;               /* #8F939C — AA (≥ 4,5:1) auf Surface */
     --sf-line: 48 50 56;                   /* #303238 */
 
     /* Identische Akzentfamilie, für dunkle Flächen behutsam angehoben */
     --sf-accent-amber: 255 160 90;         /* #FFA05A */
     --sf-accent-amber-deep: 255 133 85;    /* #FF8555 */
+    --sf-accent-amber-ink: 255 197 158;    /* #FFC59E — AA-Text auf Amber-Tints */
     --sf-accent-violet: 140 134 255;       /* #8C86FF */
     --sf-accent-lime: 212 247 140;         /* #D4F78C */
     --sf-accent-lime-deep: 185 234 87;     /* #B9EA57 */
@@ -145,22 +148,26 @@
     --sf-on-amber: 43 22 0;
     --sf-on-lime: 31 42 0;
     --sf-on-violet: 255 255 255;
-    --sf-on-coral: 255 255 255;
+    /* Dark: Coral-Flächen sind hell genug für Ink-Text (Weiß nur 3,3:1). */
+    --sf-on-coral: 24 25 28;
     --sf-on-charcoal: 255 255 255;
-    /* On-Farben der Blöcke bleiben in Light und Dark identisch (gleiche
-       Helligkeitsklasse der Flächen). */
-    --sf-on-block-violet: 255 255 255;
-    --sf-on-block-lavender: 36 26 85;
-    --sf-on-block-sky: 7 50 87;
-    --sf-on-block-teal: 4 51 46;
-    --sf-on-block-mint: 14 59 40;
-    --sf-on-block-lime: 31 42 0;
-    --sf-on-block-sun: 59 43 0;
-    --sf-on-block-amber: 43 22 0;
-    --sf-on-block-apricot: 58 29 0;
-    --sf-on-block-coral: 255 255 255;
-    --sf-on-block-pink: 74 13 44;
-    --sf-on-block-slate: 27 36 54;
+    /*
+     * On-Farben der Dark-Blöcke: Die Dark-Flächen sind heller als ihre
+     * Light-Pendants — Weiß erreicht dort kein AA (z. B. Violett 3,0:1), deshalb
+     * Ink als Vordergrund; nur Charcoal behält Weiß (Phase 17).
+     */
+    --sf-on-block-violet: 24 25 28;        /* #18191C */
+    --sf-on-block-lavender: 24 25 28;
+    --sf-on-block-sky: 24 25 28;
+    --sf-on-block-teal: 24 25 28;
+    --sf-on-block-mint: 24 25 28;
+    --sf-on-block-lime: 24 25 28;
+    --sf-on-block-sun: 24 25 28;
+    --sf-on-block-amber: 24 25 28;
+    --sf-on-block-apricot: 24 25 28;
+    --sf-on-block-coral: 24 25 28;
+    --sf-on-block-pink: 24 25 28;
+    --sf-on-block-slate: 24 25 28;
     --sf-on-block-charcoal: 255 255 255;
 
     --sf-priority-urgent: 241 108 108;     /* #F16C6C */
@@ -170,5 +177,6 @@
     --sf-success: 107 200 135;             /* #6BC887 */
     --sf-warning: 242 180 74;              /* #F2B44A */
     --sf-danger: 241 108 108;              /* #F16C6C */
+    --sf-on-success: 24 25 28;             /* Ink-Text auf Dark-Erfolgsfläche */
   }
 }

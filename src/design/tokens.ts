@@ -14,13 +14,14 @@
  * (`typeScale`) und erweitertes Spacing.
  */
 
-export type AccentName = 'amber' | 'amberDeep' | 'violet' | 'lime' | 'limeDeep' | 'coral';
+export type AccentName = 'amber' | 'amberDeep' | 'amberInk' | 'violet' | 'lime' | 'limeDeep' | 'coral';
 export type OnColorName =
   | 'amber'
   | 'lime'
   | 'violet'
   | 'coral'
   | 'charcoal'
+  | 'success'
   | BlockName;
 
 /**
@@ -125,6 +126,28 @@ const DARK_BLOCKS: BlockPalette = {
   charcoal: '#232428',
 };
 
+/**
+ * Vordergründe für die **Dark**-Blöcke: Die Dark-Flächen sind heller als ihre
+ * Light-Pendants, deshalb liefert Winterweiß dort keinen AA-Kontrast mehr
+ * (z. B. Violett #8C86FF/Weiß ≈ 3,0:1). Fast alle Dark-Blöcke bekommen deshalb
+ * Ink-Text; nur Charcoal behält Weiß.
+ */
+const DARK_ON_BLOCKS: BlockPalette = {
+  violet: '#18191C',
+  lavender: '#18191C',
+  sky: '#18191C',
+  teal: '#18191C',
+  mint: '#18191C',
+  lime: '#18191C',
+  sun: '#18191C',
+  amber: '#18191C',
+  apricot: '#18191C',
+  coral: '#18191C',
+  pink: '#18191C',
+  slate: '#18191C',
+  charcoal: '#FFFFFF',
+};
+
 /** Light — warmes Canvas, klare Weißflächen und kräftige Farbblöcke. */
 export const palette: ThemePalette = {
   canvas: '#F6F4EE',
@@ -134,11 +157,13 @@ export const palette: ThemePalette = {
   charcoalElevated: '#232428',
   ink: '#18191C',
   muted: '#5C5F66',
-  faint: '#9A9DA6',
+  faint: '#6E717A',
   line: '#E8E5DC',
   accent: {
     amber: '#FF8C38',
     amberDeep: '#F27244',
+    /** AA-Textfarbe des Amber-Akzents auf neutralen/tönenden Flächen. */
+    amberInk: '#9A5B21',
     violet: '#635BFF',
     lime: '#C3F073',
     limeDeep: '#A3E635',
@@ -148,6 +173,7 @@ export const palette: ThemePalette = {
     // Enthält die klassischen On-Farben (amber/lime/violet/coral/charcoal)
     // und die On-Farben aller Farbflächen-Familien.
     ...LIGHT_ON_BLOCKS,
+    success: '#FFFFFF',
   },
   blocks: LIGHT_BLOCKS,
   onBlocks: LIGHT_ON_BLOCKS,
@@ -156,9 +182,13 @@ export const palette: ThemePalette = {
     soon: '#FF8C38', // Amber — morgen / in wenigen Tagen
     ok: '#C3F073', // Lime — erledigt / entspannt
   },
-  success: '#3E9B5A',
-  warning: '#E89C1E',
-  danger: '#E05353',
+  /*
+   * Statusfarben seit Phase 17 als AA-Textfarben nutzbar (≥ 4,5:1 auf Surface):
+   * Erfolg/Warning/Fehler sind dunkler gefasst und im Dark Mode aufgehellt.
+   */
+  success: '#2F7D4A',
+  warning: '#B45309',
+  danger: '#C23737',
 };
 
 /**
@@ -173,21 +203,23 @@ export const darkPalette: ThemePalette = {
   charcoalElevated: '#232428',
   ink: '#F7F7F5',
   muted: '#B5B7BC',
-  faint: '#7C7F87',
+  faint: '#8F939C',
   line: '#303238',
   accent: {
     amber: '#FFA05A',
     amberDeep: '#FF8555',
+    amberInk: '#FFC59E',
     violet: '#8C86FF',
     lime: '#D4F78C',
     limeDeep: '#B9EA57',
     coral: '#F16C6C',
   },
   on: {
-    ...LIGHT_ON_BLOCKS,
+    ...DARK_ON_BLOCKS,
+    success: '#18191C',
   },
   blocks: DARK_BLOCKS,
-  onBlocks: LIGHT_ON_BLOCKS,
+  onBlocks: DARK_ON_BLOCKS,
   priority: {
     urgent: '#F16C6C',
     soon: '#FFA05A',
@@ -197,6 +229,7 @@ export const darkPalette: ThemePalette = {
   warning: '#F2B44A',
   danger: '#F16C6C',
 };
+// Hinweis: Dark-on.coral ist bewusst Ink (#18191C) — siehe DARK_ON_BLOCKS.
 
 /** Liefert genau die Palette des bereits aufgelösten Themes. */
 export function paletteFor(isDark: boolean): ThemePalette {
@@ -273,6 +306,154 @@ export function foregroundOn(color: string, colors: ThemePalette = palette): str
   const darkContrast = (luminance + 0.05) / 0.05;
   const lightContrast = 1.05 / (luminance + 0.05);
   return darkContrast >= lightContrast ? '#18191C' : '#FFFFFF';
+}
+
+/* ------------------------------------------------- WCAG-AA-Helfer (Phase 17) */
+
+/**
+ * Kontrast-Helfer für den Karten-Neutralisierungs-Umbau: Farben bleiben als
+ * Akzent erhalten (Streifen, Icons, Tint-Pills), aber **Text** sitzt wieder auf
+ * neutralen Flächen. Für farbigen Text auf neutralen/tönenden Flächen und für
+ * Vollton-Pills/Badges liefern diese Helfer automatisch AA-sichere Werte
+ * (≥ 4,5:1, mit kleinem Puffer gerechnet, damit auch 14-%-Tints sicher sind).
+ */
+const AA_RATIO = 4.6;
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const value = hex.replace('#', '');
+  if (!/^[0-9A-Fa-f]{6}$/.test(value)) return null;
+  return [
+    parseInt(value.slice(0, 2), 16),
+    parseInt(value.slice(2, 4), 16),
+    parseInt(value.slice(4, 6), 16),
+  ];
+}
+
+function rgbToHex(rgb: [number, number, number]): string {
+  return `#${rgb.map((channel) => Math.max(0, Math.min(255, Math.round(channel))).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
+function channelLuminance(channel: number): number {
+  const c = channel / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0;
+  return (
+    0.2126 * channelLuminance(rgb[0]) +
+    0.7152 * channelLuminance(rgb[1]) +
+    0.0722 * channelLuminance(rgb[2])
+  );
+}
+
+/** WCAG-Kontrastverhältnis zweier Farben (1 … 21). */
+export function contrastRatio(a: string, b: string): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  const [hi, lo] = la >= lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function mixRgb(
+  from: [number, number, number],
+  to: [number, number, number],
+  t: number,
+): [number, number, number] {
+  return [0, 1, 2].map((i) => from[i] + (to[i] - from[i]) * t) as [number, number, number];
+}
+
+/** Richtung, in die eine Farbe gemischt wird, um auf dunklen Flächen lesbar zu sein. */
+const INK_TARGET_LIGHT: [number, number, number] = [14, 15, 18];
+const INK_TARGET_DARK: [number, number, number] = [255, 255, 255];
+const SURFACE_FOR = (isDark: boolean) => (isDark ? '#18191C' : '#FFFFFF');
+
+const readableCache = new Map<string, string>();
+
+/**
+ * AA-sichere *Textfarbe* einer Akzentfarbe auf neutralen Karten (Surface bzw.
+ * dezente Tint-Flächen): Hellt/Dunkelt die Akzentfarbe entlang ihrer selbst,
+ * bis ≥ 4,6:1 erreicht ist — die Farbfamilie bleibt erkennbar
+ * (Amber → warmes Tiefamber, Sky → Tiefblau, Lime → Oliv …).
+ */
+export function readableInk(color: string, isDark: boolean): string {
+  const cacheKey = `ink:${color}:${isDark}`;
+  const cached = readableCache.get(cacheKey);
+  if (cached) return cached;
+  const rgb = hexToRgb(color);
+  if (!rgb) return color;
+  const surface = SURFACE_FOR(isDark);
+  const target = isDark ? INK_TARGET_DARK : INK_TARGET_LIGHT;
+  let result = color;
+  if (contrastRatio(color, surface) < AA_RATIO) {
+    for (let step = 1; step <= 20; step += 1) {
+      const candidate = rgbToHex(mixRgb(rgb, target, step * 0.05));
+      result = candidate;
+      if (contrastRatio(candidate, surface) >= AA_RATIO) break;
+    }
+  }
+  readableCache.set(cacheKey, result);
+  return result;
+}
+
+const solidCache = new Map<string, { bg: string; fg: string }>();
+
+/**
+ * AA-sicheres Flächen-/Text-Paar für **Vollton**-Pills, Badges und Buttons:
+ * Bevorzugt die Originalfläche mit dem kontraststärkeren Vordergrund (Weiß
+ * oder Ink); erst wenn beides unter 4,6:1 bleibt, wird die Fläche selbst
+ * angepasst (Light: abgedunkelt, Dark: aufgehellt).
+ */
+export function solidPair(color: string, isDark: boolean): { bg: string; fg: string } {
+  const cacheKey = `solid:${color}:${isDark}`;
+  const cached = solidCache.get(cacheKey);
+  if (cached) return cached;
+  const rgb = hexToRgb(color);
+  if (!rgb) return { bg: color, fg: '#FFFFFF' };
+
+  const whiteRatio = contrastRatio(color, '#FFFFFF');
+  const inkRatio = contrastRatio(color, '#18191C');
+  let pair: { bg: string; fg: string };
+  if (Math.max(whiteRatio, inkRatio) >= AA_RATIO) {
+    pair = whiteRatio >= inkRatio ? { bg: color, fg: '#FFFFFF' } : { bg: color, fg: '#18191C' };
+  } else {
+    // Mittlere Helligkeit: Fläche in Richtung des stärkeren Vordergrunds ziehen.
+    const preferWhite = whiteRatio >= inkRatio;
+    const target = preferWhite ? INK_TARGET_LIGHT : INK_TARGET_DARK;
+    let bg = color;
+    for (let step = 1; step <= 20; step += 1) {
+      bg = rgbToHex(mixRgb(rgb, target, step * 0.05));
+      const ratio = preferWhite ? contrastRatio(bg, '#FFFFFF') : contrastRatio(bg, '#18191C');
+      if (ratio >= AA_RATIO) break;
+    }
+    pair = { bg, fg: preferWhite ? '#FFFFFF' : '#18191C' };
+  }
+  solidCache.set(cacheKey, pair);
+  return pair;
+}
+
+const whiteOnCache = new Map<string, string>();
+
+/**
+ * Fläche, auf der **Weiß** als Text garantiert AA erreicht (z. B. Zähler-
+ * Badges in Navigation und Tabs): dunkelt die Farbe nur so weit ab wie nötig.
+ */
+export function whiteOn(color: string, isDark: boolean): string {
+  const cacheKey = `white:${color}:${isDark}`;
+  const cached = whiteOnCache.get(cacheKey);
+  if (cached) return cached;
+  const rgb = hexToRgb(color);
+  if (!rgb) return color;
+  let result = color;
+  if (contrastRatio(color, '#FFFFFF') < AA_RATIO) {
+    for (let step = 1; step <= 20; step += 1) {
+      result = rgbToHex(mixRgb(rgb, INK_TARGET_LIGHT, step * 0.05));
+      if (contrastRatio(result, '#FFFFFF') >= AA_RATIO) break;
+    }
+  }
+  whiteOnCache.set(cacheKey, result);
+  return result;
 }
 
 /**
