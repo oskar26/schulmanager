@@ -38,14 +38,14 @@ Im Onboarding „Los geht’s“ → „Mit Beispieldaten“ wählen, dann z. B.
 **Aufgaben** eine Hausaufgabe abhaken (Karte rutscht per Spring in „Erledigt“)
 oder auf dem Desktop mit der Maus über Karten und Listen streichen.
 
-## Bestand (Phase 17, 2026-09-05 — frisch aufgenommen)
+## Bestand (Phase 4, 2026-09-03)
 
 | Datei | Szene |
 |---|---|
 | `dashboard-phone-light/dark.html` | Dashboard, 390 px, hell/dunkel |
 | `timetable-phone-light/dark.html` | Stundenplan-Tages-Timeline, 390 px |
 | `tasks-phone-light/dark.html` | Aufgaben, 390 px |
-| `grades-phone-light/dark.html` | Noten (Hero mit Lime-Akzent), 390 px |
+| `grades-phone-light/dark.html` | Noten (Lime-Hero), 390 px |
 | `inbox-phone-light/dark.html` | Postfach, 390 px |
 | `dashboard-desktop-light.html` | Dashboard mit Sidebar, 1600 px |
 | `timetable-desktop-light.html` | Stundenplan-Zeitraster, 1600 px |

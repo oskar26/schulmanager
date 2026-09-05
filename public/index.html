@@ -105,21 +105,17 @@
         border-radius: 6px;
       }
 
-      /*
-       * Scrollbars dezent und NEUTRAL (Phase 17): Die frühere Amber-Färbung
-       * zeigte am rechten Rand jedes Scrollbereichs eine dünne orange Linie,
-       * die wie ein Rendering-Artefakt wirkte. Grautöne statt Akzentfarbe.
-       */
+      /* Scrollbars nicht blocknadel-dick */
       * {
         scrollbar-width: thin;
-        scrollbar-color: rgba(24, 25, 28, 0.22) transparent;
+        scrollbar-color: rgba(255, 140, 56, 0.35) transparent;
       }
       *::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       *::-webkit-scrollbar-thumb {
-        background: rgba(24, 25, 28, 0.22);
+        background: rgba(255, 140, 56, 0.35);
         border-radius: 8px;
       }
       *::-webkit-scrollbar-track {
@@ -131,10 +127,10 @@
           background: #FFA05A;
         }
         * {
-          scrollbar-color: rgba(247, 247, 245, 0.24) transparent;
+          scrollbar-color: rgba(255, 160, 90, 0.35) transparent;
         }
         *::-webkit-scrollbar-thumb {
-          background: rgba(247, 247, 245, 0.24);
+          background: rgba(255, 160, 90, 0.35);
         }
       }
     </style>

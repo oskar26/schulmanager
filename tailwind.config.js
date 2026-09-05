@@ -20,7 +20,6 @@ module.exports = {
         accent: {
           amber: 'rgb(var(--sf-accent-amber) / <alpha-value>)',
           'amber-deep': 'rgb(var(--sf-accent-amber-deep) / <alpha-value>)',
-          'amber-ink': 'rgb(var(--sf-accent-amber-ink) / <alpha-value>)',
           violet: 'rgb(var(--sf-accent-violet) / <alpha-value>)',
           lime: 'rgb(var(--sf-accent-lime) / <alpha-value>)',
           'lime-deep': 'rgb(var(--sf-accent-lime-deep) / <alpha-value>)',
@@ -51,7 +50,6 @@ module.exports = {
         },
         on: {
           amber: 'rgb(var(--sf-on-amber) / <alpha-value>)',
-          success: 'rgb(var(--sf-on-success) / <alpha-value>)',
           lime: 'rgb(var(--sf-on-lime) / <alpha-value>)',
           violet: 'rgb(var(--sf-on-violet) / <alpha-value>)',
           coral: 'rgb(var(--sf-on-coral) / <alpha-value>)',

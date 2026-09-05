@@ -49,15 +49,12 @@ const buttonTextStyle = tva({
   base: 'font-semibold',
   parentVariants: {
     action: {
-      // AA (Phase 17): Auf Amber-Vollfläche trägt on-amber dunklen Text (7,4:1);
-      // auf der 15-%-Tönung von `secondary` und auf transparent (`ghost`) braucht
-      // es die abgestufte amber-ink-Textfarbe (Light: tiefes Amber, Dark: hell).
       primary: 'text-on-amber',
-      secondary: 'text-accent-amber-ink',
-      ghost: 'text-accent-amber-ink',
+      secondary: 'text-on-amber',
+      ghost: 'text-accent-amber-deep',
       surface: 'text-ink',
       danger: 'text-on-coral',
-      success: 'text-on-success',
+      success: 'text-on-lime',
     },
     size: { sm: 'text-[13px]', md: 'text-[15px]', lg: 'text-[16px]', icon: 'text-[15px]' },
   },

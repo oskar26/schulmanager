@@ -95,10 +95,7 @@ function WidgetHeader({
     <Row className="justify-between gap-3 px-5 pb-3 pt-5">
       <Row className="min-w-0 flex-1 gap-3">
         <IconBadge icon={IconComponent} color={ink} size="lg" tone="tint" />
-        {/* Phase 17: Titel einzeilig mit Auslassungspunkten — der gemeldete
-            Umbruch („Nächs… Unterricht“) entstand durch zweizeiliges Quetschen
-            neben der Aktions-Pill. */}
-        <BlockText className="flex-1 text-[16px] font-bold leading-[21px] tracking-[-0.2px]" numberOfLines={1}>
+        <BlockText className="flex-1 text-[18px] font-extrabold leading-[22px] tracking-[-0.3px]" numberOfLines={2}>
           {title}
         </BlockText>
       </Row>
@@ -186,7 +183,7 @@ function NextLessonContent({
 
   return (
     <>
-      <WidgetHeader icon={BookOpen} title="Nächste Stunde" />
+      <WidgetHeader icon={BookOpen} title="Nächste Stunde" action={status.label} />
       <View className="px-5 pb-5">
         <Row className="gap-3">
           <IconBadge icon={BookOpen} color={ink} size="xl" tone="tint" />
@@ -211,13 +208,6 @@ function NextLessonContent({
               {lesson.room ? ` · ${lesson.room}` : ''}
               {lesson.teacher ? ` · ${lesson.teacher}` : ''}
             </BlockCaption>
-            {/* Langer Status (z. B. „Nächster Unterricht Montag“) als eigene
-                Zeile statt gequetschter Header-Pill („Nächs… Montag ste…“). */}
-            {status.kind !== 'in-lesson' && status.label ? (
-              <BlockCaption className="mt-0.5 text-[11.5px]" numberOfLines={1}>
-                {status.label}
-              </BlockCaption>
-            ) : null}
           </View>
         </Row>
 
@@ -418,7 +408,7 @@ function TimelineLesson({
               >
                 {cancelled ? (lesson.originalSubject ?? lesson.subject) : lesson.subject}
               </BlockText>
-              {lesson.room ? <InkPill label={lesson.room} /> : null}
+              {lesson.room ? <InkPill label={lesson.room} className="px-2 py-0.5" /> : null}
             </Row>
             {lesson.state !== 'regular' ? (
               <Pill
@@ -452,7 +442,7 @@ export function HomeworkWidget({ snapshot }: WidgetProps) {
       <WidgetHeader icon={ListChecks} title="Hausaufgaben" action="Alle" onAction={() => router.navigate('/tasks')} />
       {total > 0 ? (
         <View className="px-5 pb-3">
-          <Progress value={(done / total) * 100} color={colors.accent.violet} />
+          <Progress value={(done / total) * 100} color={colors.blocks.violet} trackClassName="bg-black/10" />
           <BlockCaption className="mt-1.5 text-[11px]">{done} von {total} erledigt</BlockCaption>
         </View>
       ) : null}
@@ -781,7 +771,7 @@ function QuickActionTile({ action, onPress }: { action: QuickAction; onPress: ()
       accessibilityLabel={action.label}
       radius={radius.cardSm}
       padded={false}
-      className="min-h-[84px] items-center justify-center px-2 py-2.5"
+      className="min-h-[108px] items-center justify-center px-2 py-3"
     >
       <QuickActionTileContent icon={action.icon} label={action.label} />
     </ColorBlockCard>
@@ -792,8 +782,8 @@ function QuickActionTileContent({ icon, label }: { icon: LucideIcon; label: stri
   const ink = useBlockInk();
   return (
     <>
-      <IconBadge icon={icon} color={ink} size="md" tone="tint" />
-      <BlockText className="mt-1.5 text-center text-[11.5px] font-semibold leading-[14px]" numberOfLines={2}>{label}</BlockText>
+      <IconBadge icon={icon} color={ink} size="lg" tone="tint" />
+      <BlockText className="mt-2 text-center text-[11px] font-extrabold leading-[14px]" numberOfLines={2}>{label}</BlockText>
     </>
   );
 }

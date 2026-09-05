@@ -48,7 +48,7 @@ import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Switch } from '@/ui/gluestack/feedback';
 import { useSettings } from '@/state/settings';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn, readableInk, resolveThemeColor } from '@/design/tokens';
+import { foregroundOn, resolveThemeColor } from '@/design/tokens';
 
 /** Platzhalter, solange „Noten verbergen“ aktiv ist. */
 const MASK = '•••';
@@ -115,8 +115,7 @@ export default function GradesScreen() {
   // Tab-Route landet er zuverlässig auf dem Start-Tab.
   if (!gradesOn) return <Redirect href="/" />;
 
-  // AA: Hero-Zahlen in der abgestuften Lime-Textfarbe auf neutraler Karte.
-  const limeInk = readableInk(resolveThemeColor(colors.blocks.lime, isDark), isDark);
+  const limeInk = foregroundOn(resolveThemeColor(colors.blocks.lime, isDark), colors);
 
   return (
     <Screen adaptive="content">
@@ -166,14 +165,7 @@ export default function GradesScreen() {
                   size="lg"
                 />
                 <View className="min-w-0 flex-1">
-                  {/* Einzeilig mit Font-Shrink: „GESAMTSCHNITT“ darf weder
-                      silbengetrennt umbrechen noch gequetscht werden. */}
-                  <BlockCaption
-                    className="text-[10.5px] font-bold uppercase tracking-[1.2px]"
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
+                  <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.6px]">
                     Gesamtschnitt
                   </BlockCaption>
                   <StatNumber
@@ -318,7 +310,7 @@ function SubjectCard({
 }) {
   const { colors, isDark } = useThemeColors();
   const tone = subjectColor(subject.subject, isDark);
-  const ink = readableInk(tone, isDark);
+  const ink = foregroundOn(tone, colors);
   const SubjectIcon = subjectIcon(subject.subject);
   const trend = gradeTrend(subject);
   const hasTrend = trend.points.length >= 3;
@@ -451,7 +443,7 @@ function SubjectSheet({
   if (!subject) return <Sheet open={false} onClose={onClose}><View /></Sheet>;
 
   const tone = subjectColor(subject.subject, isDark);
-  const ink = readableInk(tone, isDark);
+  const ink = foregroundOn(tone, colors);
   const SubjectIcon = subjectIcon(subject.subject);
   const required = requiredGrade(subject, target);
   const preview = simulated != null ? simulate(subject, simulated) : null;
@@ -467,7 +459,7 @@ function SubjectSheet({
           <Row className="gap-3">
             <IconBadge icon={SubjectIcon} color={ink} tone="tint" size="lg" />
             <View className="min-w-0 flex-1">
-              <BlockCaption className="text-[10.5px] font-bold uppercase tracking-[1.2px]" numberOfLines={1}>
+              <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.4px]">
                 Aktueller Schnitt
               </BlockCaption>
               <StatNumber
@@ -488,7 +480,7 @@ function SubjectSheet({
               >
                 {subject.grades.length}
               </StatNumber>
-              <BlockCaption className="text-[10.5px] font-bold uppercase tracking-[1.2px]" numberOfLines={1}>
+              <BlockCaption className="text-[10.5px] font-extrabold uppercase tracking-[1.2px]">
                 Bewertungen
               </BlockCaption>
             </View>

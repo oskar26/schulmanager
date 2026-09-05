@@ -22,7 +22,7 @@ import {
   type CategoryKey,
 } from '@/design/categories';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn, readableInk, resolveThemeColor } from '@/design/tokens';
+import { foregroundOn, resolveThemeColor } from '@/design/tokens';
 import { downloadStoredFile } from '@/api/downloads';
 import { formatRelativeDay, formatTimeAgo } from '@/lib/date';
 import { excerpt, htmlToText } from '@/lib/html';
@@ -247,8 +247,8 @@ function BoardCardBody({ tile, category }: { tile: Tile; category: CategoryKey }
           {htmlToText(tile.content)}
         </BlockCaption>
         <Row className="mt-2 flex-wrap gap-1.5">
-          <Pill label={categoryLabel(category)} color={ink} tone="tint" icon={categoryIcon(category)} />
-          {tile.pinned ? <Pill label="Angeheftet" color={ink} tone="tint" icon={MapPin} /> : null}
+          <Pill label={categoryLabel(category)} color={ink} tone="tint" icon={categoryIcon(category)} className="px-2.5 py-1" />
+          {tile.pinned ? <Pill label="Angeheftet" color={ink} tone="tint" icon={MapPin} className="px-2.5 py-1" /> : null}
         </Row>
       </View>
     </Row>
@@ -282,8 +282,7 @@ function LetterCard({
     needsAction ? colors.blocks.coral : isConfirmed ? colors.blocks.mint : colors.blocks.lavender,
     isDark,
   );
-  // AA: Icon- und Pill-Akzent als abgestufte Textvariante (nicht Vollton-auf-Vollton).
-  const ink = readableInk(tone, isDark);
+  const ink = foregroundOn(tone, colors);
   const StatusIcon = needsAction ? AlertCircle : isConfirmed ? CheckCheck : MailOpen;
 
   /**
@@ -337,12 +336,12 @@ function LetterCard({
                   : `${letter.sender ?? 'Schule'} · zum Lesen antippen`}
               </BlockCaption>
               <Row className="mt-2 flex-wrap gap-1.5">
-                <Pill label={letter.sender ?? 'Schule'} color={ink} tone="tint" />
+                <Pill label={letter.sender ?? 'Schule'} color={ink} tone="tint" className="px-2.5 py-1" />
                 {needsAction ? (
-                  <Pill label="Bestätigung nötig" color={ink} tone="tint" icon={AlertCircle} />
+                  <Pill label="Bestätigung nötig" color={ink} tone="tint" icon={AlertCircle} className="px-2.5 py-1" />
                 ) : null}
                 {isConfirmed ? (
-                  <Pill label="bestätigt" color={ink} tone="tint" icon={CheckCheck} />
+                  <Pill label="bestätigt" color={ink} tone="tint" icon={CheckCheck} className="px-2.5 py-1" />
                 ) : null}
               </Row>
             </View>
@@ -353,7 +352,7 @@ function LetterCard({
         {needsAction ? (
           <View
             className="flex-row items-center justify-between gap-3 px-4 py-3"
-            style={{ backgroundColor: tint(tone, 0.12) }}
+            style={{ backgroundColor: tint(ink, 0.12) }}
           >
             <BlockCaption className="min-w-0 flex-1 text-[11.5px]">
               Kenntnisnahme wird direkt an die Schule gesendet.

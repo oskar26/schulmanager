@@ -8,7 +8,6 @@ import { Home, CalendarDays, ListChecks, BarChart3, Inbox } from 'lucide-react-n
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import type { ThemePalette } from '@/design/tokens';
-import { whiteOn } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
 import { useSnapshot, useModuleActive } from '@/data/queries';
 import { useLayout } from '@/lib/breakpoints';
@@ -299,13 +298,12 @@ function AnimatedTabItem({
             height: 18,
             paddingHorizontal: badgeLabel === '99+' ? 5 : 4,
             borderRadius: 9,
-            // AA: Fläche abgedunkelt, bis Weiß ≥ 4,5:1 hält (Phase 17).
-            backgroundColor: whiteOn(colors.accent.coral, false),
+            backgroundColor: colors.accent.coral,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700', lineHeight: 12 }}>
+          <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800', lineHeight: 12 }}>
             {badgeLabel}
           </Text>
         </View>
