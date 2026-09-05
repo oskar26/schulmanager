@@ -14,8 +14,7 @@
 >
 > Stand: 2026-09-05 · **Phasen 1–9 umgesetzt ✅ · Phase 10 ✅ · Phase 11 ✅ ·
 > Phase 12 ✅ · Phase 13 ✅ (Android-Systemkanal + Web-Pille; iOS-Target-Quelle
-> vorbereitet) · Phase 14 ✅ · Phase 15 ✅ · Phase 16 ✅ · Phase 17 ✅
-> (UI-Abnahme: Rendering-Bugs, WCAG-AA-Farbsystem, Raster/Spacing, Typo).**
+> vorbereitet) · Phase 14 ✅ · Phase 15 ✅ · Phase 16 ✅.**
 >
 > Die Phasen 10–15 kommen aus dem Auftrag „Teil 2 (Bugfixes & neue
 > Anforderungen)“ und sind die Fortsetzung dieses Dokuments: 10 APK-Styling &
@@ -1214,87 +1213,6 @@ Phase 14 (Settings-Feld `timetableMode` im neuen „Erscheinungsbild“-Zweig).
 
 ---
 
-## Phase 17 — UI-Abnahme: Rendering-Bugs, AA-Farbsystem, Raster & Typografie
-
-**Status: ✅ umgesetzt (2026-09-05)** — Folge der externen Design-Abnahme
-(gemeldet: Modal-Clipping, Badge-Overlaps, Scroll-Artefakt, unzureichende
-Kontraste, „Farbsalat“, schiefes Dashboard-Grid, Overlays-Too-Big-Switch,
-Text-Umbrüche, 0-%-Fortschritts-Fehler, unruhige Badges).
-
-### Umsetzung
-
-1. **Rendering-Bugs & Layering**
-   - `Sheet` (Desktop-Dialog & Phone-Sheet): eigener `SheetHeader` — Titel in
-     schrumpfbarem Container (`flex: 1` + `minWidth: 0`, `numberOfLines={2}`,
-     20 px/700), Close-Button `flexShrink: 0`, Dialog `overflow: hidden`.
-     Long titles laufen nicht mehr aus der Box in den Backdrop.
-   - **Root-Cause Sidebar-Badges:** `PressableScale`/`PressableOpacity` hüllten
-     Kinder in einen *uneingestylten* `Animated.View` (Yoga-Default: Spalte) —
-     Row-Layouts (Icon · Label · Badge) stapelten vertikal und überlappten.
-     Beide animieren jetzt **die Pressable selbst** (`Animated.createAnimatedComponent(Pressable)`),
-     zusätzlich ist der Sidebar-Zähler Inline-Flex mit `flexShrink: 0`.
-   - Scroll-Artefakt (dünne orange Linie rechts): die *bewusst* amber-gefärbte
-     Browser-Scrollbar in `public/index.html` — ersetzt durch neutrale Grautöne
-     (Light/Dark), `scrollbar-width: thin` bleibt.
-2. **Farbsystem auf WCAG AA**
-   - `ColorBlockCard` ist jetzt eine **neutrale Surface-Karte mit 5-px-Akzentstreifen**
-     links; `BlockText`/`BlockCaption` laufen in Ink/Muted. Farben wirken als
-     Streifen, Icon-/Pill-Tints und Zahlen — nicht mehr als Vollfläche unter Text.
-   - Neue Token-Helfer in `design/tokens.ts`: `contrastRatio`, `readableInk`
-     (AA-Textfarbe eines Akzents, Light abgedunkelt / Dark aufgehellt),
-     `solidPair` (AA-Fläche/Vordergrund-Paar für Vollton-Pills), `whiteOn`
-     (Badge-Fläche mit garantiert AA-Weiß). Alle 26 Block-Akzente × Light/Dark
-     erreichen ≥ 4,6:1.
-   - `Pill`/`Chip`: voll runde Pill (999), 12 px semibold — dezenter als
-     Hauptinhalt; tint/solid/outline automatisch AA.
-   - Token-Anpassungen: `faint` auf AA (Light `#6E717A`, Dark `#8F939C`),
-     Statusfarben als AA-Text nutzbar (`success #2F7D4A`, `warning #B45309`,
-     `danger #C23737`; Dark wie gehabt aufgehellt), `accent.amberInk` für
-     Text auf Amber-Tints (Buttons `secondary`/`ghost`, „Heute“-Aktion),
-     Dark-`onBlocks` = Ink (nur Charcoal behält Weiß), `on.success`,
-     Dark-`on.coral` = Ink. `global.css`/`tailwind.config.js` synchron.
-   - Screens nachgezogen: Kalender (Pills waren **hartcodiert #000** auf
-     Vollfarbe), Aufgaben (Checkbox-Häkchen in Surface statt Fachvollton,
-     Ampel-Pillen tint statt solid+weißem Ring), Postfach, Noten, Stundenplan.
-3. **Grid, Spacing & Layout**
-   - Dashboard: `DashboardGrid` — Zeilen fester Spaltenzahl (`layout.columns`),
-     gleichbreite Spalten (`flex: 1`), fester `gap: 16`, unvollständige letzte
-     Zeile bekommt unsichtbare Füller → Karten schließen bündig ab (keine
-     flex-wrap-Masonry mit schwimmenden Breiten mehr).
-   - „Dashboard anpassen“: kompakte Einzeilen-Karte (Icon + Titel + Hinweis +
-     Chevron) statt großer Kachel; Schnellaktions-Kacheln 108 → 84 px.
-   - `SegmentedControl`: `self-start` + inhaltsbasierte Breite (`flexBasis:
-     auto`, `flexShrink: 1`) statt voller Bildschirmbreite; Höhe 44 px.
-   - Karten-Padding vereinheitlicht (`p-[18px]`, `ColorBlockCard` wie `Card`).
-4. **Typografie & Overflows**
-   - Widget-Header-Titel einzeilig mit Ellipsis (16 px/700); das lange Status-
-     Label („Nächster Unterricht Montag“) wird als Caption-Zeile unter den
-     Zeiten geführt statt als gequetschte Header-Pill.
-   - `StatCard`-Captions einzeilig mit Font-Shrink (`GESAMTSCHNITT` bricht nicht
-     mehr mid-word um); Noten-Hero-Labels genauso abgesichert.
-   - Hierarchie: Sekundärtexte in `muted` und kleiner, Statuswörter 600 statt
-     800, Screen-/Kartentitel bleiben fett.
-5. **Komponenten-Fixes**
-   - `Progress` (feedback.tsx): eigene Implementierung mit expliziter
-     `width: value%` — bei 0 % bleibt nur der neutrale Track (gluestack
-     `createProgress` mit ungestyltem View-Root ignorierte `value`).
-   - Dashboard-Hero-Fortschritt: `Math.max(2, progress)`-Mindestbreite entfernt.
-
-### Akzeptanzkriterien (aus der Abnahme)
-
-- [x] Modal-Titel bleibt in der Box; Badges rechtsbündig ohne Überlappung;
-      keine orange Scroll-Linie mehr.
-- [x] Kein Text auf gesättigter Vollfläche; alle Text-/Pill-Kontraste ≥ 4,5:1
-      (Light & Dark, alle 13 Blockfamilien + Statusfarben).
-- [x] Eine neutrale Kartenbasis, Farben nur als Akzent; funktionale Ampel
-      (Rot dringend / Orange Warnung / Grün erledigt) bleibt erhalten.
-- [x] Dashboard-Karten bündig in einem Raster mit festem Gap; segmented
-      Controls so breit wie ihr Inhalt.
-- [x] Kein mid-word-Umbruch in Card-Headern/Stat-Captions; 0-%-Progress zeigt
-      nur den Track.
-
----
-
 ## Abhängigkeitsgraph (Kurzform)
 
 ```
@@ -1351,10 +1269,4 @@ Phase 15 (Stundenplan-Ansichten)   — benötigt 1, 4, 10; empfohlen nach 14
 | 25 | **Phase 11 führt keinen öffentlichen CORS-Proxy als Standard ein, sondern eine Fähigkeitsprüfung + selbst gehosteten Umweg** | Die API schickt keine `Access-Control-Allow-Origin`-Header; ein öffentlicher Relay würde Schul-Login und Noten an Dritte geben. Der Transport prüft deshalb erst, ob die *eigene* Installation durchreichen kann (suffix-basiert, subpfad-tolerant), und lässt sich sonst eine eigene Relay-Adresse hinterlegen. Der blockierte Zustand wird vor dem ersten Request erkannt und erklärt — nicht nach 30 s Timeout als „Keine Verbindung“ missdeutet. |
 | 26 | **Der Umweg wird in den Einstellungen gespeichert, nicht als Build-Variable** | Ein Build-Override (`EXPO_PUBLIC_SM_API_BASE`) zwingt jede Nutzerin/jeden Nutzer zu einem eigenen Web-Build. Im Browserspeicher gesetzt wirkt er sofort, pro Auslieferung und ohne dass Schulflow-Deployment Secrets braucht. |
 | 27 | **Haptik: Android-Auswahl fällt auf `performAndroidHapticsAsync`, nicht auf `Vibrator`-Simulation** | expo-haptics dokumentiert `impactAsync`/`notificationAsync` auf Android als „simulated using Vibrator“ — genau das lange Brummen aus dem Auftrag. Die Systemkonstanten (`EFFECT_CLICK`-Familie) sind kurz, herstellerspezifisch kalibriert und brauchen keine `VIBRATE`-Permission; ein kurzes `impactAsync(Light)` bleibt als Fallback für Geräte ohne Effect-Tabelle. |
-| 28 | **Phase 17 neutralisiert `ColorBlockCard` (Surface + 5-px-Akzentstreifen), statt sie zu löschen** | Die Abnahme verlangte „keine knalligen Vollflächen unter Text“. ~45 Nutzungsorte profitieren sofort, ohne dass Screens umgebaut werden; die Akzent-API (`color`) bleibt erhalten — Farben werden gestrichen, Bedeutungen nicht. |
-| 29 | **AA-Kontraste werden *berechnet* (`readableInk`/`solidPair`/`whiteOn`), nicht pro Hand kuratiert** | 13 Blöcke × Light/Dark × Tint/Solid/Vollton per Hand zu pflegen bricht garantiert wieder ein. Die HSL-Abstufung hält die Farbfamilie erkennbar (Amber → warmes Tiefamber) und ist via Cache kostenlos. |
-| 30 | **Statusfarben bleiben die Ampel (Coral/Amber/Lime als Akzent), aber `success`/`warning`/`danger` sind jetzt selbst AA-Textfarben** | „Rot = Dringend/Fehler, Orange = Warnung, Grün = Erfolg“ war gefordert; tiefere Light-Werte (#C23737/#B45309/#2F7D4A) funktionieren als Text *und* als Fläche mit AA-Vordergrund. |
-| 31 | **Sidebar-Badge-Bug wurde im Motion-Layer gefixt, nicht im Shell-Layout** | Das Symptom („Badges überdecken Labels“) kam vom Animated.View-Wrapper, der jedes Row-Pressable zur Spalte machte. Shell-Härtung (feste Icon-Slot-Größe, `flexShrink: 0`) macht das Layout zusätzlich robust — der Wrapper-Fix hilft jedem Screen. |
-| 32 | **Dashboard-Raster als Zeilen-Chunk mit Flex-Spalten statt CSS-Grid-Polyfill** | RN kennt kein Grid; Zeilen mit `flex: 1`-Spalten + Füller-Zellen liefern gleiche Spaltenbreiten, gleiche Zeilenhöhen und bündige Abschlüsse mit Bordmitteln auf Phone/Tablet/Desktop. |
-| 33 | **Browser-Scrollbar ist neutral grau, nicht amber** | Die amber-gefärbte Scrollbar war als Branding gedacht, las sich aber als Rendering-Artefakt („dünne orange Linie am rechten Rand“). Akzente gehören in die Oberfläche, nicht in OS-Chrome. |
 | 20 | **Illustrationen zeichnen in `useBlockInk()`, nicht in einer eigenen Farbpalette** | Ein Leerzustand kann auf Creme-Canvas *oder* mitten in einer von 13 Blockfarben × Light/Dark stehen. Nur die zugehörige Vordergrundfarbe ist überall garantiert lesbar; Tönungen (13 %/8 %) erzeugen die Flächenwirkung. `illustrations.tsx` importiert deshalb bewusst **nicht** aus `primitives.tsx` (Zyklus-frei) und bekommt `ink` als Prop. |

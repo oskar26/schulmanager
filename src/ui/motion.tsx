@@ -10,7 +10,7 @@
  *   sanft nach, wenn ein Eintrag verschwindet) statt hart umzuspringen.
  */
 import React, { useEffect, useState } from 'react';
-import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, type PressableProps, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -23,17 +23,6 @@ import Animated, {
 import { Stack } from 'tamagui';
 
 import { palette } from '@/design/tokens';
-
-/*
- * Phase 17 · Struktur-Fix: `PressableScale`/`PressableOpacity` hüllen ihre
- * Kinder früher in einen **uneingestylten Animated.View** (Yoga-Default:
- * flex-direction column). Ein Row-Layout auf der Pressable — z. B. Sidebar-
- * Einträge mit Icon · Label · Badge oder Segment-Buttons — wurde dadurch
- * vertikal gestapelt und Badges/Icons legten sich übereinander. Beide
- * Komponenten animieren deshalb jetzt **die Pressable selbst** (ein Knoten,
- * Layout und Transform auf demselben Element) statt eines Wrapper-Views.
- */
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type MotionProps = {
   children: React.ReactNode;
@@ -109,7 +98,7 @@ export function PressableScale({
   const canInteract = !disabled;
 
   return (
-    <AnimatedPressable
+    <Pressable
       {...rest}
       disabled={disabled}
       onPress={onPress}
@@ -133,11 +122,11 @@ export function PressableScale({
         }
         onHoverOut?.(event);
       }}
-      style={[style, animatedStyle]}
+      style={style}
       className={className}
     >
-      {children}
-    </AnimatedPressable>
+      <Animated.View style={animatedStyle}>{children}</Animated.View>
+    </Pressable>
   );
 }
 
@@ -163,7 +152,7 @@ export function PressableOpacity({
   pressedOpacity?: number;
   hoverOpacity?: number;
   className?: string;
-  style?: StyleProp<ViewStyle> | ((state: { pressed: boolean }) => StyleProp<ViewStyle>);
+  style?: ViewStyle | ((state: { pressed: boolean }) => ViewStyle);
 }) {
   const opacity = useSharedValue(1);
   const canInteract = !disabled;
@@ -171,7 +160,7 @@ export function PressableOpacity({
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   return (
-    <AnimatedPressable
+    <Pressable
       {...rest}
       disabled={disabled}
       className={className}
@@ -191,10 +180,10 @@ export function PressableOpacity({
         if (canInteract) opacity.value = withTiming(1, { duration: 140 });
         onHoverOut?.(event);
       }}
-      style={[style, animatedStyle]}
+      style={style}
     >
-      {children}
-    </AnimatedPressable>
+      <Animated.View style={animatedStyle}>{children}</Animated.View>
+    </Pressable>
   );
 }
 

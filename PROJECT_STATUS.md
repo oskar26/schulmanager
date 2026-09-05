@@ -10,11 +10,8 @@
 > Nummerierung unten ab; Abschnitt 2 (Tokens) wird dort fortgeschrieben.
 >
 > **Stand 2026-09-05:** Phase 9 (Politur & Regression) sowie die Ergänzungsphasen
-> 10–17 sind umgesetzt. Phase 17 (UI-Abnahme) neutralisiert die Farbflächen-Karten
-> zugunsten eines WCAG-AA-Systems (Akzentstreifen statt Vollflächen, berechnete
-> Kontrastfarben), fixt Modal-Clipping/Badge-Overlays/Scroll-Artefakt, ein
-> echtes Dashboard-Raster, inhaltsbasierte Segmented Controls, Text-Overflows
-> und den 0-%-Fortschrittsbalken — Details in `docs/redesign-phasen.md`.
+> 10–14 sind umgesetzt. Die nächste geplante Ergänzung ist Phase 15
+> (Stundenplan-Ansichten).
 
 ---
 

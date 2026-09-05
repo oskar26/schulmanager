@@ -48,7 +48,7 @@ import { useTabNavReserve } from '@/ui/nav-reserve';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Progress } from '@/ui/gluestack/feedback';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn, readableInk, resolveThemeColor, type ThemePalette } from '@/design/tokens';
+import { foregroundOn, resolveThemeColor, type ThemePalette } from '@/design/tokens';
 
 type Tab = 'homework' | 'exams' | 'plan';
 
@@ -330,32 +330,31 @@ function HomeworkTab({
   );
 }
 
-/** Fortschritts-Block — neutrale Karte mit Lime-Akzent und großer Prozentzahl. */
+/** Fortschritts-Block — Lime-Fläche mit großer Prozentzahl (StatCard-Logik). */
 function HomeworkProgress({ open, done, total }: { open: number; done: number; total: number }) {
   const { colors, isDark } = useThemeColors();
   const percent = Math.round((done / total) * 100);
-  // AA: Zahl in der abgedunkelten Akzentvariante statt Vollton-auf-Vollton.
-  const limeInk = readableInk(resolveThemeColor(colors.blocks.lime, isDark), isDark);
+  const ink = foregroundOn(resolveThemeColor(colors.blocks.lime, isDark), colors);
 
   return (
     <ColorBlockCard color={colors.blocks.lime} className="mb-3" style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
       <Row className="gap-4">
         <View className="min-w-0 flex-1">
-          <BlockText className="text-[15.5px] font-bold leading-5">
+          <BlockText className="text-[15.5px] font-extrabold leading-5">
             {done === total ? 'Alles erledigt!' : open === 0 ? 'Gleich geschafft' : 'Aufgaben-Fortschritt'}
           </BlockText>
-          {/* Standard-Progress: neutraler Track, Füllung nur > 0 % breit. */}
           <Progress
             value={(done / total) * 100}
             className="mt-2.5"
-            color={colors.accent.violet}
+            trackClassName="bg-black/10"
+            color={colors.blocks.violet}
           />
           <BlockCaption className="mt-2 text-[11.5px]">
             {done} von {total} erledigt{open > 0 ? ` · ${open} offen` : ''}
           </BlockCaption>
         </View>
         <View className="items-end justify-center">
-          <Text className="text-[34px] font-extrabold leading-9 tracking-[-1px]" style={{ color: limeInk, fontVariant: ['tabular-nums'] }}>
+          <Text className="text-[34px] font-extrabold leading-9 tracking-[-1px]" style={{ color: ink, fontVariant: ['tabular-nums'] }}>
             {percent}%
           </Text>
           <BlockCaption className="text-center">erledigt</BlockCaption>
@@ -394,12 +393,17 @@ function HomeworkTaskCard({
 }) {
   const { colors, isDark } = useThemeColors();
   const subjectTone = subjectColor(item.subject, isDark);
-  // AA-sichere Akzentvariante der Fachfarbe für Checkbox-Frame, Icons und Text
-  // (seit Phase 17 laufen alle auf der neutralen Kartenfläche).
-  const ink = readableInk(subjectTone, isDark);
+  const ink = foregroundOn(subjectTone, colors);
   const days = daysUntil(item.due);
   const meta = priorityMeta(days, colors);
   const SubjectIcon = subjectIcon(item.subject);
+
+  // Wenn Ampel- und Fachfarbe dieselbe Familie sind, bekommt die Pille einen
+  // weißen Ring, damit die Fälligkeit nicht in der Fläche verschwindet.
+  const pillRing: StyleProp<ViewStyle> =
+    meta.color.toUpperCase() === subjectTone.toUpperCase()
+      ? { borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)' }
+      : undefined;
 
   return (
     <ColorBlockCard
@@ -409,11 +413,11 @@ function HomeworkTaskCard({
       style={{ padding: 16 }}
     >
       <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
-        {/* Große, runde Checkbox mit Fülleffekt — Häkchen in Surfacefarbe */}
+        {/* Große, runde Checkbox mit Fülleffekt */}
         <RoundCheck
           checked={done}
           ink={ink}
-          onColor={colors.surface}
+          onColor={subjectTone}
           onPress={onToggle}
           label={`${item.subject}: ${done ? 'wieder öffnen' : 'als erledigt markieren'}`}
         />
@@ -436,8 +440,10 @@ function HomeworkTaskCard({
             <Pill
               label={done ? 'Erledigt' : meta.label}
               color={done ? colors.priority.ok : meta.color}
-              tone="tint"
+              tone="solid"
               icon={done ? CheckCheck : meta.urgent ? AlertTriangle : Clock}
+              className="px-2.5 py-1"
+              style={done ? undefined : pillRing}
             />
           </Row>
 
@@ -520,8 +526,8 @@ function ExamCard({
   blockCount: number;
   onGoPlan: () => void;
 }) {
-  const { colors, isDark } = useThemeColors();
-  const ink = readableInk(resolveThemeColor(tone, isDark), isDark);
+  const { colors } = useThemeColors();
+  const ink = foregroundOn(tone, colors);
   const SubjectIcon = subjectIcon(exam.subject);
 
   return (
@@ -538,8 +544,8 @@ function ExamCard({
             {days === 0 ? '!' : days}
           </Text>
           <Text
-            className="mt-1 text-center text-[9.5px] font-bold uppercase tracking-[1px]"
-            style={{ color: colors.muted }}
+            className="mt-1 text-center text-[9.5px] font-extrabold uppercase tracking-[1.1px]"
+            style={{ color: ink, opacity: 0.72 }}
             numberOfLines={2}
           >
             {days === 0 ? 'Heute' : days === 1 ? 'Tag bis Arbeit' : 'Tage bis Arbeit'}
@@ -558,9 +564,9 @@ function ExamCard({
             {exam.start && exam.end ? ` · ${exam.start}–${exam.end} Uhr` : exam.start ? ` · ${exam.start} Uhr` : ''}
           </BlockCaption>
           <Row className="mt-2 flex-wrap gap-1.5">
-            {exam.type ? <Pill label={exam.type} color={ink} tone="tint" icon={BarChart3} /> : null}
+            {exam.type ? <Pill label={exam.type} color={ink} tone="tint" icon={BarChart3} className="px-2.5 py-1" /> : null}
             {blockCount > 0 ? (
-              <Pill label={`${blockCount} Lernblöcke`} color={ink} tone="tint" icon={Sparkles} />
+              <Pill label={`${blockCount} Lernblöcke`} color={ink} tone="tint" icon={Sparkles} className="px-2.5 py-1" />
             ) : null}
           </Row>
           {exam.comment ? (
@@ -622,7 +628,7 @@ function PlanTab({ planByDay }: { planByDay: [string, { id: string; date: string
 function PlanBlockCard({ subject, focus, minutes }: { subject: string; focus: string; minutes: number }) {
   const { colors, isDark } = useThemeColors();
   const subjectTone = subjectColor(subject, isDark);
-  const ink = readableInk(subjectTone, isDark);
+  const ink = foregroundOn(subjectTone, colors);
   const SubjectIcon = subjectIcon(subject);
 
   return (
@@ -633,7 +639,7 @@ function PlanBlockCard({ subject, focus, minutes }: { subject: string; focus: st
           <BlockText className="text-[15px] font-extrabold leading-[19px]" numberOfLines={1}>{subject}</BlockText>
           <BlockCaption className="text-[11.5px]">{focus}</BlockCaption>
         </View>
-        <Pill label={`${minutes} min`} color={ink} tone="solid" icon={Clock} />
+        <Pill label={`${minutes} min`} color={ink} tone="solid" icon={Clock} className="px-2.5 py-1" />
       </Row>
     </ColorBlockCard>
   );

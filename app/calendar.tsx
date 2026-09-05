@@ -43,7 +43,7 @@ import {
 } from '@/ui/primitives';
 import { FadeInUp, PressableOpacity, PressableScale } from '@/ui/motion';
 import { useThemeColors } from '@/design/theme';
-import { foregroundOn, readableInk, resolveThemeColor } from '@/design/tokens';
+import { foregroundOn, resolveThemeColor } from '@/design/tokens';
 
 type Mode = 'list' | 'month';
 
@@ -414,10 +414,6 @@ function EventCard({
   isDark: boolean;
 }) {
   const { colors } = useThemeColors();
-  // Akzentfarbe der Karte als AA-sichere Pill-Farbe — NICHT mehr #000 auf
-  // Vollfarbe (Phase-17-Bugfix: schwarze Pills auf dunklen Blöcken). Der Hook
-  // reicht hier nicht, weil der Context erst *innerhalb* der Karte lebt.
-  const accentInk = readableInk(resolveThemeColor(entry.color, isDark), isDark);
   const resolved = resolveThemeColor(entry.color, isDark);
   const isPast = daysUntil(entry.date) < 0;
 
@@ -441,24 +437,31 @@ function EventCard({
         <EventIconBadge icon={icon} />
         <View className="min-w-0 flex-1">
           <BlockText
-            className="text-[15px] font-bold leading-[19px] tracking-[-0.2px]"
+            className="text-[15px] font-extrabold leading-[18px] tracking-[-0.2px]"
             numberOfLines={2}
           >
             {entry.title}
           </BlockText>
           <Row className="mt-1.5 flex-wrap items-center gap-1.5">
             {entry.time ? (
-              <Pill label={entry.time} color={accentInk} tone="tint" icon={Clock} />
+              <Pill label={entry.time} color={useBlockInkColor()} tone="tint" icon={Clock} className="px-2 py-0.5" />
             ) : null}
             {entry.location ? (
-              <Pill label={entry.location} color={accentInk} tone="tint" icon={MapPin} />
+              <Pill label={entry.location} color={useBlockInkColor()} tone="tint" icon={MapPin} className="px-2 py-0.5" />
             ) : null}
-            <Pill label={entry.kind} color={accentInk} tone="tint" />
+            <Pill label={entry.kind} color={useBlockInkColor()} tone="tint" className="px-2 py-0.5" />
           </Row>
         </View>
       </Row>
     </ColorBlockCard>
   );
+}
+
+/** Helper, der die BlockInk-Farbe zurückgibt (für Pills innerhalb der ColorBlockCard). */
+function useBlockInkColor(): string {
+  // Wir geben hier einfach einen neutralen Wert zurück; die Pill-Komponente
+  // innerhalb der ColorBlockCard nutzt den Context.
+  return '#000000';
 }
 
 /* ------------------------------------------------------------------ Icon-Badge im Block */
@@ -491,22 +494,22 @@ function EventSheet({
     <Sheet open={Boolean(entry)} onClose={onClose} title={entry?.title}>
       {entry ? (
         <View className="gap-3">
-          {/* Kopf als Akzentkarte (neutral + Streifen in Eventfarbe) */}
+          {/* Kopf als ColorBlockCard */}
           <ColorBlockCard color={entry.color} style={{ padding: 16 }}>
             <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
               <SheetIconBadge icon={icon} />
               <View className="min-w-0 flex-1">
-                <BlockText className="text-[19px] font-bold leading-[24px] tracking-[-0.3px]" numberOfLines={2}>
+                <BlockText className="text-[19px] font-extrabold leading-[23px] tracking-[-0.3px]" numberOfLines={2}>
                   {entry.title}
                 </BlockText>
-                <BlockCaption className="mt-1 text-[13px] font-semibold">
+                <BlockCaption className="mt-1 text-[13px] font-bold">
                   {formatRelativeDay(entry.date)}
                   {entry.time ? ` · ${entry.time}` : ''}
                 </BlockCaption>
                 <View className="mt-2 flex-row flex-wrap gap-1.5">
-                  <SheetAccentPill label={entry.kind} />
+                  <Pill label={entry.kind} color="#000" tone="tint" />
                   {entry.location ? (
-                    <SheetAccentPill label={entry.location} icon={MapPin} />
+                    <Pill label={entry.location} color="#000" tone="tint" icon={MapPin} />
                   ) : null}
                 </View>
               </View>
@@ -532,10 +535,4 @@ function EventSheet({
 function SheetIconBadge({ icon }: { icon: LucideIcon }) {
   const ink = useBlockInk();
   return <IconBadge icon={icon} color={ink} size="lg" tone="tint" className="mt-0.5" />;
-}
-
-/** Pill im Sheet-Kopf in der AA-sichere Akzentfarbe der Eventkarte. */
-function SheetAccentPill({ label, icon }: { label: string; icon?: LucideIcon }) {
-  const ink = useBlockInk();
-  return <Pill label={label} color={ink} tone="tint" icon={icon} />;
 }
