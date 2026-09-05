@@ -88,4 +88,5 @@ export const KEYS = {
   notificationState: 'schulflow.notifications.state',
   widgetLayout: 'schulflow.widgets',
   widgetSnapshot: 'schulflow.widgets.snapshot', // JSON für Home-Screen-Widgets (s. widgets/spec.md)
+  smRelay: 'schulflow.sm-relay', // { url } — manueller CORS-Umweg der Web-App (Phase 11)
 } as const;

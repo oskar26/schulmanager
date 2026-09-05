@@ -23,6 +23,11 @@ Der Web-Build liegt schon fertig im Branch `gh-pages`. Du musst nur einmal die S
 
    ### 🌐 https://oskar26.github.io/schulmanager/
 
+   > **Echte Schuldaten im Browser:** Die Schulmanager-API erlaubt keine
+   > Direktanfragen aus dem Browser (CORS). Die Pages-Auslieferung ist ein reiner
+   > Datei-Server, deshalb läuft der Login dort nur mit einem **Umweg** — siehe
+   > Abschnitt „Verbindung zur Schule (Web)“ unten. Demo-Modus funktioniert immer.
+
    Chrome bietet oben **„App installieren"** an (PWA) — eigenes Fenster, eigenes Symbol,
    fühlt sich wie eine App an. Auf dem Xiaomi-Browser/Safari: Menü → „Zum Startbildschirm".
 
@@ -83,6 +88,48 @@ kleine Datei im Repo angelegt werden:
 
 ---
 
+---
+
+## Abnahme Phase 10 — „APK sieht ungestylt aus?“ (Prüfliste nach jedem neuen Build)
+
+Falls die installierte App plötzlich kahl aussieht (nur Text, keine Farbflächen),
+ist fast immer die **Styling-Pipeline** im Build kaputt — nicht das Design.
+So grenzt man es in zwei Minuten ein:
+
+1. **Selbsttest in der App:** Schulflow prüft beim Start, ob das Stylesheet im
+   Paket angekommen ist. Fehlt es, erscheint unten eine Karte
+   „**Styling-Bundle unvollständig**“ (mit Build-Nummer). Diese Karte ist der
+   Befund — Screenshots davon reichen als Fehlermeldung völlig.
+2. **Im Repository nachsehen:** Actions → letzter Build „Schulflow Build“ →
+   Job *Android-APK bauen*. Die Schritte
+   *Styling-Pipeline prüfen* und *Native kompilierte Styles bestätigen*
+   müssen grün sein. Rot = der Build wurde absichtlich gestoppt (es gibt dann
+   auch keine neue APK).
+3. **Lokal reproduzieren:** `npm ci && npm run doctor` — listet die genaue
+   Ursache auf (häufigster Fall: zwei Kopien von `react-native-css-interop`,
+   weil jemand die Version von Hand pinnt).
+4. **CI-Gate tatsächlich aktiv?** Der Bot darf Workflow-Dateien nicht ändern
+   (GitHub blockiert das). Die aktuelle Fassung liegt in
+   `scripts/github-workflow-vorlage.yml` und muß nach Änderungen einmal von Hand
+   hinüberkopiert werden: Repository → `Add file` → **Commit changes via Web-Editor**
+   in `.github/workflows/android-apk.yml` (identisch wie beim Erstanlegen).
+   Erst danach greift der Blocker „Styling-Pipeline prüfen“ bei jedem Build.
+
+### Was danach auf dem Handy durchgeklickt wird
+
+| Screen | Muß sichtbar sein |
+|---|---|
+| Start | Charcoal-Hero mit Radius 32, drei Stat-Kacheln, Schul-Pill darunter; **Such-/Einstellungs-Icon rechts neben dem Titel, nicht über dem Text** |
+| Stundenplan | Titel „Stundenplan“ + „Zwei Wochen · …“, Abschnittslabels „Diese Woche“/„Nächste Woche“, Stunden als Farbflächen in Fachfarbe |
+| Aufgaben | Tabs als **Segmentierte Pille** (Hausaufgaben / Arbeiten / Lernplan), Leerzustand mit Illustration + Textblock |
+| Postfach | Tabs Briefe / Nachrichten / Brett als Pille, Karten vollflächig nach Kategorie |
+| Noten | Titel, Fächerzahl, Leerzustand und Schloss-Icon gestylt (nicht nur der „Verbergen“-Schalter) |
+| Bottom-Nav | Aktiver Tab: Amber-Halo **hinter** dem Icon (kein Fleck *auf* dem Icon), Punkt darunter; Kapsel in Landscape nicht am Rand abgeschnitten |
+| Safe-Area | Kein Text unter der Statusleiste, kein Inhalt hinter dem Home-Indicator |
+
+> Beim ersten Start nach einem Update kurz warten: Die App zeigt beim Booten ein
+> Marken-Startbild, bis Einstellungen und Datenstand hydratisiert sind.
+
 ## FAQ
 
 **Kann ich das auch in Termux/Acode auf dem Handy bauen?**
@@ -95,6 +142,16 @@ Snack kann dieses Projekt nicht ausführen: Der Snack-Git-Import ist aktuell def
 (Asset-Upload wirft serverseitig `"$": Required`), und Snack unterstützt
 expo-router/NativeWind/Tamagui/gluestack nur stark eingeschränkt. Die APK über
 GitHub Actions ist der saubere Weg — und zusätzlich läuft die Web-Version im Browser.
+
+**Web-Version zeigt Demodaten, aber kein Login-Ergebnis?**
+Korrekt so: Der Browser darf `login.schulmanager-online.de` ohne Umweg nicht
+ansprechen. Zwei Wege: (a) die APK nutzen — die verbindet sich direkt, oder
+(b) einen eigenen Umweg hinterlegen: `scripts/relay/`-Worker deployen und die
+URL unter *Einstellungen → Verbindung → Umweg (Relay)* eintragen. Die
+Verbindungs-Karte dort zeigt jederzeit, welcher Weg gerade aktiv ist.
+
+**Die App sieht im APK ungestylt aus?**
+Siehe „Abnahme Phase 10“ oben — die App meldet das inzwischen selbst.
 
 **Die Web-Seite zeigt nichts?**
 Nach dem Aktivieren von Pages 1–2 Minuten warten und die Seite neu laden.

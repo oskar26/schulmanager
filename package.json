@@ -18,7 +18,8 @@
     "smoke:matrix": "node scripts/smoke-matrix.mjs",
     "icons": "node scripts/render-icons.mjs",
     "export:web": "expo export --platform web",
-    "serve:web": "node scripts/web-proxy.mjs"
+    "serve:web": "node scripts/web-proxy.mjs",
+    "doctor": "node scripts/style-pipeline-check.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -76,7 +77,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-native": "^0.81.5",
-    "react-native-css-interop": "^0.1.22",
+    "react-native-css-interop": "0.2.6",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
@@ -98,5 +99,8 @@
     "babel-preset-expo": "~54.0.0",
     "jsdom": "^25.0.1",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "react-native-css-interop": "0.2.6"
   }
 }

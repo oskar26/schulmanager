@@ -54,10 +54,28 @@ Was sich jenseits der Navigation ändert (`src/ui/shell.tsx`, `src/ui/primitives
    und gibt bei ungültigen Daten Rohtext zurück statt abzustürzen.
 2. **CORS:** Die API `login.schulmanager-online.de` sendet keine
    `Access-Control-Allow-Origin`-Header — jeder Browser-Aufruf wäre blockiert worden.
-   Seit diesem Update proxyt der Dev-Server (`metro.config.js → server.enhanceMiddleware`)
-   alle Aufrufe unter **`/sm-api/*`** an die API weiter; im Web-Bundle ruft
-   `src/api/client.ts` deshalb automatisch diesen Same-Origin-Pfad auf.
-3. **User-Agent:** Browser dürfen ihn nicht setzen — der Proxy setzt ihn serverseitig.
+   Der Dev-Server (`metro.config.js → server.enhanceMiddleware`) reicht alle Aufrufe
+   unter **`…/sm-api/*`** durch, der Export-Server zusätzlich **`…/sm-storage/*`**
+   (Datei-Anhänge).
+3. **User-Agent:** Browser dürfen ihn nicht setzen — der Durchreicher setzt ihn serverseitig.
+4. **Der Web-Bug (Redesign Phase 11):** Der Mount war als **Wurzel-Pfad** `/sm-api`
+   verdrahtet. Ausgeliefert wird auf GitHub Pages — ein reiner Datei-Server unter der
+   Basis `/schulmanager/`. `POST /sm-api/api/calls` antwortete dort mit 404 und HTML,
+   der JSON-Parse scheiterte, die Screens blieben leer. Die APK funktionierte, weil sie
+   gar keinen Umweg braucht.
+   Heute löst `src/api/transport.ts` den Weg pro Session **einmal** auf und prüft ihn mit
+   `GET …/__health` (1,5 s), in dieser Reihenfolge: manueller Umweg (Einstellungen) →
+   `EXPO_PUBLIC_SM_API_BASE` → same-origin Durchreicher **relativ zur App-Basis**
+   (`document.baseURI`, damit `/`, `/schulmanager/` und jeder Unterpfad gleich laufen) →
+   Direktaufruf. Ein 200 mit `text/html` (SPA-Fallback) gilt ausdrücklich als *kein*
+   Durchreicher. Findet sich nichts, meldet die App **„Kein Weg durch den Browser“**,
+   bevor überhaupt ein Request losgeschickt wird — kein 30-Sekunden-Timeout, kein
+   rätselhaftes „Keine Verbindung“. Einstellungen → Konto zeigt die
+   **Verbindungs-Karte** (aktiver Weg, Latenz, Eingabefeld für den Umweg, „Neu prüfen“).
+5. **Reines Static-Hosting braucht einen dritten Hop:** `scripts/relay/` enthält einen
+   Cloudflare-Worker mit genau diesem Vertrag (`/__health`, `/sm-api`, `/sm-storage`,
+   optional `ALLOWED_ORIGINS`). Deployen, URL in die Einstellungen — die Web-Version ist
+   repariert, ohne neuen App-Build.
 
 ### 2.2 Entwickeln
 
@@ -74,10 +92,52 @@ npm run serve:web    # liefert dist/ + /sm-api-Proxy aus (Port 8080, $PORT über
 
 `scripts/web-proxy.mjs` ist bewusst null-Abhängigkeiten-Node (Statik + SPA-Fallback + Proxy).
 
-Eigener Reverse-Proxy (nginx/Caddy)? Dann muss nur `/sm-api/*` auf
-`https://login.schulmanager-online.de/*` weitergeleitet werden — oder die Env-Variable
-`EXPO_PUBLIC_SM_API_BASE` auf einen beliebigen Basis-URL zeigen, dann ignoriert der
-Client den eingebauten Pfad.
+`scripts/web-proxy.mjs` ist bewusst null-Abhängigkeiten-Node (Statik + SPA-Fallback +
+Durchreicher) und funktioniert jetzt unabhängig vom Auslieferungspfad
+(`SERVE_DIR=web-build PORT=8080 node scripts/web-proxy.mjs`).
+
+Eigener Reverse-Proxy (nginx/Caddy)? Dann muss nur `…/sm-api/*` auf
+`https://login.schulmanager-online.de/*` (und `…/sm-storage/*` auf den Storage-Host)
+weitergeleitet werden — oder `EXPO_PUBLIC_SM_API_BASE` auf einen beliebigen Basis-URL
+zeigen. Beides entfällt, wenn Nutzer:innen den Umweg selbst eintragen:
+*Einstellungen → Verbindung → Umweg (Relay)* liegt im Browserspeicher, gilt sofort und
+braucht keinen neuen Build (Empfehlung für GitHub Pages: der Worker aus `scripts/relay/`).
+
+### 2.5 APK-Styling-Pipeline (Redesign Phase 10)
+
+Ein Styling-Ausfall im **installierten Build** ist praktisch unsichtbar: Er taucht in
+keinem Typecheck auf, nicht im Web-Bundle und nicht in den Screens. Ursache war eine
+doppelte NativeWind-Laufzeit — `react-native-css-interop` einmal als eigener Pin
+(0.1.22), einmal als Dependency von `nativewind@4.2.6` (0.2.6). Babel injiziert in jede
+Screen-Datei `require("react-native-css-interop/jsx-runtime")`, aufgelöst aus `app/` →
+die 0.1.22-Kopie; der kompilierte CSS-Payload läuft über das generierte
+`.cache/android.js` → die 0.2.6-Laufzeit. Zwei Registries: **nativ** löst sich jedes
+`className` ins Leere auf (nur inline gesetzte `style`-Props überleben — genau das
+gemeldete „nur die Hälfte ist gestylt“), **Web** bleibt unauffällig, weil dort das
+echte CSS-Stylesheet im DOM greift.
+
+Deshalb gilt jetzt:
+
+* `package.json` pinnt `react-native-css-interop` auf exakt die Version, die nativewind
+  verlangt, und setzt dieselbe Version als `overrides` → eine Kopie, für alle.
+* `npm run doctor` (`scripts/style-pipeline-check.mjs`) prüft 14 Invarianten der
+  Pipeline, darunter die **Auflösungs-Symmetrie** (Screen-Runtime == Payload-Runtime)
+  und mit `--built=android` die Größe des kompilierten nativen StyleSheets.
+* Der Workflow (`android-apk.yml`, Vorlage in `scripts/github-workflow-vorlage.yml`)
+  läuft den Doctor **vor** `expo prebuild`, verwirft Metro-/NativeWind-Cache vor Gradle
+  und bestätigt nach dem Build die kompilierten Styles. Ein ungestyltes APK kann so
+  nicht mehr unbemerkt veröffentlicht werden.
+* `src/ui/style-guard.tsx` mißt zur Laufzeit nach (ein View, dessen Größe nur aus
+  `w-24 h-24` kommt) und meldet einen Ausfall in der App statt im Logcat.
+* `className` bleibt die einzige Quelle für Typografie; **Struktur** (Achsen und Abstände
+  im `ScreenHeader`) ist zusätzlich inline gesetzt, damit eine verlorene Klasse nichts
+  überlappen kann.
+
+Prüfen nach jedem Pull von Dependency-Änderungen:
+
+```bash
+npm ci && npm run doctor    # 14 Invarianten; Exit != 0 = Build würde ungestylt
+```
 
 ### 2.4 PWA (installierbar)
 
@@ -200,9 +260,10 @@ nichts rendert oder ein erwarteter Text fehlt (`--expect=…`).
 
 ## 6. Bekannte Grenzen (ehrlich)
 
-* Datei-Downloads (`storage.schulmanager-online.de`) können im Web je nach
-  Server-Konfiguration am selben CORS-Problem hängen; sie laufen aus der nativen
-  App und im Demo fehlerfrei.
+* Datei-Downloads (`storage.schulmanager-online.de`) hingen im Web am selben
+  CORS-Problem wie die API. Seit Phase 11 läuft der Download über den jeweils
+  aktiven Umweg (`…/sm-storage/*`); ohne Durchreicher und ohne Relay bleibt er im
+  Browser blockiert — nativ und im Demo fehlerfrei.
 * Kein echter Push (by design, siehe README); die Island aktualisiert sich, solange
   die App lebt bzw. im Hintergrund laufen darf.
 * iOS: Live Activities bis zur WidgetKit-Extension nur In-App.

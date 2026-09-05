@@ -1,13 +1,23 @@
 /**
- * Live-Island — die schwebende Kapsel oben mittig.
+ * Live-Island — jetzt die **Tab-Bar-Erweiterung** der Web-Version (Redesign Phase 13).
  *
- * Funktioniert plattformübergreifend in-App (Phone, Tablet, Desktop, Web)
- * und ist die sichtbare Schwester der nativen Android-„Live Update"-
- * Benachrichtigung (modules/schulflow-live-island), die auf Xiaomi HyperOS
- * automatisch als Fokus-Notification um die Kamera gelegt wird.
+ * Ursprung: eine „Dynamic Island"-Kapsel, die über *allen* Screens oben am
+ * Bildschirm schwebte. Das hat auf Telegram-artige Referenz-Apps gewirkt, aber
+ * im eigenen Systemkontext doppelt gehalten: oben überlappte sie Statusleiste
+ * und Notch, und in der installierten App war sie das falsche Vehikel — dort
+ * gehören Live-Infos auf den Sperrbildschirm bzw. ins Live-Update.
  *
- * Inhalt: laufende Stunde mit Restzeit+Fortschritt oder die nächste Stunde
- * mit Countdown, sobald sie ≤ 60 Minuten weg ist. Antippen klappt Details auf.
+ * Deshalb:
+ *  · **Nativ (APK/iPA):** kein eigenes In-App-Island-UI mehr. `effects.ts`
+ *    spielt dieselben Infos weiter über die Android-Fortschritts-Notification
+ *    (Live-Update / HyperOS-Fokus-Notification) und, sobald der
+ *    WidgetKit-Target gebaut ist, über eine iOS **Live Activity**
+ *    (`modules/schulflow-live-island/ios/`) zu. Diese Komponente liefert dann `null`.
+ *  · **Web:** dieselbe Pille, aber nicht oben — sondern als Erweiterung über der
+ *    schwebenden Tab-Bar (Antippen klappt die Detailkarte nach oben auf).
+ *
+ * Inhalt unverändert: laufende Stunde mit Restzeit + Fortschritt, sonst die
+ * nächste Stunde mit Countdown (≤ 60 min).
  */
 import React, { useEffect, useState } from 'react';
 import { Platform, Text, View } from 'react-native';
@@ -19,6 +29,7 @@ import { BookOpen } from 'lucide-react-native';
 import type { IslandState } from '@/features/island/use-island';
 import { hapticLight } from '@/lib/haptics';
 import { useLayout } from '@/lib/breakpoints';
+import { useTabNavReserve } from '@/ui/nav-reserve';
 import { tint } from '@/design/subjects';
 import { foregroundOn } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
@@ -28,6 +39,7 @@ import { LivePulse, PressableOpacity, PressableScale } from '@/ui/motion';
 export function LiveIsland({ state }: { state: IslandState | null }) {
   const layout = useLayout();
   const insets = useSafeAreaInsets();
+  const navReserve = useTabNavReserve();
   const [expanded, setExpanded] = useState(false);
 
   // Zuklappen, sobald der Kontext wechselt (andere Stunde, Pause→Stunde …).
@@ -36,14 +48,22 @@ export function LiveIsland({ state }: { state: IslandState | null }) {
     setExpanded(false);
   }, [signature]);
 
-  if (!state) return null;
+  // Phase 13: natives In-App-Island ist abgeschaltet — Live-Infos laufen dort
+  // über das System (Android-Live-Update, iOS Live Activity), nicht über eine
+  // Kapsel im Layout. Web behält das In-App-Pendant, unten über der Tab-Bar.
+  if (!state || Platform.OS !== 'web') return null;
+
+  // Auf Phones sitzt die Pille direkt über der schwebenden Kapsel (in der
+  // ohnehin freien Reserve, damit kein Screen-Inhalt verdeckt wird); auf
+  // Rail/Desktop reicht der übliche Rand.
+  const anchorBottom = layout.navigation === 'bottom' ? Math.max(navReserve, insets.bottom + 92) : 20;
 
   return (
     <View
       pointerEvents="box-none"
       style={{
         position: 'absolute',
-        top: (Platform.OS === 'web' ? 10 : insets.top + 6),
+        bottom: anchorBottom,
         left: layout.navigationWidth,
         right: 0,
         alignItems: 'center',
@@ -51,8 +71,8 @@ export function LiveIsland({ state }: { state: IslandState | null }) {
       }}
     >
       <View pointerEvents="box-none" style={{ width: '100%', maxWidth: 460, paddingHorizontal: 12, alignItems: 'center' }}>
-        <IslandPill state={state} expanded={expanded} onToggle={() => { hapticLight(); setExpanded((v) => !v); }} />
         {expanded ? <IslandCard state={state} onClose={() => setExpanded(false)} /> : null}
+        <IslandPill state={state} expanded={expanded} onToggle={() => { hapticLight(); setExpanded((v) => !v); }} />
       </View>
     </View>
   );
@@ -183,7 +203,8 @@ function IslandCard({ state, onClose }: { state: IslandState; onClose: () => voi
   return (
     <View
       style={{
-        marginTop: 8,
+        // Phase 13: die Karte sitzt über der Pille und klappt nach oben auf.
+        marginBottom: 8,
         alignSelf: 'stretch',
         backgroundColor: colors.charcoal,
         borderRadius: 24,

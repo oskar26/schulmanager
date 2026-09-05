@@ -1,0 +1,15 @@
+# Schulflow-Relay — Auslieferung auf Cloudflare Workers (Phase 11).
+#
+#   cd scripts/relay && npx wrangler deploy
+#
+# Die entstandene URL (+ /sm-api) in der Web-App unter
+# „Einstellungen → Verbindung → Umweg (Relay)“ eintragen.
+name = "schulflow-relay"
+main = "schulflow-relay.worker.js"
+compatibility_date = "2026-09-01"
+
+# Nur diese Herkunften dürfen das Relay benutzen. Leere Liste = alle Herkunften
+# (funktioniert, ist aber ein offener Proxy für die Schulmanager-API — besser
+# hier die eigene Pages-Domain eintragen).
+[vars]
+ALLOWED_ORIGINS = "https://oskar26.github.io"

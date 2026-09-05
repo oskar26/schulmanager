@@ -14,23 +14,25 @@
  */
 import { Platform } from 'react-native';
 
-/**
- * Basis-URL der API.
- *
- * · nativ      → direkt gegen login.schulmanager-online.de
- * · Web        → same-origin Pfad `/sm-api`, den der Dev-Server (metro.config.js)
- *                bzw. der Export-Server (scripts/web-proxy.mjs) an die API
- *                durchreicht — die API sendet keine CORS-Header, und Browser
- *                blockieren sonst jeden Aufruf.
- * · Override   → `EXPO_PUBLIC_SM_API_BASE` (z. B. eigener Reverse-Proxy).
- */
-export const BASE_URL =
-  process.env.EXPO_PUBLIC_SM_API_BASE ??
-  (Platform.OS === 'web' ? '/sm-api' : 'https://login.schulmanager-online.de');
+import { explainWebBlock, resolveSmTransport } from './transport';
 
-/** Ob die Web-App über den eingebauten Proxy läuft (nur informativ fürs UI). */
-export const WEB_USES_CORS_PROXY =
-  Platform.OS === 'web' && !process.env.EXPO_PUBLIC_SM_API_BASE;
+/**
+ * Basis-URL der API — **bewusst nicht mehr statisch**.
+ *
+ * Die Auflösung pro Anfrage übernimmt `src/api/transport.ts`:
+ *  · nativ   → direkte Verbindung zu `login.schulmanager-online.de` (kein CORS)
+ *  · Web     → manueller Umweg (Einstellungen) → `EXPO_PUBLIC_SM_API_BASE` →
+ *              same-origin Durchreicher *relativ zur App-Basis* → Direktaufruf
+ *
+ * Der alte Root-Pfad `/sm-api` war die Ursache des Web-Bugs: Auf statischem
+ * Hosting (GitHub Pages) existiert dort kein Durchreicher, also antwortete der
+ * Server mit 404-HTML und die Anbindung „lud keine Daten“ — im APK dagegen
+ * lief alles, weil der dort gar keinen Proxy braucht.
+ *
+ * `BASE_URL` bleibt als Fallback und für Tests exportiert.
+ */
+export { DIRECT_API_HOST } from './transport';
+export const BASE_URL = Platform.OS === 'web' ? '/sm-api' : 'https://login.schulmanager-online.de';
 
 /** Pflichtfeld, dessen Wert der Server nicht prüft (leerer String ⇒ HTTP 400). */
 export const BUNDLE_VERSION = '3505280ee7';
@@ -153,6 +155,7 @@ export class SchulmanagerClient {
 
   constructor(private readonly options: ClientOptions) {}
 
+  /** Nur für Aufrufer außerhalb von `post()` — der Weg wird dort ohnehin aufgelöst. */
   private get baseUrl() {
     return this.options.baseUrl ?? BASE_URL;
   }
@@ -165,11 +168,24 @@ export class SchulmanagerClient {
   async post<T>(path: string, body: unknown, opts: { auth?: boolean } = {}): Promise<T> {
     await this.bucket.take();
 
+    // Transport zuerst: auf Web entscheidet er, *wohin* die Anfrage überhaupt
+    // darf. Kein Weg → sofortige, erklärende Antwort statt 30-Sekunden-Timeout.
+    const transport = this.options.baseUrl ? null : await resolveSmTransport();
+    const base = this.options.baseUrl ?? transport?.apiBase ?? BASE_URL;
+    if (!base) {
+      throw new SchulmanagerError(
+        'Kein Weg zur Schulmanager-API',
+        0,
+        'network',
+        explainWebBlock(transport) ?? undefined,
+      );
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-    // Browser verbieten selbst gesetzte User-Agents — das macht der Proxy.
+    // Browser verbieten selbst gesetzte User-Agents — das macht der Durchreicher.
     if (Platform.OS !== 'web') headers['User-Agent'] = USER_AGENT;
 
     if (opts.auth !== false) {
@@ -182,7 +198,7 @@ export class SchulmanagerClient {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
-      response = await this.fetch(`${this.baseUrl}${path}`, {
+      response = await this.fetch(`${base}${path}`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body ?? {}),
@@ -190,11 +206,16 @@ export class SchulmanagerClient {
       });
     } catch (error) {
       const aborted = error instanceof Error && error.name === 'AbortError';
+      // Auf Web ist ein blockierter Request meist ein CORS-/Proxy-Problem, kein
+      // Netzproblem. Die Ursache gehört deshalb in die Meldung, nicht in die Konsole.
+      const webBlock = Platform.OS === 'web' && !this.options.baseUrl ? explainWebBlock(transport) : null;
       throw new SchulmanagerError(
         aborted ? `Timeout bei ${path}` : String(error),
         0,
         'network',
-        aborted ? 'Die Schule antwortet nicht (Timeout). Prüfe deine Internetverbindung.' : undefined,
+        aborted
+          ? 'Die Schule antwortet nicht (Timeout). Prüfe deine Internetverbindung.'
+          : (webBlock ?? undefined),
       );
     } finally {
       clearTimeout(timeout);

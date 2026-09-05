@@ -1,12 +1,18 @@
 /**
  * Produktiv-Server für den statischen Web-Export von Schulflow.
  *
- *   npx expo export --platform web        # baut nach dist/
- *   node scripts/web-proxy.mjs            # serviert dist/ + /sm-api/*
+ *   npx expo export --platform web -o dist   # baut nach dist/
+ *   node scripts/web-proxy.mjs                # serviert dist/ + die Durchreicher
  *
  * Ohne diesen Mini-Server würde die Web-App die Schulmanager-API direkt
- * aufrufen — und der Browser blockt das wegen fehlender CORS-Header.
- * Hier ist alles dabei: Statikdateien, SPA-Fallback und der API-Proxy.
+ * aufrufen — und der Browser blockt das wegen fehlender CORS-Header. Hier ist
+ * alles dabei: Statikdateien, SPA-Fallback und die Upstream-Durchreicher
+ * `/…/sm-api/*` (login.schulmanager-online.de) sowie `/…/sm-storage/*`
+ * (storage.schulmanager-online.de, Datei-Anhänge).
+ *
+ * Umgebungsvariablen:
+ *   PORT        Port (Standard 8080)
+ *   SERVE_DIR   Export-Verzeichnis (Standard ./dist)
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -18,9 +24,8 @@ const require = createRequire(import.meta.url);
 const { createSmApiProxy } = require('./sm-api-proxy.cjs');
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const DIST = path.join(ROOT, '..', 'dist');
+const DIST = process.env.SERVE_DIR ? path.resolve(process.env.SERVE_DIR) : path.join(ROOT, '..', 'dist');
 const PORT = Number(process.env.PORT ?? 8080);
-const SM_API_PREFIX = '/sm-api';
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -41,18 +46,16 @@ const TYPES = {
 const proxy = createSmApiProxy();
 
 const server = http.createServer((req, res) => {
+  // 1) Upstream-Durchreicher: suffix-basiert, damit der Export unter `/`,
+  //    `/schulmanager/` oder jedem anderen Unterpfad identisch funktioniert.
+  if (proxy(req, res)) return;
+
+  // 2) Statische Dateien mit SPA-Fallback (Client-Routing).
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
   let pathname = decodeURIComponent(url.pathname);
-
-  if (pathname.startsWith(`${SM_API_PREFIX}/`)) {
-    proxy(req, res, SM_API_PREFIX);
-    return;
-  }
-
   if (pathname === '/') pathname = '/index.html';
   let file = path.join(DIST, pathname);
 
-  // SPA-Fallback: unbekannte Pfade → index.html (Client-Routing).
   if (!file.startsWith(DIST) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     file = path.join(DIST, 'index.html');
   }
@@ -70,5 +73,6 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Schulflow Web läuft: http://localhost:${PORT}`);
-  console.log(`API-Proxy:           http://localhost:${PORT}${SM_API_PREFIX} → https://login.schulmanager-online.de`);
+  console.log('Durchreicher:  …/sm-api → https://login.schulmanager-online.de');
+  console.log('               …/sm-storage → https://storage.schulmanager-online.de');
 });

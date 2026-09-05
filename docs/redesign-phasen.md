@@ -1,7 +1,8 @@
 # Schulflow – Redesign-Phasenplan („Farbflächen-Stil“)
 
 > **Master-Dokument für den Redesign-Auftrag.** Verbindliche Planungs- und
-> Abnahmequelle für alle 9 Phasen. Status wird nach jeder abgeschlossenen Phase
+> Abnahmequelle für alle Phasen (1–9 Grundredesign, 10–15 Ergänzung aus
+> „Redesign-Auftrag Teil 2“). Status wird nach jeder abgeschlossenen Phase
 > hier aktualisiert; funktional entscheidende Punkte werden im
 > **Entscheidungs-Log** (unten) dokumentiert.
 >
@@ -11,7 +12,14 @@
 > Typografie, riesige Radien, Icon-Badges, Pill-Tags, schwarze Pill-Nav,
 > weiche Schatten.**
 >
-> Stand: 2026-09-04 · **Alle 9 Phasen umgesetzt ✅** (siehe Status je Phase)
+> Stand: 2026-09-05 · **Phasen 1–9 umgesetzt ✅ · Phase 10 ✅ · Phase 11 ✅ ·
+> Phase 12 teilweise ✅ (Haptik, Screen-Transitionen) · Phase 13 teilweise ✅
+> (Island: Web-Pille über der Tab-Bar, nativ abgeschaltet) · Phasen 14–15 geplant.**
+>
+> Die Phasen 10–15 kommen aus dem Auftrag „Teil 2 (Bugfixes & neue
+> Anforderungen)“ und sind die Fortsetzung dieses Dokuments: 10 APK-Styling &
+> Layout, 11 Schulmanager-API im Browser, 12 Grundqualität & Bugs, 13 Live
+> Island → Live Activities, 14 Einstellungen-Umbau, 15 Stundenplan-Umschalter.
 
 ---
 
@@ -751,6 +759,461 @@ Benötigt Phasen 1–8 (finaler Durchlauf über alles).
 
 ---
 
+## Phase 10 — APK-Styling & Layout-Fix (aus „Teil 2“, Punkt 1)
+
+**Status: ✅ umgesetzt (2026-09-05) — die On-Device-Abnahme erfolgt mit dem nächsten CI-Build**
+
+### Diagnose (zuerst geführt, wie beauftragt)
+
+Symptom war nicht „CSS fehlt komplett“, sondern **selektiv**: Bottom-Nav,
+Tages-Pillen, Switches und die Hero-Card waren gestylt, Titel, Abschnittslabels,
+Farbflächen-Padding, Typografie und Abstände nicht. Dieses Muster hat nur eine
+Erklärung: alles **inline** Gesetzte (`style={{ … }}` aus `tokens.ts`) überlebt,
+alles **klassenbasierte** (`className`, also praktisch das gesamte Redesign aus
+Phase 1–9) nicht.
+
+Nachgewiesene Ursache — eine **doppelte NativeWind-Laufzeit**:
+
+| Prüfschritt | Befund |
+|---|---|
+| `npm ls react-native-css-interop` | `nativewind@4.2.6 → 0.2.6` **und** eigene, obere Pin `react-native-css-interop@^0.1.22` → zwei Kopien im Baum |
+| `createRequire('app/_layout.tsx').resolve('react-native-css-interop/jsx-runtime')` | landete in **0.1.22** (hoisted) |
+| Auflösung aus dem von NativeWind generierten StyleSheet-Modul (`node_modules/react-native-css-interop/.cache/android.js`) | landete in **0.2.6** (verschachtelt unter `nativewind`) |
+| Babel-Nachbau (`babel-preset-expo` + `nativewind/babel`) auf einer Testdatei | injiziert in **jede Screen-Datei** `require("react-native-css-interop/jsx-runtime")` — ein leerer Specifier, also aus `app/` aufgelöst |
+| `expo export --platform android` (lesbar, `--no-bytecode --no-minify`) | vorher 13.696.698 Zeichen, Runtime-Marker `verifyData`/`verifyJSX` 7×, `injectData` 9×; nachher 13.583.138 Zeichen (−111 KB), 4× bzw. 5× → genau eine Runtime |
+
+Kette: Der Metro-Transformer schreibt das kompilierte Stylesheet über
+`injectData(…)` in die Laufzeit, die **aus dem `.cache`-Modul** aufgelöst wird
+(0.2.6). Babel verdrahtet jedes `className` mit der Laufzeit, die **aus der
+Screen-Datei** aufgelöst wird (0.1.22). Zwei Registry-Instanzen → die Screens
+fragen in einer leeren Tabelle nach → auf nativ kein Styling. Auf Web blieb es
+unsichtbar, weil dort echte CSS-Klassen im DOM greifen, und im Dev-Modus, weil
+das Stylesheet dort über den Middleware-Pfad nachgeliefert wird.
+
+Verworfen wurden nach dieser Messung: „global.css nicht eingebunden“,
+WebView-Ladereihenfolge, Screens auf alten Render-Pfaden (kein einziger betroffener
+Screen nutzt alte Komponenten) und WebView-Timing.
+
+### Umsetzung
+
+- **Ursache behoben:** `package.json` pinnt `react-native-css-interop` jetzt auf
+  exakt die Version, die `nativewind@4.2.6` verlangt (`0.2.6`), plus
+  `"overrides": { "react-native-css-interop": "0.2.6" }`. Ergebnis: eine Kopie,
+  Deduping erzwungen, `app/` und `.cache` resolving identisch.
+- **`scripts/style-pipeline-check.mjs` (neu) → `npm run doctor`:** prüft 14
+  Invarianten der Pipeline — genau eine Kopie, Versionsparity zu nativewind,
+  **Auflösungs-Symmetrie** (der eigentliche Bug), `jsxImportSource`,
+  `withNativeWind`-Input, `global.css`-Import im Root, Tailwind-`content`-Globs
+  (+ Warnung, wenn `className` außerhalb der Globs auftaucht), mit `--built=<platform>`
+  zusätzlich die Größe des kompilierten nativen StyleSheets.
+  Negativtest (zweite Kopie simuliert) schlägt korrekt mit Exit 1 auf.
+- **CI (`android-apk.yml` + `scripts/github-workflow-vorlage.yml`, identisch):**
+  `npm run doctor` als Blocker **vor** `expo prebuild`, Metro-/NativeWind-Cache
+  wird vor Gradle verworfen (`--rerun-tasks`, kein halbfertiges Bundle), nach dem
+  Build prüft `--built=android`, und der Web-Job läuft den Doctor ebenfalls.
+  Ein ungestyltes APK kann damit nicht mehr unbemerkt veröffentlicht werden.
+- **Laufzeit-Sonde `src/ui/style-guard.tsx` (neu), gemountet in `app/_layout.tsx`:**
+  ein View, dessen Größe ausschließlich aus `w-24 h-24` kommt; mißt `onLayout`
+  statt 96 px deutlich weniger, meldet die App „Styling-Bundle unvollständig“ als
+  abbestellbare Karte (bewusst **nur Inline-Styles**, weil sie ja funktioniert,
+  wenn Klassen tot sind) inkl. Build-Version und Hinweis auf `npm run doctor`.
+  Kein Blocker: Navigation und Daten bleiben nutzbar. `useStylePipelineHealth()`
+  stellt den Zustand für Diagnose-Anzeigen bereit (Phase 12/14: „Über“-Abschnitt).
+- **Bottom-Nav (gemeldetes „Glow-Icon verdeckt ein Icon“):** die Deko-Ebenen des
+  aktiven Tabs trugen `elevation`. Auf Android bestimmt Elevation die
+  **Zeichenreihenfolge** — Halo und Hintergrund landeten *über* dem Icon, der
+  Amber-Halo pulsierte also auf dem Icon. Jetzt: `elevation` raus, Tiefenwirkung
+  auf iOS über echte Schatten (`Platform.select`), explizite `zIndex`-Schichtfolge
+  Deko → Hintergrund → Icon → Punkt → Badge.
+- **Safe-Areas im nativen Kontext:** die schwebende Kapsel rechnet
+  `insets.left`/`insets.right` ein (Landscape, Notch/Punch-Hole, drei Buttons),
+  damit sie weder angeschnitten noch unter der Systemuhr verschwindet; die
+  Scroll-Reserve unten bleibt `max(100 px, insets.bottom + 88 px)`
+  (`useTabNavReserve`, unverändert, aber jetzt wieder sichtbar korrekt).
+- **Header-Überlappung auf Start:** `ScreenHeader` trägt seine Kopfzeilen-Struktur
+  (`flexDirection`, `alignItems`, `justifyContent`, `gap`, `minHeight`) jetzt
+  inline *und* als Klasse. Der Header war die einzige Stelle, an der eine
+  verlorene Klasse nicht nur „hässlich“, sondern physisch überlappend war
+  (Such-/Einstellungs-Icon über dem Begrüßungstext). Typografie bleibt bewusst
+  klassenbasiert — 45 Screens überschreiben die Größen der Text-Bausteine per
+  `className`, und inline würde jede dieser Entscheidungen still aushebeln.
+
+### Akzeptanzkriterien
+
+- [x] Eine `react-native-css-interop`-Kopie im Abhängigkeitsbaum; Auflösung aus
+      `app/` und aus dem generierten StyleSheet-Modul zeigt in dieselbe Runtime
+      (dokumentierter Nachweis oben).
+- [x] Android-Bundle enthält eine gefüllte native StyleSheet-Registry
+      (`.cache/android.js` 23.024 Byte; `npm run doctor --built=android`).
+- [x] `npm run doctor` blockiert in CI vor `prebuild` und meldet die Ursache
+      auf Deutsch statt eines Build-Abbruchs ins Blaue; Negativtest liefert Exit 1.
+- [x] Styling-Verlust ist nicht mehr stumm: Laufzeit-Sonde meldet ihn in der App.
+- [x] Bottom-Nav ohne `elevation`-Z-Order-Konflikt (Glow über Icon), Kapsel
+      safe-area-korrekt in Landscape/Notch.
+- [x] `ScreenHeader` strukturell ausfallsicher; keine Überlappung von
+      Kopfaktion und Titel möglich.
+- [x] `npm run typecheck` und Smoke-Matrix (17 Routen × 3 Formfaktoren) grün.
+- [ ] **Auf dem Gerät nach dem nächsten Build abzunehmen:** Stundenplan
+      (Titel/Labels/Stundenliste), Aufgaben-Tabs als Segmented-Control,
+      Postfach-Tabs, Noten-Titel/-Empty-State, Start ohne Icon-Überlappung —
+      jeweils 1:1 wie Web, ohne Überlappungen, mit Safe-Area-Abstand zu
+      Statusleiste/Home-Indicator. Liste dafür: `HANDY-TESTEN.md` §„Abnahme
+      Phase 10“.
+
+### Abhängigkeiten
+
+Keine neue — Phase 10 ist Voraussetzung für die Abnahme aller visuellen Folgen
+(12–15), weil deren Wirkung sonst in der installierten App unsichtbar bleibt.
+
+---
+
+## Phase 11 — Schulmanager-Online-API im Browser (aus „Teil 2“, Punkt 2)
+
+**Status: ✅ umgesetzt (2026-09-05)**
+
+### Diagnose
+
+Die Anbindung war nicht „kaputt“, sondern **für die Auslieferungsart falsch adressiert**:
+
+- `src/api/client.ts` setzte im Browser `/sm-api` als **Wurzel-Pfad** fest.
+  Den Durchreicher gibt es aber nur im Dev-Server (`metro.config.js`) und in
+  `scripts/web-proxy.mjs`.
+- Ausgeliefert wird die Web-Version auf GitHub Pages — ein reiner Datei-Server
+  unter der Basis `/schulmanager/`. `POST /schulmanager/sm-api/api/calls` (zuvor
+  sogar `POST /sm-api/api/calls`)antwortete dort mit **404 und HTML**; der
+  JSON-Parse scheiterte, die Screens blieben leer.
+- Nativ (APK) existiert das Problem nicht: React Native hat kein CORS, die App
+  spricht `login.schulmanager-online.de` direkt an. Genau deshalb „functioniert
+  sie nur in der installierten App“.
+- Elternbriefe/Anhänge hingen am gleichen Problem (Storage-Host
+  `storage.schulmanager-online.de`, siehe `docs/PLATTFORMEN.md` §6).
+
+### Umsetzung
+
+- **`src/api/transport.ts` (neu)** — eine Schicht, die pro Session **einmal**
+  den Weg zur API festlegt und ihn danach allen Konsumenten liefert:
+  1. manueller Umweg aus den Einstellungen (persistiert, `KEYS.smRelay`),
+  2. Build-Override `EXPO_PUBLIC_SM_API_BASE`,
+  3. same-origin Durchreicher — **relativ zur App-Basis** über
+     `document.baseURI`, funktioniert also unter `/`, `/schulmanager/` und jedem
+     Unterpfad,
+  4. Direktaufruf als letzte Chance (falls die API je CORS öffnet).
+  Jeder Kandidat wird mit einem `GET …/__health` in 1,5 s geprüft; ein 200 mit
+  `text/html` (SPA-Fallback eines Datei-Servers) gilt als *kein* Durchreicher.
+  Findet sich nichts, ist der Zustand `blocked` — und Anfragen werden erst gar
+  nicht mehr geschickt (kein 30-s-Timeout, kein „Keine Verbindung“-Raten).
+- **`src/api/client.ts`** löst die Basis jetzt pro Anfrage auf
+  (`resolveSmTransport()`), `post()` wirft bei `blocked` eine
+  `SchulmanagerError` mit der **Handlungsansage** im `userMessage`
+  („… Einstellungen → Verbindung …“). Nativ unverändert direkt.
+- **Einstellungen → Konto: `src/ui/connection-card.tsx` (neu)** mit
+  `useSmTransport()` (`src/api/use-transport.ts`): aktuelle Route inkl.
+  gemessener Latenz, Eingabefeld für die Umweg-Adresse (akzeptiert Worker-Root
+  *oder* `…/sm-api`, normalisiert beides), Speichern & prüfen / Entfernen /
+  Neu prüfen, plus der blockierte Hinweis mit Verweis auf `scripts/relay/`.
+  Wirkt ohne neuen Build, weil die Adresse im Browserspeicher liegt.
+  `WEB_USES_CORS_PROXY` (statisch, irreführend) ist daraus verschwunden.
+- **Durchreicher erweitert** (`scripts/sm-api-proxy.cjs`, `metro.config.js`,
+  `scripts/web-proxy.mjs`): Prefix-Erkennung am **Suffix** statt am Wurzel-Pfad,
+  neuer Mount `/sm-storage` für Datei-Anhänge, `/__health` als Ein-Request-Fähigkeits-
+  nachweis, `SERVE_DIR` für den Export-Server.
+- **Relay für rein statisches Hosting:** `scripts/relay/schulflow-relay.worker.js`
+  (+ `wrangler.toml`, `scripts/relay/README.md`) — derselbe Vertrag wie der
+  lokale Durchreicher, `ALLOWED_ORIGINS`-Beschränkung, nur die zwei Upstreams,
+  keine Logs von Bodies/Tokens, `Vary: Origin`. Damit ist der Browser-Weg auch
+  auf GitHub Pages reparierbar, ohne dass Schulflow einen fremden
+  öffentlichen Proxy mit dem Schul-Login füttert.
+- **Downloads** (`src/api/downloads.ts`) laufen auf Web über denselben Umweg
+  (`rewriteStorageUrlForWeb`).
+
+### Akzeptanzkriterien
+
+- [x] Browser-Datenfluss hängt nicht mehr an einem Root-Pfad; die App leitet
+      `/sm-api` und `/sm-storage` aus ihrer eigenen Basis ab (Subpfad-tolerant).
+- [x] Einmalige, gepufferte Fähigkeitsprüfung pro Session statt Rate hängender
+      Requests; `blocked` wird vor dem ersten fetch erkannt.
+- [x] Nutzer:innen können den Umweg ohne Build in den Einstellungen setzen und
+      sehen sofort Status + Latenz.
+- [x] Fehlermeldung im blockierten Zustand erklärt Ursache und Ausweg (auch im
+      Login-Formular, das denselben Client nutzt). Auch der letzte Direktaufruf
+      wird nicht als kryptische `TypeError` durchgereicht: schlägt er fehl,
+      nennt die App CORS als Grund und den Weg in die Einstellungen; ein
+      wiederholt leerer Health-Check des Relays meldet die geprüfte Adresse.
+- [x] Relais-Implementierung liegt im Repo und ist in einer Minute deploybar;
+      der lokale Export-Server bedient denselben Vertrag (Health + Storage).
+- [x] `typecheck` grün; Web-Smoke-Matrix unverändert grün (kein Render-Fehler
+      durch die neue Transport-Schicht).
+- [ ] Auf Pages nach dem nächsten Web-Deploy zu prüfen: mit eingetragenem Relay
+      laden Stundenplan/Aufgaben/Noten/Postfach; ohne Relay erscheint die
+      Verbindungs-Karte mit der Erklärung statt leerer Screens.
+
+### Abhängigkeiten
+
+Unabhängig von Phase 10 (läuft auch mit ungestyltem APK), liefert aber den
+Nachweis für Phase 12/14: Die Verbindungs-Karte ist der Keim für den
+Drilldown-Punkt „Konto & Verbindung“.
+
+---
+
+## Phase 12 — Grundqualität & Bugs (aus „Teil 2“, Punkt 3)
+
+**Status: 🟡 teilweise umgesetzt (Haptik ✅, Rest geplant)**
+
+### Umsetzung (bereits erfolgt)
+
+- **`src/lib/haptics.ts` komplett umgestellt.** Android nutzte
+  `impactAsync`/`notificationAsync` — expo-haptics simuliert diese Stile dort mit
+  `Vibrator` + `VibrationEffect.createOneShot(...)`: ein langes, brummendes
+  Muster, genau die Rückmeldung aus dem Auftrag. Jetzt:
+  `performAndroidHapticsAsync(...)` mit den Systemkonstanten
+  (`SEGMENT_TICK` für Ticks, `CONTEXT_CLICK` für Taps, `VIRTUAL_KEY` für
+  Auswahl, `TOGGLE_ON/OFF`, `CONFIRM`, `REJECT`, `LONG_PRESS`) — kurze, vom
+  Hersteller auf die eigene Vibrations-Spule kalibrierte Impulse, ohne
+  `VIBRATE`-Permission, mit kurzem `impactAsync(Light)`-Fallback auf alten ROMs.
+  iOS bleibt bei `UIImpactFeedbackGenerator` (`.light`/`.medium`/`.heavy`) und
+  `UINotificationFeedbackGenerator` für Erfolg/Fehler.
+- **Coalescing (55 ms):** zwei Feedbacks im selben Frame (Checkbox-Toggle +
+  Listen-Reflow) zählen als ein Tipp — kein Rattern mehr beim schnellen Abhaken.
+- Neue, semantische Aufrufe: `hapticTap()`, `hapticToggle(on)`,
+  `hapticSelection()`, `hapticHeavy()`; `hapticLight()` bleibt als Tick erhalten.
+- **Screen-Wechsel:** der Root-`Stack` animiert jetzt einheitlich
+  (`animation: 'slide_from_right'`, `animationDuration: 260 ms` — kürzer als der
+  Systemdefault, die App fühlt sich direkt an), die sechs modalen Formulare
+  kommen von unten (`slide_from_bottom`), `settings` als Card mit Slide.
+  Toggle-Switches brauchen nichts: `Switch` ist der Plattform-Switch
+  (`RNSwitch` via gluestack) und animiert bereits auf beiden Systemen.
+
+### Noch offen (geplant)
+
+- **Übergänge, zweite Runde:** `LinearTransition` an den Aufgaben-Tabs und an
+  der neuen Stundenplan-Umschaltung (Phase 15), Karten-Expand der Sheets
+  (`Sheet` mit `entering`/`exiting` + Spring statt Sprung),
+  Tab-Wechsel-Querblende (braucht einen eigenen Scene-Wrapper —
+  Bottom-Tabs haben keine Szenen-Animation), alles auf 120-Hz-Ablauf prüfen.
+- **QA-Passage Alignment/Größen:** 360/390/430 dp × Phone/Tablet/Desktop,
+  System-Schriftgröße 1,3, RTL-ignorierend; Fokus auf Basislinien in
+  `ScreenHeader`, `SectionHeader`, Zeilen mit `Pill` rechts (Abschneiden bei
+  langen Fächernukrzel) und auf Zeilenumbrüche in `StatCard`-Captions.
+- **Haptik-Qualität:** optionale dünne native Brücke (`modules/schulflow-haptics`)
+  für `VibrationEffect.EFFECT_TICK` ab API 30 mit sauberem Fallback, damit auch
+  Geräte ohne Systemkonstanten einen Klick statt eines Summens spüren.
+- Diagnose-Anzeige `useStylePipelineHealth()` im „Über“-Abschnitt (nutzt Phase-10-Sonde).
+
+### Akzeptanzkriterien
+
+- [x] Kein langes Vibrationsmuster mehr: Android nutzt
+      `VibrationEffect`-Systemeffekte, iOS `.light`/`.medium`; Doppel-Feedback
+      unter 55 ms wird verworfen.
+- [x] Screen-Wechsel animieren einheitlich (Root-Stack 260 ms, Modals von unten);
+      Switches sind Plattform-Animationen und bleiben unverändert.
+- [ ] Jeder interaktive Baustein (Screen-/Tab-Wechsel, Karten-Expand, Checkbox,
+      Toggle, Sheet) animiert mit identischem Timing; kein harter Sprung.
+- [ ] QA-Passage dokumentiert (Tabelle je Formfaktor), alle Funde behoben.
+- [ ] `npm run smoke:matrix` und `typecheck` grün.
+
+### Abhängigkeiten
+
+Benötigt Phase 10 (Sonst sind Motion-Änderungen im APK nicht sichtbar).
+Hängt mit Phase 13/14 zusammen (Bottom-Bar-Pill, Drilldown-Transitionen).
+
+---
+
+## Phase 13 — „Live Island“ → Live Activities (aus „Teil 2“, Punkt 4)
+
+**Status: 🟡 teilweise umgesetzt (2026-09-05): In-App-Kapsel ist von oben nach
+unten gewandert und auf nativ abgeschaltet; die System-Kanäle bestehen, der
+iOS-WidgetKit-Target und die Telemetrie-Feinschritte fehlen noch. Teilschritt
+„Glow in der Bottom-Nav“ wurde bereits in Phase 10 behoben.**
+
+### Umsetzung (bereits erfolgt)
+
+- `src/features/island/LiveIsland.tsx` rendert **auf nativ `null`** — die
+  Kapsel oben am Bildschirm (Statusleiste, Notch, Dynamic Island) gibt es nicht
+  mehr. Live-Infos laufen dort über die bestehenden System-Mechanismen
+  (`useLiveIslandEffects`: Android-Fortschritts-Notification → Live-Update bzw.
+  HyperOS-Fokus-Notification, Expo-Go-Fallback über `expo-notifications`).
+- Auf **Web** ist dieselbe Pille jetzt die **Erweiterung über der Tab-Bar**:
+  Verankerung `bottom = max(useTabNavReserve(), insets.bottom + 92)` — sie sitzt
+  in der ohnehin freien Reserve, kein Screen-Inhalt wird verdeckt; auf
+  Rail/Desktop rückt sie an den unteren Rand des Inhaltsbereichs
+  (`left: layout.navigationWidth`).
+- Detailkarte klappt zur neuen Position hin **nach oben** auf (`marginBottom`
+  statt `marginTop`), Zuklappen bei Kontextwechsel und Haptik unverändert.
+- `app/_layout.tsx`: Kommentar/Mount dokumentieren den neuen Zustand; die
+  Effekte (`effects.ts`) laufen weiterhin plattformunabhängig.
+
+### Noch offen (geplant)
+
+- iOS: WidgetKit-/ActivityKit-Target bauen (`npx expo-apple-targets`,
+  `LiveIslandAttributes.swift` übernehmen, App-Group) → echte Live Activity.
+- Android: promoted-Ongoing nur auf API ≥ 35 absichern, Ticker nur bei
+  Änderung (Dedup existiert), „Akute Hausaufgaben-Erinnerung“ als zweiter
+  Live-Update-Inhalt (heute: Stunde/Countdown).
+
+### Ziel
+
+Kein eigenes In-App-Island-UI mehr oben am Bildschirm. Installierte Apps spielen
+Live-Infos über **native Mechanismen** aus, die Web-Version zeigt sie als
+**Pill über der Bottom-Tab-Bar**.
+
+### Betroffene Screens / Komponenten
+
+- `src/features/island/LiveIsland.tsx` — In-App-Kapsel oben **entfällt** auf
+  nativ; auf Web wird sie zur Tab-Bar-Erweiterung umgebaut (neue Komponente
+  `IslandBarPill`, verankert über `useTabNavReserve()` in
+  `app/(tabs)/_layout.tsx`, also *oberhalb* der schwarzen Kapsel, nicht am
+  oberen Rand).
+- `app/_layout.tsx` — `IslandHost` rendert die Kapsel nur noch auf Web.
+- `modules/schulflow-live-island/` — Android: bestehende
+  ongoing/Progress-Notification bleibt der Kanal (Live-Update auf Stock-Android,
+  Fokus-Notification auf HyperOS); `setRequestPromotedOngoing` bleibt reflexiv.
+  iOS: ActivityKit-`LiveIslandAttributes` + WidgetKit-Extension bauen
+  (`npx expo-apple-targets`, App-Group, `expo run:ios`) → echte Live Activity auf
+  Lockscreen/Dynamic Island statt In-App-Kapsel.
+- `src/features/island/bridge.ts` / `bridge.web.ts` — Bridge bekommt
+  `startLiveActivity`/`updateLiveActivity`/`endLiveActivity` (nativ) und
+  `barPill`-Modus (web); `effects.ts` liefert den Tab-Titel weiterhin.
+- Bottom-Nav-Bereinigung: `elevation`-Z-Order ist in Phase 10 gefallen; hier
+  entfällt der Rest (die Kapsel über der Bar braucht dieselbe Reserve, damit kein
+  Inhalt davon verdeckt wird).
+
+### Akzeptanzkriterien
+
+- [x] Oben am Bildschirm ist in der installierten App keine Island mehr sichtbar
+      — weder als Kapsel noch als Overlay über dem Statuszeilenbereich.
+- [x] Web: Pille unmittelbar über der Tab-Bar, keine Verdeckung von Inhalt,
+      Detailkarte klappt nach oben auf.
+- [ ] Android zeigt die Live-Info als Live-Update/Fokus-Notification
+      (laufende Stunde, Restzeit, Fortschritt), mit Stiller-Notification-Fallback
+      in Expo Go.
+- [ ] iOS zeigt eine echte Live Activity (ActivityKit), sobald der
+      WidgetKit-Target gebaut ist; ohne Target bleibt die App frei von
+      Eigenbau-Inseln.
+- [x] Gleiche Infos wie zuvor (Fach, Restzeit/Fortschritt, Countdown,
+      Änderung/Ausfall-Markierung), Tap klappt die Detailkarte auf.
+- [ ] Aktivierung bleibt in den Einstellungen (Phase 14: eigener Punkt
+      „Live-Infos“), Erlaubnisabfrage auf Android unverändert.
+
+### Abhängigkeiten
+
+Benötigt Phase 10 (Sichtbarkeit im APK) und Phase 14 (Einstellungs-Drilldown für
+„Live-Infos“). Blockiert nicht 15.
+
+---
+
+## Phase 14 — Einstellungen-Umbau (aus „Teil 2“, Punkt 5)
+
+**Status: 🟡 geplant**
+
+### Ziel
+
+Von der langen Liste zum **Drilldown**: Die Hauptseite zeigt Kategorien als
+Farbkarten (Phase-8-Stil), jede Kategorie öffnet eine Unterseite mit den
+Details. Dashboard-Widgets werden per **Drag-and-Drop** sortiert.
+
+### Betroffene Screens / Komponenten
+
+- Routing: `app/settings.tsx` → `app/settings/_layout.tsx` +
+  `app/settings/index.tsx` (Kategorien) + Unterseiten `appearance.tsx`,
+  `privacy.tsx`, `notifications.tsx`, `widgets.tsx`, `modules.tsx`,
+  `account.tsx` (enthält die Verbindungs-Karte aus Phase 11), `live-island.tsx`,
+  `about.tsx`. Deep-Links bleiben erhalten: alte hrefs mappen per
+  `expo-router`-Redirect auf die Unterseite.
+- `src/state/settings.ts` — bleibt die einzige Quelle; Unterseiten lesen/schreiben
+  denselben Store (keine zweiten Zustände).
+- Neue Kategorie-Karten nutzen das `SectionBlock`-Muster aus Phase 8 (Farbfläche +
+  `IconBadge lg` + Chevron), Reihenfolge: Konto & Verbindung, Schule,
+  Erscheinungsbild, Dashboard-Widgets, Benachrichtigungen, Live-Infos, Datenschutz,
+  Module, Über.
+- Widget-Sortierung: `SettingsGroup` + neue `DraggableWidgetRow` mit
+  `react-native-gesture-handler` (`Gesture.Pan`) + Reanimated
+  (`LinearTransition`/`withSpring`), Lift-Schatten, Ablageziel-Pill;
+  Persistenz über `useSettings.moveWidget` bzw. neues `setWidgetOrder(ids)`
+  (additiv, `moveWidget` bleibt für Kompatibilität).
+- `about.tsx` zeigt Styling-Pipeline-Status (`useStylePipelineHealth()`),
+  Build-/Relay-Infos aus Phase 10/11.
+
+### Akzeptanzkriterien
+
+- [ ] Hauptseite nennt nur Kategorien (≤ 10 Karten, keine Toggle, keine
+      Eingabefelder); jede Unterseite hat `ScreenHeader` + eigene Scroll-Reserve.
+- [ ] Zurück-Navigation aus jeder Unterseite funktioniert aus jedem Zustand
+      (`useSafeBack`, Deep-Link-kompatibel).
+- [ ] Umschalten (Theme, Module, Datenschutz, Live-Island, Benachrichtigungen)
+      wirkt sofort und persistiert wie bisher.
+- [ ] Drag-and-Drop: Ziehen, Einsortieren, Loslassen; Reihenfolge nach
+      Neustart identisch; ausgeblendete Widgets nehmen keinen Platz ein
+      (Log #8 aus Phase 8 bleibt gewahrt); „nach oben/unten“-Buttons sind weg.
+- [ ] Kein Regressions-Risiko für Dashboard und Screens: Widget-Reihenfolge ist
+      dieselbe Datenstruktur wie vorher.
+
+### Abhängigkeiten
+
+Benötigt Phase 1 (Komponenten), 2 (Header-Pattern), 8 (Sektionskarten), 10
+( damit es im APK sichtbar wird) und 13 (Einstiegspunkt „Live-Infos“).
+
+---
+
+## Phase 15 — Stundenplan: Listen- ↔ Kalenderansicht (aus „Teil 2“, Punkt 6)
+
+**Status: 🟡 geplant**
+
+### Ziel
+
+Die 2-Wochen-Stack-Ansicht aus Phase 4 wird **optional**. Der Stundenplan bekommt
+einen Umschalter zwischen
+
+1. **Liste** (bestehend: Tages-Pillen + Stundenliste) und
+2. **Kalender** (neu: Wochenraster — Wochentage als Spalten Mo–Fr, Zeitachse
+   links, farbige vertikale Blöcke exakt über ihrer Zeitspanne, kompakte Kürzel
+   für Fach/Lehrer/Raum, Freistunden bleiben sichtbar als Lücke).
+
+### Betroffene Screens / Komponenten
+
+- `app/(tabs)/timetable.tsx` — `SegmentedControl` „Liste / Kalender“ direkt unter
+  `ScreenHeader`; die Wochen-Streifen bleiben nur in der Listenansicht, der
+  Kalender zeigt beide Wochen nicht gestapelt, sondern die gewählte Woche als
+  Raster mit seitlichem Wochen-Pfeil (der alte `weekOffset`-Mechanismus kehrt
+  dafür in reduzierter Form zurück).
+- Neue `src/ui/timetable-week-grid.tsx`: Raster aus `hours × days`, Zeithöhe aus
+  `min(start/end)`-Dauer (Grundraster 44 px/h), Überlappungen nebenseitig
+  (Vertretung direkt nach der Originalstunde), Freistunde = leere Zelle mit
+  1-px-Innenlinie **nur** innerhalb des Rasters (Kernprinzip 8 bleibt gelten —
+  das Raster ist die Ausnahme, in der Trennlinien Struktur tragen).
+- Block-Inhalte: Fach-Kürzel (max. 3 Zeichen), Lehrer-Kürzel, Raum;
+  Hintergrund = Fachfarbe über `subjectColor()`, Entfall = Coral mit
+  Durchstreichung, Vertretung = grüner Rand-Punkt + `Pill`; Tap öffnet das
+  bestehende Detail-Sheet (Phase 4), identische Datenquelle `useSnapshot()`.
+- `src/state/settings.ts` — neues Feld `timetableMode: 'list' | 'calendar'`
+  (persistiert, Default `list`), damit die Wunschansicht bleibt.
+- `src/lib/date.ts` — nutzt weiter die Montag-Verankerung;
+  `startOfWeek`/`addDays` decken den Kalender ohne neue Logik ab.
+
+### Akzeptanzkriterien
+
+- [ ] Beide Ansichtentypen sind umschaltbar, Auswahl wird über Tab-/App-Wechsel
+      und Neustart behalten.
+- [ ] Kalender: jede Stunde sitzt pixelgenau in ihrer Zeitspanne (Stunde =
+      Rasterhöhe), Blöcke tragen Fach/Lehrer/Raum als Kürzel, Freistunden sind als
+      Lücke sichtbar, Überlappungen seitlich geteilt statt übereinander.
+- [ ] Deutlich kompakter als die Listenansicht (ganze Woche auf einem Schirm,
+      ohne Scrollen in Höhe ≤ 844 dp für eine Normalwoche).
+- [ ] Vertretung/Entfall/Raumwechsel im Raster ebenso erkennbar wie in der Liste
+      (Fach-Kürzel + Status-Punkt), Tap öffnet dasselbe Detail-Sheet.
+- [ ] Phone (360–430 dp), Tablet-Rail und Desktop-Sidebar: Spaltenzahl bleibt
+      Mo–Fr (Wochenende optional nach Einstellung), Scrollen nur vertikal,
+      Zeitachse sticky links.
+- [ ] „2 Wochen gestapelt“ ist nicht mehr die einzige Ansicht (Auftrag: raus aus
+      dem Standardweg, erhalten als Liste).
+
+### Abhängigkeiten
+
+Benötigt Phase 1 (Blocks/Pill/SegmentedControl), 4 (Stunden-Datenmodell,
+Detail-Sheet, `subjectIcon`) und 10 (Kalender-Optik im APK). Empfohlen nach
+Phase 14 (Settings-Feld `timetableMode` im neuen „Erscheinungsbild“-Zweig).
+
+---
+
 ## Abhängigkeitsgraph (Kurzform)
 
 ```
@@ -764,6 +1227,15 @@ Phase 1 (Fundament)
  │                                  empfohlene Reihenfolge wie nummeriert)
  └── Phase 8 (Einstellungen) — nur Phase 1 nötig
 Phase 9 (Politur) — benötigt 1–8
+
+Teil 2 (Bugfixes & neue Anforderungen):
+Phase 10 (APK-Styling-Pipeline) — keine Vorbedingung; **Vorbedingung für die
+  Sichtbarkeit** aller visuellen Folgenphasen im installierten Build
+Phase 11 (API im Browser) — unabhängig (Transport-Schicht, kein UI- Zwang)
+Phase 12 (Grundqualität)      — benötigt 10; hängt mit 13/14 zusammen
+Phase 13 (Live Activities)     — benötigt 10, mündet in 14 („Live-Infos“)
+Phase 14 (Einstellungen-Drilldown) — benötigt 1, 2, 8, 10, 13
+Phase 15 (Stundenplan-Ansichten)   — benötigt 1, 4, 10; empfohlen nach 14
 ```
 
 ---
@@ -791,4 +1263,11 @@ Phase 9 (Politur) — benötigt 1–8
 | 17 | **Brief-Karten wechseln die Familie nach Status** (Lavendel → Coral offen → Mint bestätigt) statt nur einen Akzent zu setzen | Die Vorgabe nennt Lavendel als Grundfamilie und „Bestätigungspflicht = Coral-Akzent“. Auf einer vollflächigen Karte ist ein Akzent zu leise — der Statuswechsel der *ganzen* Fläche macht offene Aufgaben auf Scroll-Distanz sichtbar und folgt der Ampel-Semantik der App. |
 | 18 | **Einstellungs-Sektionen sind Farbkarten *über* weißen Gruppenkarten**, nicht farbige Karten mit Inhalt darin | Toggle-Zeilen brauchen ruhigen Hintergrund für Lesbarkeit und Switch-Kontrast. Der Farbblock trägt Identität und Icon-Badge, die Gruppe darunter den Inhalt — Divider bleiben so sauber gruppenintern (Kernprinzip 8). |
 | 19 | **Rohe `<Pressable>` sind in Screens verboten**; Interaktionen laufen über `PressableScale` (Flächen/Karten/Buttons) oder `PressableOpacity` (Zeilen, Chips, Text-Links). Ausnahme: unsichtbare Modal-/Sheet-Backdrops | Press-Feedback lief bisher teils über NativeWind-Klassen (`active:opacity-*`, nicht animiert, auf Web inkonsistent), teils über Reanimated. Ein Layer bedeutet identisches Timing, Hover-Verhalten auf Web und `disabled`-Handling überall. |
+| 21 | **Phase 10 setzt bei „APK ohne Styling“ zuerst die Pipeline messbar aufs Papier (npm ls + createRequire + Bundle-Diff), bevor irgendetwas umgebaut wird** | Die Symptome sahen nach „Stylesheet fehlt“, nach „Screens nutzen alte Komponenten“ oder nach WebView-Timing aus. Alles drei war falsch; die Messung (zwei `react-native-css-interop`-Kopien, divergierende Auflösung von `app/` vs. `.cache`) war in Minuten erledigt und hat einen Umbau von 20 Screens überflüssig gemacht. Diagnose zuerst ist hier keine Formalie, sondern der Unterschied zwischen einem Fix und einem Monatsprojekt. |
+| 22 | **Verteidigung der Styling-Pipeline = drei Ebenen: eine Runtime (Pin + overrides), ein CI-Blocker (`npm run doctor`), eine Laufzeit-Sonde** | Eine reine Versionserhöhung wäre still zurückfallbar gewesen (jemand pinnt erneut eine Version, niemand merkt es). Der CI-Guard fängt Konfigurationsdrift ab, die Sonde meldet den Fall, in dem trotzdem etwas kippt — und zwar bei der Person, die es sieht, statt im Logcat. |
+| 23 | **Struktur wird inline gehärtet, Typografie bleibt klassenbasiert** | Der Header-Bug (Icons über dem Titel) war der einzige Fall, in dem eine fehlende Klasse *überlappend* statt nur „zu wenig Padding“ bedeutet. 45 Screens überschreiben die Textgrößen der Bausteine per `className`; inline gesetzte Typografie hätte jede dieser Entscheidungen ausgehebelt (Inline gewinnt gegen Klassen). Härtung dort, wo Überlappung entsteht; partout nicht dort, wo Screens variieren. |
+| 24 | **Auf Android wird `elevation` von Deko-Ebenen entfernt, nicht die Deko selbst** | Elevation bestimmt auf Android die *Zeichenreihenfolge* — der Amber-Halo lag über dem Icon, deshalb „verdeckt das pulsierende Glow-Icon ein Icon“ (Auftrag Punkt 4). Der Halo ist als getönte Fläche weiter sichtbar; iOS bekommt seinen echten Schatten per `Platform.select`. |
+| 25 | **Phase 11 führt keinen öffentlichen CORS-Proxy als Standard ein, sondern eine Fähigkeitsprüfung + selbst gehosteten Umweg** | Die API schickt keine `Access-Control-Allow-Origin`-Header; ein öffentlicher Relay würde Schul-Login und Noten an Dritte geben. Der Transport prüft deshalb erst, ob die *eigene* Installation durchreichen kann (suffix-basiert, subpfad-tolerant), und lässt sich sonst eine eigene Relay-Adresse hinterlegen. Der blockierte Zustand wird vor dem ersten Request erkannt und erklärt — nicht nach 30 s Timeout als „Keine Verbindung“ missdeutet. |
+| 26 | **Der Umweg wird in den Einstellungen gespeichert, nicht als Build-Variable** | Ein Build-Override (`EXPO_PUBLIC_SM_API_BASE`) zwingt jede Nutzerin/jeden Nutzer zu einem eigenen Web-Build. Im Browserspeicher gesetzt wirkt er sofort, pro Auslieferung und ohne dass Schulflow-Deployment Secrets braucht. |
+| 27 | **Haptik: Android-Auswahl fällt auf `performAndroidHapticsAsync`, nicht auf `Vibrator`-Simulation** | expo-haptics dokumentiert `impactAsync`/`notificationAsync` auf Android als „simulated using Vibrator“ — genau das lange Brummen aus dem Auftrag. Die Systemkonstanten (`EFFECT_CLICK`-Familie) sind kurz, herstellerspezifisch kalibriert und brauchen keine `VIBRATE`-Permission; ein kurzes `impactAsync(Light)` bleibt als Fallback für Geräte ohne Effect-Tabelle. |
 | 20 | **Illustrationen zeichnen in `useBlockInk()`, nicht in einer eigenen Farbpalette** | Ein Leerzustand kann auf Creme-Canvas *oder* mitten in einer von 13 Blockfarben × Light/Dark stehen. Nur die zugehörige Vordergrundfarbe ist überall garantiert lesbar; Tönungen (13 %/8 %) erzeugen die Flächenwirkung. `illustrations.tsx` importiert deshalb bewusst **nicht** aus `primitives.tsx` (Zyklus-frei) und bekommt `ink` als Prop. |
