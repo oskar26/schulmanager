@@ -44,7 +44,7 @@ import {
   SegmentedControl,
   Sheet,
   Skeleton,
-  useBlockInk,
+  useBlockAccent,
 } from '@/ui/primitives';
 import { Button, ButtonText } from '@/ui/gluestack/button';
 import { Spinner } from '@/ui/gluestack/feedback';
@@ -235,7 +235,7 @@ function BoardCard({ tile, index, onOpen }: { tile: Tile; index: number; onOpen:
 }
 
 function BoardCardBody({ tile, category }: { tile: Tile; category: CategoryKey }) {
-  const ink = useBlockInk();
+  const ink = useBlockAccent();
   return (
     <Row className="gap-3" style={{ alignItems: 'flex-start' }}>
       <IconBadge icon={tile.pinned ? MapPin : categoryIcon(category)} color={ink} tone="tint" size="lg" />
@@ -282,7 +282,7 @@ function LetterCard({
     needsAction ? colors.blocks.coral : isConfirmed ? colors.blocks.mint : colors.blocks.lavender,
     isDark,
   );
-  const ink = foregroundOn(tone, colors);
+  const ink = tone;
   const StatusIcon = needsAction ? AlertCircle : isConfirmed ? CheckCheck : MailOpen;
 
   /**
@@ -567,7 +567,7 @@ function LetterSheet({ letter, onClose }: { letter: Letter | null; onClose: () =
         <View className="gap-3">
           <ColorBlockCard color={lavender} style={{ padding: 16 }}>
             <Row className="gap-3">
-              <IconBadge icon={MailOpen} color={foregroundOn(lavender, colors)} tone="tint" size="lg" />
+              <IconBadge icon={MailOpen} color={lavender} tone="tint" size="lg" />
               <View className="min-w-0 flex-1">
                 <BlockText className="text-[15px] font-extrabold" numberOfLines={1}>
                   {letter.sender ?? 'Schule'}

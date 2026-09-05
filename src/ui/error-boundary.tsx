@@ -45,7 +45,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
     if (this.props.inline) {
       return (
-        <View className="rounded-[28px] bg-surface p-4">
+        <View className="rounded-[20px] border border-line bg-surface p-4">
           <Text className="text-[14px] font-semibold text-ink">Diese Karte konnte nicht geladen werden.</Text>
           <PressableOpacity onPress={this.reset} hitSlop={12} accessibilityRole="button">
             <Text className="mt-1 text-[13px] font-semibold text-accent-amber-deep">Erneut versuchen</Text>

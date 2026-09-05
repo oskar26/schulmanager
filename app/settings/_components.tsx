@@ -82,7 +82,7 @@ export function SectionBlock({
 }) {
   const { colors, isDark } = useThemeColors();
   const tone = resolveThemeColor(color, isDark);
-  const ink = foregroundOn(tone, colors);
+  const ink = tone;
   return (
     <ColorBlockCard
       color={tone}
@@ -122,7 +122,7 @@ export function CategoryCard({
 }) {
   const { colors, isDark } = useThemeColors();
   const tone = resolveThemeColor(color, isDark);
-  const ink = foregroundOn(tone, colors);
+  const ink = tone;
   return (
     <PressableScale
       onPress={onPress}

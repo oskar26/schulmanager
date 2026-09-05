@@ -298,12 +298,14 @@ function AnimatedTabItem({
             height: 18,
             paddingHorizontal: badgeLabel === '99+' ? 5 : 4,
             borderRadius: 9,
-            backgroundColor: colors.accent.coral,
+            backgroundColor: colors.status.urgent,
             alignItems: 'center',
             justifyContent: 'center',
+            borderWidth: 2,
+            borderColor: colors.charcoal,
           }}
         >
-          <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800', lineHeight: 12 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '800', lineHeight: 12 }}>
             {badgeLabel}
           </Text>
         </View>

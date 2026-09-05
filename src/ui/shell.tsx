@@ -26,9 +26,8 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
-import { radius, shadow } from '@/design/tokens';
+import { blockTint, radius, shadow } from '@/design/tokens';
 import { useThemeColors } from '@/design/theme';
-import { tint } from '@/design/subjects';
 import type { LayoutInfo } from '@/lib/breakpoints';
 import { useSnapshot } from '@/data/queries';
 import { hapticLight } from '@/lib/haptics';
@@ -64,7 +63,12 @@ const ICONS: Record<string, LucideIcon> = {
   inbox: Inbox,
 };
 
-/** Kleiner, positionssicherer Zähler für Navigationseinträge (max. 99+). */
+/**
+ * Zähler für Navigationseinträge (max. 99+). In der vollen Sidebar sitzt das
+ * Badge per `marginLeft: auto` **ganz rechts** im Nav-Item (space-between) und
+ * kann Icon oder Label nicht mehr überlagern; auf der Rail schwebt es oben
+ * rechts am Icon.
+ */
 function NavBadge({ count, compact = false }: { count: number; compact?: boolean }) {
   const { colors } = useThemeColors();
   const label = formatNavBadge(count);
@@ -75,19 +79,22 @@ function NavBadge({ count, compact = false }: { count: number; compact?: boolean
       accessibilityLabel={`${label} neue Einträge`}
       style={{
         position: compact ? 'absolute' : 'relative',
-        top: compact ? -7 : undefined,
-        right: compact ? -12 : undefined,
+        top: compact ? -6 : undefined,
+        right: compact ? -10 : undefined,
         minWidth: label === '99+' ? 30 : 20,
         height: 20,
-        paddingHorizontal: label === '99+' ? 5 : 4,
+        paddingHorizontal: 8,
         borderRadius: radius.pill,
-        backgroundColor: colors.accent.coral,
+        backgroundColor: colors.status.urgent,
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: compact ? 0 : 8,
+        marginLeft: compact ? 0 : 'auto',
+        flexShrink: 0,
+        borderWidth: compact ? 2 : 0,
+        borderColor: colors.surface,
       }}
     >
-      <Text style={{ color: colors.on.coral, fontSize: 10, fontWeight: '800', lineHeight: 12 }}>
+      <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700', lineHeight: 13 }}>
         {label}
       </Text>
     </View>
@@ -98,7 +105,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
   const { state, navigation, layout } = props;
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { data, isDemo } = useSnapshot();
 
   const full = layout.navigation === 'sidebar';
@@ -144,9 +151,9 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
         backgroundColor: colors.surface,
         paddingTop: insets.top,
         paddingBottom: Math.max(insets.bottom, 12),
-        // Keine harte Trennlinie: Die weiche Schattenkante hebt die Shell genug
-        // vom Canvas ab und bleibt auch im Dark Mode ruhig.
-        ...shadow.float,
+        borderRightWidth: 1,
+        borderRightColor: colors.line,
+        ...shadow.card,
       }}
     >
       {/* Marke */}
@@ -159,7 +166,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <IconBadge icon={GraduationCap} color={colors.accent.amber} size="lg" tone="solid" accessibilityLabel="Schulflow" />
+          <IconBadge icon={GraduationCap} color={colors.accent.violet} size="lg" tone="solid" accessibilityLabel="Schulflow" style={{ borderRadius: 12 }} />
           {full ? (
             <View>
               <Text style={{ fontSize: 17, fontWeight: '800', letterSpacing: -0.4, color: colors.ink }}>
@@ -203,27 +210,28 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
               accessibilityLabel={item.title}
               onPress={() => goTab(item.name, item.key)}
               style={{
-                minHeight: full ? 56 : 62,
+                // .nav-item: flex · align-items center · space-between · 12/16 padding · 100 % breit
+                minHeight: full ? 48 : 62,
                 minWidth: full ? undefined : 62,
                 width: full ? '100%' : 62,
                 flexDirection: full ? 'row' : 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: full ? 'space-between' : 'center',
                 gap: full ? 12 : 4,
-                paddingVertical: full ? 6 : 7,
-                paddingHorizontal: full ? 10 : 4,
-                borderRadius: radius.pill,
-                backgroundColor: active ? tint(colors.accent.amber, 0.16) : 'transparent',
-                ...(active ? shadow.card : undefined),
+                paddingVertical: full ? 12 : 7,
+                paddingHorizontal: full ? 16 : 4,
+                borderRadius: full ? radius.md : radius.pill,
+                backgroundColor: active ? blockTint(colors.accent.violet, isDark) : 'transparent',
               }}
             >
-              <View style={{ position: 'relative' }}>
+              <View style={{ position: 'relative', flexShrink: 0 }}>
                 <IconBadge
                   icon={Icon}
-                  color={active ? colors.accent.amber : colors.muted}
+                  color={active ? colors.accent.violet : colors.muted}
                   size="md"
                   tone={active ? 'solid' : 'tint'}
                   strokeWidth={active ? 2.5 : 2}
+                  style={{ borderRadius: 10 }}
                 />
                 {rail ? <NavBadge count={item.badge} compact /> : null}
               </View>
@@ -231,11 +239,13 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
                 <Text
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     fontSize: 14.5,
                     fontWeight: active ? '800' : '600',
-                    color: active ? colors.accent.amberDeep : colors.muted,
+                    color: active ? colors.accent.violet : colors.ink,
                   }}
                   numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   {item.title}
                 </Text>
@@ -264,14 +274,16 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
             marginTop: 16,
             marginHorizontal: 12,
             padding: 12,
-            borderRadius: radius.cardSm,
-            backgroundColor: tint(colors.accent.amber, 0.11),
+            borderRadius: radius.md,
+            backgroundColor: colors.canvas,
+            borderWidth: 1,
+            borderColor: colors.line,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 10,
           }}
         >
-          <IconBadge icon={GraduationCap} color={colors.accent.amber} size="md" tone="solid" />
+          <IconBadge icon={GraduationCap} color={colors.accent.violet} size="md" tone="tint" style={{ borderRadius: 10 }} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '700', color: colors.ink }}>
               {data?.student ? `${data.student.firstname} ${data.student.lastname}` : 'Nicht verbunden'}
@@ -291,7 +303,7 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { layout: LayoutInfo }
 
 function DemoPill() {
   const { colors } = useThemeColors();
-  return <Pill label="DEMO" color={colors.accent.amber} tone="solid" className="px-2 py-1" />;
+  return <Pill label="DEMO" color={colors.accent.amber} tone="tint" className="px-2 py-1" />;
 }
 
 function ToolButton({
@@ -313,19 +325,19 @@ function ToolButton({
       onPress={onPress}
       scale={0.95}
       style={{
-        minHeight: full ? 52 : 58,
+        minHeight: full ? 48 : 58,
         minWidth: full ? undefined : 58,
         width: full ? '100%' : 58,
         flexDirection: full ? 'row' : 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: full ? 'flex-start' : 'center',
         gap: full ? 12 : 4,
-        paddingHorizontal: full ? 10 : 4,
-        borderRadius: radius.pill,
+        paddingHorizontal: full ? 16 : 4,
+        borderRadius: full ? radius.md : radius.pill,
       }}
     >
-      <IconBadge icon={Icon} color={colors.muted} size="md" tone="tint" />
-      {full ? <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>{label}</Text> : null}
+      <IconBadge icon={Icon} color={colors.muted} size="md" tone="tint" style={{ borderRadius: 10 }} />
+      {full ? <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }} numberOfLines={1}>{label}</Text> : null}
     </PressableScale>
   );
 }

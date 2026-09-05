@@ -30,7 +30,7 @@ export default function SchoolSettings() {
         />
       </SettingsGroup>
       {(data?.modules ?? []).length > 0 ? (
-        <View className="rounded-[28px] bg-surface p-[18px]">
+        <View className="rounded-[20px] border border-line bg-surface p-[18px]">
           <Text className="text-[10.5px] font-extrabold uppercase tracking-[1.3px] text-muted">Freigeschaltete Module</Text>
           <View className="mt-2.5 flex-row flex-wrap gap-2">
             {(data?.modules ?? []).map((module) => (

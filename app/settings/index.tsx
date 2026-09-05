@@ -62,7 +62,7 @@ export default function SettingsIndex() {
       </View>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
-        <View className="mb-2 mt-4 rounded-[24px] bg-surface px-4 py-3.5">
+        <View className="mb-2 mt-4 rounded-[14px] border border-line bg-surface px-4 py-3.5">
           <Text className="text-[12.5px] font-semibold leading-[18px] text-muted">
             Deine Einstellungen sind sofort aktiv und werden auf diesem Gerät gespeichert. Unterseiten lassen sich direkt öffnen und sicher zurückgehen.
           </Text>
